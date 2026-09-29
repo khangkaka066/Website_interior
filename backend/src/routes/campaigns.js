@@ -13,8 +13,10 @@ import {
   updateAd,
   deleteAd,
 } from '../controllers/campaigns.js'
+import { requirePermission } from '../middleware/auth.js'
 
 const router = Router()
+router.use(requirePermission('campaigns'))
 
 router.get('/', asyncHandler(listCampaigns))
 router.post('/', asyncHandler(createCampaign))

@@ -1,5 +1,7 @@
 import { prisma } from '../src/lib/prisma.js'
 import { generateOrderNumber, generateTrackingId } from '../src/utils/ids.js'
+import { hashPassword } from '../src/lib/auth.js'
+import { PERMISSION_DEFS } from '../src/constants/permissions.js'
 
 const carriers = [
   { code: 'GHN', name: 'Giao Hàng Nhanh', serviceTypes: ['Giao nhanh', 'Giao tiết kiệm'] },
@@ -54,6 +56,35 @@ async function main() {
     carrierRecords.push(rec)
   }
   console.log(`Seeded ${carrierRecords.length} shipping carriers.`)
+
+  for (const def of PERMISSION_DEFS) {
+    await prisma.supportPermission.upsert({
+      where: { key: def.key },
+      update: {},
+      create: { key: def.key, label: def.label, enabledForSupport: def.defaultEnabled },
+    })
+  }
+  console.log(`Seeded ${PERMISSION_DEFS.length} support permission defaults.`)
+
+  const adminEmail = process.env.ADMIN_USERNAME
+  const adminPassword = process.env.ADMIN_PASSWORD
+  if (adminEmail && adminPassword) {
+    const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } })
+    if (!existingAdmin) {
+      await prisma.user.create({
+        data: {
+          name: 'Quản trị viên',
+          email: adminEmail,
+          passwordHash: await hashPassword(adminPassword),
+          role: 'ADMIN',
+          adminRole: 'MAIN_ADMIN',
+        },
+      })
+      console.log(`Seeded MAIN_ADMIN account "${adminEmail}" from backend/.env.`)
+    } else {
+      console.log(`MAIN_ADMIN account "${adminEmail}" already exists, skipping.`)
+    }
+  }
 
   const existingOrders = await prisma.order.count()
   if (existingOrders > 0) {

@@ -84,7 +84,7 @@ export default function Login() {
   const location = useLocation()
 
   function goAfterLogin(user) {
-    if (user.role === 'admin') {
+    if (user.role === 'ADMIN') {
       navigate(location.state?.from || '/dashboard', { replace: true })
     } else {
       navigate('/', { replace: true })
@@ -102,16 +102,20 @@ export default function Login() {
       if (!result.ok) return setError(result.error)
       goAfterLogin(result.user)
     } else {
-      const result = registerCustomer({ name, username, password })
+      const result = await registerCustomer({ name, username, password })
       setSubmitting(false)
       if (!result.ok) return setError(result.error)
       goAfterLogin(result.user)
     }
   }
 
-  function handleGoogleProfile(profile) {
-    const user = loginWithGoogleProfile(profile)
-    goAfterLogin(user)
+  async function handleGoogleProfile(profile) {
+    try {
+      const user = await loginWithGoogleProfile(profile)
+      goAfterLogin(user)
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   return (
@@ -159,12 +163,12 @@ export default function Login() {
             </label>
           )}
           <label>
-            Số điện thoại hoặc email
+            {mode === 'signin' ? 'Số điện thoại hoặc email' : 'Email'}
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Email hoặc số điện thoại của bạn"
+              placeholder={mode === 'signin' ? 'Email hoặc số điện thoại của bạn' : 'ban@email.com'}
               autoFocus
             />
           </label>

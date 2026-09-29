@@ -4,35 +4,55 @@ import { shopInfo } from '../../data/shop'
 import { getSession, logout } from '../../auth'
 import { api } from '../../api'
 
+// `permKey` matches a backend SupportPermission key — omitted for items every
+// admin can always see (Tổng quan, Cài đặt). `mainAdminOnly` items never show
+// for SUPPORT_ADMIN regardless of permission toggles (role management can't
+// be delegated).
 const NAV_ITEMS = [
-  { id: 'overview', label: 'Tổng quan' },
-  { id: 'products', label: 'Sản phẩm' },
-  { id: 'orders', label: 'Đơn hàng' },
-  { id: 'customers', label: 'Khách hàng' },
-  { id: 'shipping', label: 'Vận chuyển' },
-  { id: 'messages', label: 'Tin nhắn' },
-  { id: 'campaigns', label: 'Quảng cáo' },
-  { id: 'analytics', label: 'Phân tích' },
-  { id: 'settings', label: 'Cài đặt' },
+  { id: 'overview', label: 'Tổng quan', to: '/dashboard' },
+  { id: 'products', label: 'Sản phẩm', to: '/dashboard/products', permKey: 'products' },
+  { id: 'orders', label: 'Đơn hàng', to: '/dashboard/orders', permKey: 'orders' },
+  { id: 'customers', label: 'Khách hàng', to: '/dashboard/customers', permKey: 'customers' },
+  { id: 'shipping', label: 'Vận chuyển', to: '/dashboard/shipping', permKey: 'shipping' },
+  { id: 'messages', label: 'Tin nhắn', to: '/dashboard/messages', permKey: 'messages' },
+  { id: 'campaigns', label: 'Quảng cáo', to: '/dashboard/campaigns', permKey: 'campaigns' },
+  { id: 'analytics', label: 'Phân tích', to: '/dashboard/analytics', permKey: 'analytics' },
+  { id: 'accounts', label: 'Tài khoản & Phân quyền', to: '/dashboard/accounts', mainAdminOnly: true },
+  { id: 'settings', label: 'Cài đặt', anchor: true },
 ]
 
 const UNREAD_POLL_MS = 10000
+
+export function useCanAccess() {
+  const session = getSession()
+  const [permissions, setPermissions] = useState(null)
+
+  useEffect(() => {
+    api.get('/permissions').then((data) => {
+      setPermissions(Object.fromEntries(data.items.map((p) => [p.key, p.enabledForSupport])))
+    }).catch(() => setPermissions({}))
+  }, [])
+
+  function canAccess(permKey) {
+    if (!permKey) return true
+    if (session?.adminRole === 'MAIN_ADMIN') return true
+    if (permissions === null) return false // don't flash restricted content while loading
+    return !!permissions[permKey]
+  }
+
+  return { canAccess, permissionsLoaded: permissions !== null }
+}
 
 export default function AdminLayout({ activeNav, pageTitle, headerActions, children }) {
   const navigate = useNavigate()
   const location = useLocation()
   const session = getSession()
+  const { canAccess } = useCanAccess()
 
   const getActiveNav = () => {
     if (location.pathname === '/dashboard') return 'overview'
-    if (location.pathname.startsWith('/dashboard/products')) return 'products'
-    if (location.pathname.startsWith('/dashboard/orders')) return 'orders'
-    if (location.pathname.startsWith('/dashboard/shipping')) return 'shipping'
-    if (location.pathname.startsWith('/dashboard/customers')) return 'customers'
-    if (location.pathname.startsWith('/dashboard/messages')) return 'messages'
-    if (location.pathname.startsWith('/dashboard/campaigns')) return 'campaigns'
-    if (location.pathname.startsWith('/dashboard/analytics')) return 'analytics'
-    return activeNav
+    const match = NAV_ITEMS.find((item) => item.to && item.to !== '/dashboard' && location.pathname.startsWith(item.to))
+    return match?.id || activeNav
   }
 
   function handleLogout() {
@@ -42,16 +62,18 @@ export default function AdminLayout({ activeNav, pageTitle, headerActions, child
 
   const currentActive = getActiveNav()
   const onDashboardOverview = location.pathname === '/dashboard'
+  const isMainAdmin = session?.adminRole === 'MAIN_ADMIN'
 
   const [unreadCount, setUnreadCount] = useState(0)
   useEffect(() => {
+    if (!canAccess('messages')) return
     let cancelled = false
     async function poll() {
       try {
         const data = await api.get('/chat/conversations')
         if (!cancelled) setUnreadCount(data.items.reduce((sum, c) => sum + c.unreadCount, 0))
       } catch {
-        // backend offline — ignore
+        // backend offline / no access — ignore
       }
     }
     poll()
@@ -60,6 +82,7 @@ export default function AdminLayout({ activeNav, pageTitle, headerActions, child
       cancelled = true
       clearInterval(id)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Link (client-side navigation) không tự cuộn tới anchor như thẻ <a> gốc
@@ -71,6 +94,11 @@ export default function AdminLayout({ activeNav, pageTitle, headerActions, child
     if (el) el.scrollIntoView({ behavior: 'smooth' })
   }, [location.pathname, location.hash])
 
+  const visibleItems = NAV_ITEMS.filter((item) => {
+    if (item.mainAdminOnly) return isMainAdmin
+    return canAccess(item.permKey)
+  })
+
   return (
     <div className="dash-root">
       <aside className="dash-sidebar">
@@ -79,117 +107,35 @@ export default function AdminLayout({ activeNav, pageTitle, headerActions, child
           <span>{shopInfo.name}</span>
         </Link>
         <nav className="dash-nav">
-          {NAV_ITEMS.map((item) => {
-            if (item.id === 'products') {
-              return (
-                <Link
-                  key={item.id}
-                  to="/dashboard/products"
-                  className={`dash-nav-item ${currentActive === 'products' ? 'dash-nav-active' : ''}`}
-                >
-                  {item.label}
-                </Link>
-              )
-            }
-            if (item.id === 'orders') {
-              return (
-                <Link
-                  key={item.id}
-                  to="/dashboard/orders"
-                  className={`dash-nav-item ${currentActive === 'orders' ? 'dash-nav-active' : ''}`}
-                >
-                  {item.label}
-                </Link>
-              )
-            }
-            if (item.id === 'shipping') {
-              return (
-                <Link
-                  key={item.id}
-                  to="/dashboard/shipping"
-                  className={`dash-nav-item ${currentActive === 'shipping' ? 'dash-nav-active' : ''}`}
-                >
-                  {item.label}
-                </Link>
-              )
-            }
-            if (item.id === 'customers') {
-              return (
-                <Link
-                  key={item.id}
-                  to="/dashboard/customers"
-                  className={`dash-nav-item ${currentActive === 'customers' ? 'dash-nav-active' : ''}`}
-                >
-                  {item.label}
-                </Link>
-              )
-            }
+          {visibleItems.map((item) => {
             if (item.id === 'messages') {
               return (
-                <Link
-                  key={item.id}
-                  to="/dashboard/messages"
-                  className={`dash-nav-item ${currentActive === 'messages' ? 'dash-nav-active' : ''}`}
-                >
+                <Link key={item.id} to={item.to} className={`dash-nav-item ${currentActive === item.id ? 'dash-nav-active' : ''}`}>
                   {item.label}
                   {unreadCount > 0 && <span className="dash-nav-badge">{unreadCount}</span>}
                 </Link>
               )
             }
-            if (item.id === 'campaigns') {
+            if (item.to) {
               return (
-                <Link
-                  key={item.id}
-                  to="/dashboard/campaigns"
-                  className={`dash-nav-item ${currentActive === 'campaigns' ? 'dash-nav-active' : ''}`}
-                >
+                <Link key={item.id} to={item.to} className={`dash-nav-item ${currentActive === item.id ? 'dash-nav-active' : ''}`}>
                   {item.label}
                 </Link>
               )
             }
-            if (item.id === 'analytics') {
-              return (
-                <Link
-                  key={item.id}
-                  to="/dashboard/analytics"
-                  className={`dash-nav-item ${currentActive === 'analytics' ? 'dash-nav-active' : ''}`}
-                >
-                  {item.label}
-                </Link>
-              )
-            }
-            if (item.id === 'overview') {
-              return (
-                <Link
-                  key={item.id}
-                  to="/dashboard"
-                  className={`dash-nav-item ${currentActive === 'overview' ? 'dash-nav-active' : ''}`}
-                >
-                  {item.label}
-                </Link>
-              )
-            }
-            // Mục còn lại (Cài đặt) hiện chỉ tồn tại
-            // dưới dạng section trong trang Tổng quan, chưa có route riêng. Đang
-            // ở Tổng quan → giữ nguyên <a href="#id"> để cuộn mượt tại chỗ; đang
-            // ở trang khác → dùng Link để điều hướng về Tổng quan trước.
+            // Anchor-only items (Cài đặt) hiện chỉ tồn tại dưới dạng section
+            // trong trang Tổng quan, chưa có route riêng. Đang ở Tổng quan →
+            // giữ nguyên <a href="#id"> để cuộn mượt tại chỗ; đang ở trang
+            // khác → dùng Link để điều hướng về Tổng quan trước.
             if (onDashboardOverview) {
               return (
-                <a
-                  key={item.id}
-                  className={`dash-nav-item ${currentActive === item.id ? 'dash-nav-active' : ''}`}
-                  href={`#${item.id}`}
-                >
+                <a key={item.id} className={`dash-nav-item ${currentActive === item.id ? 'dash-nav-active' : ''}`} href={`#${item.id}`}>
                   {item.label}
                 </a>
               )
             }
             return (
-              <Link
-                key={item.id}
-                to={`/dashboard#${item.id}`}
-                className={`dash-nav-item ${currentActive === item.id ? 'dash-nav-active' : ''}`}
-              >
+              <Link key={item.id} to={`/dashboard#${item.id}`} className={`dash-nav-item ${currentActive === item.id ? 'dash-nav-active' : ''}`}>
                 {item.label}
               </Link>
             )
@@ -217,7 +163,9 @@ export default function AdminLayout({ activeNav, pageTitle, headerActions, child
               </svg>
               <span className="icon-bell-dot" />
             </button>
-            <div className="dash-avatar">{(session?.name || 'QT').slice(0, 2).toUpperCase()}</div>
+            <div className="dash-avatar" title={isMainAdmin ? 'Main Admin' : session?.adminRole === 'SUPPORT_ADMIN' ? 'Support Admin' : ''}>
+              {(session?.name || 'QT').slice(0, 2).toUpperCase()}
+            </div>
           </div>
         </header>
 

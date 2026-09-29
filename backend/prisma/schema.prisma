@@ -11,6 +11,49 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
+// Accounts / roles
+// ---------------------------------------------------------------------------
+
+enum AccountRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum AdminRole {
+  MAIN_ADMIN
+  SUPPORT_ADMIN
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  name         String
+  role         AccountRole @default(CUSTOMER)
+  // Only set when role = ADMIN.
+  adminRole    AdminRole?
+
+  // Links a CUSTOMER-role account to its CRM record (orders, addresses...).
+  customerId String?   @unique
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+}
+
+// One row per manageable feature area. SUPPORT_ADMIN accounts can use a
+// feature only if its row is enabled here; MAIN_ADMIN always has full
+// access regardless of these rows and can flip them from the admin UI.
+model SupportPermission {
+  key               String   @id
+  label             String
+  enabledForSupport Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
 // Customers
 // ---------------------------------------------------------------------------
 
@@ -37,6 +80,7 @@ model Customer {
   addresses     CustomerAddress[]
   notes         CustomerNote[]
   conversations Conversation[]
+  account       User?
 
   @@index([email])
   @@index([status])
