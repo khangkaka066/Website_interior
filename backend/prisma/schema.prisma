@@ -1,0 +1,431 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Customers
+// ---------------------------------------------------------------------------
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+model Customer {
+  id        String         @id @default(cuid())
+  name      String
+  phone     String         @unique
+  email     String?        @unique
+  dob       DateTime?
+  gender    String?
+  avatarUrl String?
+  status    CustomerStatus @default(ACTIVE)
+  tags      String[]       @default([])
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  orders        Order[]
+  addresses     CustomerAddress[]
+  notes         CustomerNote[]
+  conversations Conversation[]
+
+  @@index([email])
+  @@index([status])
+}
+
+model CustomerAddress {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  recipientName String
+  phone         String
+  addressLine   String
+  ward          String?
+  district      String?
+  province      String
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([customerId])
+}
+
+model CustomerNote {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  content    String
+  author     String
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+}
+
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+
+enum OrderStatus {
+  PENDING_CONFIRMATION // Chờ xác nhận
+  CONFIRMED // Đã xác nhận
+  PROCESSING // Đang xử lý
+  AWAITING_SHIPMENT // Chờ giao hàng
+  SHIPPING // Đang giao
+  DELIVERED // Đã giao
+  CANCELLED // Đã hủy
+  RETURNED // Đã trả hàng
+}
+
+enum PaymentStatus {
+  AWAITING_PAYMENT // Chờ thanh toán
+  PAID // Đã thanh toán
+  FAILED // Thanh toán thất bại
+  REFUNDED // Đã hoàn tiền
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique // e.g. ORD-10293
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  status        OrderStatus   @default(PENDING_CONFIRMATION)
+  paymentStatus PaymentStatus @default(AWAITING_PAYMENT)
+  paymentMethod String
+  transactionId String?
+
+  subtotal    Decimal @db.Decimal(12, 2)
+  discount    Decimal @default(0) @db.Decimal(12, 2)
+  shippingFee Decimal @default(0) @db.Decimal(12, 2)
+  tax         Decimal @default(0) @db.Decimal(12, 2)
+  total       Decimal @db.Decimal(12, 2)
+
+  // Shipping address (snapshot at time of order)
+  recipientName String
+  recipientPhone String
+  addressLine   String
+  ward          String?
+  district      String?
+  province      String
+
+  items         OrderItem[]
+  statusEvents  OrderStatusEvent[]
+  shipment      Shipment?
+  activityLogs  ActivityLog[]
+
+  // Marketing attribution — set when the order was placed through the
+  // storefront checkout with UTM params (or a matching internal Campaign)
+  // present in that session.
+  campaignId  String?
+  campaign    Campaign? @relation(fields: [campaignId], references: [id])
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@index([campaignId])
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String?
+  name       String
+  sku        String?
+  variant    String?
+  image      String?
+  quantity   Int
+  unitPrice  Decimal @db.Decimal(12, 2)
+  discount   Decimal @default(0) @db.Decimal(12, 2)
+  lineTotal  Decimal @db.Decimal(12, 2)
+
+  @@index([orderId])
+}
+
+// Timeline: Đặt hàng -> Đã xác nhận -> Đang xử lý -> Đã đóng gói ->
+// Đã bàn giao vận chuyển -> Đang giao -> Đã giao
+model OrderStatusEvent {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+// ---------------------------------------------------------------------------
+// Shipping / Shipment
+// ---------------------------------------------------------------------------
+
+enum ShippingStatus {
+  NOT_CREATED // Chưa tạo vận đơn
+  AWAITING_PICKUP // Chờ lấy hàng
+  PICKED_UP // Đã lấy hàng
+  IN_TRANSIT // Đang trung chuyển
+  OUT_FOR_DELIVERY // Đang giao
+  DELIVERED // Giao thành công
+  FAILED // Giao thất bại
+  RETURNING // Đang hoàn
+  RETURNED // Đã hoàn
+}
+
+model ShippingCarrier {
+  id           String   @id @default(cuid())
+  code         String   @unique // GHN, GHTK, VIETTELPOST, JT, VNPOST, ...
+  name         String
+  enabled      Boolean  @default(true)
+  apiStatus    String   @default("disconnected") // connected | disconnected | error
+  apiConfig    Json? // { apiKey, secret, shopId, ... }
+  serviceTypes Json? // ["Giao nhanh", "Giao tiết kiệm", ...]
+
+  shipments Shipment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Shipment {
+  id         String @id @default(cuid())
+  trackingId String @unique
+
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  carrierId String
+  carrier   ShippingCarrier @relation(fields: [carrierId], references: [id])
+
+  status ShippingStatus @default(NOT_CREATED)
+
+  senderName     String
+  recipientName  String
+  recipientPhone String
+  addressLine    String
+  ward           String?
+  district       String?
+  province       String
+
+  weightGrams Int
+  lengthCm    Int?
+  widthCm     Int?
+  heightCm    Int?
+  goodsType   String?
+
+  shippingFee Decimal @db.Decimal(12, 2)
+  codAmount   Decimal @default(0) @db.Decimal(12, 2)
+  note        String?
+
+  trackingEvents TrackingEvent[]
+  activityLogs   ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([carrierId])
+}
+
+// Timeline: Đã tạo vận đơn -> Đã lấy hàng -> Đã đến kho -> Đang trung chuyển
+// -> Đến kho giao hàng -> Đang giao -> Giao thành công
+model TrackingEvent {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  status     String
+  location   String?
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([shipmentId])
+}
+
+// ---------------------------------------------------------------------------
+// Activity log (audit trail for sensitive actions)
+// ---------------------------------------------------------------------------
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  entityType String // "order" | "shipment"
+  orderId    String?
+  order      Order?   @relation(fields: [orderId], references: [id])
+  shipmentId String?
+  shipment   Shipment? @relation(fields: [shipmentId], references: [id])
+  action     String // e.g. "confirm_order", "cancel_order", "create_shipment"
+  actor      String // admin username
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([orderId])
+  @@index([shipmentId])
+}
+
+// ---------------------------------------------------------------------------
+// Live chat (storefront -> admin dashboard)
+// ---------------------------------------------------------------------------
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+}
+
+enum MessageSender {
+  CUSTOMER
+  ADMIN
+}
+
+model Conversation {
+  id            String             @id @default(cuid())
+  customerId    String?
+  customer      Customer?          @relation(fields: [customerId], references: [id])
+  guestName     String
+  guestPhone    String?
+  status        ConversationStatus @default(OPEN)
+  lastMessageAt DateTime           @default(now())
+  createdAt     DateTime           @default(now())
+
+  messages Message[]
+
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         MessageSender
+  content        String
+  readByAdmin    Boolean       @default(false)
+  readByCustomer Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+
+  @@index([conversationId])
+}
+
+// ---------------------------------------------------------------------------
+// Ad campaign management (manual tracking tool — no live Meta/Google/TikTok
+// API sync; "platform" is just a classification label the admin sets)
+// ---------------------------------------------------------------------------
+
+enum AdPlatform {
+  META
+  GOOGLE
+  TIKTOK
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model Campaign {
+  id          String         @id @default(cuid())
+  name        String
+  platform    AdPlatform
+  objective   String
+  status      CampaignStatus @default(DRAFT)
+  budgetTotal Decimal        @db.Decimal(12, 2)
+  budgetDaily Decimal?       @db.Decimal(12, 2)
+  spentAmount Decimal        @default(0) @db.Decimal(12, 2)
+  startDate   DateTime
+  endDate     DateTime?
+  // Tracking code used in ?utm_campaign=<utmCode> links so storefront
+  // sessions/orders can be attributed back to this campaign.
+  utmCode     String         @unique
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  adSets AdSet[]
+  orders Order[]
+
+  @@index([status])
+  @@index([platform])
+}
+
+model AdSet {
+  id               String         @id @default(cuid())
+  campaignId       String
+  campaign         Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name             String
+  audienceAgeMin   Int?
+  audienceAgeMax   Int?
+  audienceGender   String? // all | male | female
+  audienceLocation String?
+  interests        String[]       @default([])
+  budget           Decimal        @db.Decimal(12, 2)
+  status           CampaignStatus @default(DRAFT)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  ads Ad[]
+
+  @@index([campaignId])
+}
+
+enum CreativeType {
+  IMAGE
+  VIDEO
+  CAROUSEL
+}
+
+model Ad {
+  id           String         @id @default(cuid())
+  adSetId      String
+  adSet        AdSet          @relation(fields: [adSetId], references: [id], onDelete: Cascade)
+  name         String
+  creativeType CreativeType   @default(IMAGE)
+  headline     String
+  bodyCopy     String?
+  ctaLabel     String?
+  imageUrl     String?
+  status       CampaignStatus @default(DRAFT)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([adSetId])
+}
+
+// ---------------------------------------------------------------------------
+// Storefront analytics events (real event tracking for funnel/attribution)
+// ---------------------------------------------------------------------------
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  ADD_TO_CART
+  CHECKOUT_START
+  PURCHASE
+}
+
+model AnalyticsEvent {
+  id          String             @id @default(cuid())
+  sessionId   String
+  type        AnalyticsEventType
+  path        String?
+  productId   String?
+  orderId     String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  createdAt   DateTime           @default(now())
+
+  @@index([sessionId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([utmCampaign])
+}
