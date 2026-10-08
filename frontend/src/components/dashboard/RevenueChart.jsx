@@ -1,15 +1,28 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Chart from 'react-apexcharts'
-import { revenueSeries } from '../../data/dashboardDemo'
+import { api } from '../../api'
+
+const RANGE_API = { today: 'today', '7d': '7d', '30d': '30d', month: 'month', custom: '30d' }
 
 const METRICS = [
   { id: 'revenue', label: 'Doanh thu', unit: 'tr đ' },
   { id: 'orders', label: 'Số đơn hàng', unit: 'đơn' },
 ]
 
-export default function RevenueChart() {
+export default function RevenueChart({ range = '7d' }) {
   const [metric, setMetric] = useState('revenue')
-  const data = revenueSeries[metric]
+  const [trend, setTrend] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    api
+      .get(`/analytics/overview?range=${RANGE_API[range] || '30d'}`)
+      .then((r) => !cancelled && setTrend(r.trend || []))
+      .catch(() => !cancelled && setTrend([]))
+    return () => {
+      cancelled = true
+    }
+  }, [range])
 
   const options = {
     chart: { type: 'area', toolbar: { show: false } },
@@ -21,9 +34,9 @@ export default function RevenueChart() {
       gradient: { shadeIntensity: 1, opacityFrom: 0.28, opacityTo: 0, stops: [0, 90, 100] },
     },
     grid: { borderColor: '#ece0d6' },
-    legend: { show: true, labels: { colors: '#7a6f68' }, markers: { radius: 4 } },
+    legend: { show: false, labels: { colors: '#7a6f68' }, markers: { radius: 4 } },
     xaxis: {
-      categories: revenueSeries.categories,
+      categories: trend.map((t) => t.label),
       labels: { style: { colors: '#a89685' } },
       axisBorder: { show: false },
       axisTicks: { show: false },
@@ -32,10 +45,7 @@ export default function RevenueChart() {
     tooltip: { theme: 'light' },
   }
 
-  const series = [
-    { name: 'Kỳ này', data: data.current },
-    { name: 'Kỳ trước', data: data.previous },
-  ]
+  const series = [{ name: metric === 'revenue' ? 'Doanh thu (triệu đ)' : 'Số đơn', data: trend.map((t) => (metric === 'revenue' ? +(t.revenue / 1e6).toFixed(2) : t.orders)) }]
 
   return (
     <div className="dash-card dash-card-wide">
@@ -53,7 +63,7 @@ export default function RevenueChart() {
           ))}
         </div>
       </div>
-      <span className="dash-tag">dữ liệu minh họa · so với kỳ trước</span>
+      <span className="dash-tag dash-tag-real">dữ liệu thật · theo ngày</span>
       <Chart options={options} series={series} type="area" height={300} />
     </div>
   )

@@ -2,3 +2,9 @@ node_modules
 .env
 
 /src/generated/prisma
+
+# Cài đặt cửa hàng lưu ra file (xem lib/settingsStore.js)
+/storage
+
+# Bản sao lưu dữ liệu (có thông tin nhạy cảm, xem scripts/backup.js)
+/backups

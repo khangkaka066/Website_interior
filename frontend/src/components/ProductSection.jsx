@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { products } from '../data/shop'
+import { categories } from '../data/shop'
+import { useProducts } from '../data/liveProducts'
+import WishlistButton from './WishlistButton'
 
-const TABS = [
-  { id: 'new', label: 'SẢN PHẨM MỚI' },
-  { id: 'best', label: 'BÁN CHẠY' },
-  { id: 'latest', label: 'MỚI NHẤT' },
-]
+const TABS = categories.map((c) => ({ id: c.id, label: c.name.toUpperCase() }))
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
 }
 
 export default function ProductSection() {
-  const [active, setActive] = useState('new')
-  const filtered = products.filter((p) => p.tab === active)
+  const products = useProducts()
+  const [active, setActive] = useState(TABS[0]?.id)
+  const filtered = products.filter((p) => p.categoryId === active)
   const shown = filtered.length ? filtered : products.slice(0, 4)
 
   return (
@@ -35,17 +34,19 @@ export default function ProductSection() {
 
       <div className="product-grid">
         {shown.slice(0, 4).map((p) => (
-          <div className="product-card" key={p.id}>
-            {p.discount >= 40 && <span className="badge badge-discount card-badge">-{p.discount}%</span>}
+          <Link className="product-card" key={p.id} to={`/products/${p.id}`}>
             <div className="product-thumb">
-              <img src={p.image} alt={p.name} />
+              <img src={p.image} alt={p.name} loading="lazy" />
+              <WishlistButton productId={p.id} />
             </div>
             <h4>{p.name}</h4>
             <div className="product-meta">
-              <span className="price">{formatPrice(p.price)}</span>
-              <span className="rating">★ {p.rating} · {p.sold} đã bán</span>
+              <span className="price">
+                {p.priceMax ? 'Từ ' : ''}
+                {formatPrice(p.price)}
+              </span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

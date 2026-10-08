@@ -5,14 +5,25 @@ import Footer from '../components/Footer'
 import { useCart } from '../context/CartContext'
 import { api } from '../api'
 import { trackEvent, getAttribution } from '../analytics'
+import TransferQr from '../components/TransferQr'
+import { fillTransferNote } from '../utils/vietqr'
+import { useSeo } from '../useSeo'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
 }
 
-const SHIPPING_FEE = 25000
+// Dự phòng khi chưa tải được cấu hình từ máy chủ (giống mặc định ở trang Cài đặt).
+const FALLBACK_OPTIONS = {
+  methods: [
+    { id: 'COD', label: 'Thanh toán khi nhận hàng (COD)' },
+    { id: 'Chuyển khoản', label: 'Chuyển khoản ngân hàng' },
+  ],
+  shipping: { fee: 25000, freeShippingOver: 0 },
+}
 
 export default function Checkout() {
+  useSeo({ title: 'Thanh toán', noindex: true })
   const { items, totalPrice, clear } = useCart()
   const navigate = useNavigate()
 
@@ -26,9 +37,21 @@ export default function Checkout() {
     province: '',
     paymentMethod: 'COD',
   })
+  const [options, setOptions] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    api
+      .get('/shop/payment-options')
+      .then((o) => {
+        setOptions(o)
+        // phương thức đang chọn bị tắt trong Cài đặt thì chuyển sang phương thức đầu tiên còn bật
+        setForm((f) => (o.methods.some((m) => m.id === f.paymentMethod) ? f : { ...f, paymentMethod: o.methods[0]?.id || f.paymentMethod }))
+      })
+      .catch(() => setOptions(FALLBACK_OPTIONS))
+  }, [])
 
   useEffect(() => {
     if (items.length > 0) trackEvent('CHECKOUT_START')
@@ -46,7 +69,11 @@ export default function Checkout() {
     setForm((f) => ({ ...f, [field]: value }))
   }
 
-  const total = totalPrice + SHIPPING_FEE
+  const methods = (options || FALLBACK_OPTIONS).methods
+  const { fee, freeShippingOver } = (options || FALLBACK_OPTIONS).shipping
+  const shippingFee = freeShippingOver > 0 && totalPrice >= freeShippingOver ? 0 : fee
+  const total = totalPrice + shippingFee
+  const selectedMethod = methods.find((m) => m.id === form.paymentMethod)
 
   async function handleSubmit() {
     if (!form.name || !form.phone || !form.addressLine || !form.province) {
@@ -68,7 +95,6 @@ export default function Checkout() {
           unitPrice: it.price,
         })),
         paymentMethod: form.paymentMethod,
-        shippingFee: SHIPPING_FEE,
         recipientName: form.name,
         recipientPhone: form.phone,
         addressLine: form.addressLine,
@@ -79,8 +105,19 @@ export default function Checkout() {
       })
 
       trackEvent('PURCHASE', { orderId: order.id })
+      try {
+        // trang xác nhận dùng để hiện lại mã QR (đúng số tiền máy chủ đã tính và mã đơn)
+        sessionStorage.setItem(`clevinum_order_${order.orderNumber}`, JSON.stringify({ paymentMethod: form.paymentMethod, total: Number(order.total) }))
+      } catch {
+        // không lưu được thì trang xác nhận chỉ không hiện QR
+      }
       setSubmitted(true)
       clear()
+      // Thanh toán online (PayOS): chuyển sang trang thanh toán; xong PayOS đưa khách về trang xác nhận đơn.
+      if (order.paymentUrl) {
+        window.location.href = order.paymentUrl
+        return
+      }
       navigate(`/order-confirmation/${order.orderNumber}`)
     } catch (err) {
       setError(err.message)
@@ -136,15 +173,31 @@ export default function Checkout() {
 
               <h3 className="checkout-section-title" style={{ marginTop: '24px' }}>Phương thức thanh toán</h3>
               <div className="checkout-payment-options">
-                <label className={`checkout-payment-option ${form.paymentMethod === 'COD' ? 'active' : ''}`}>
-                  <input type="radio" checked={form.paymentMethod === 'COD'} onChange={() => update('paymentMethod', 'COD')} />
-                  Thanh toán khi nhận hàng (COD)
-                </label>
-                <label className={`checkout-payment-option ${form.paymentMethod === 'Chuyển khoản' ? 'active' : ''}`}>
-                  <input type="radio" checked={form.paymentMethod === 'Chuyển khoản'} onChange={() => update('paymentMethod', 'Chuyển khoản')} />
-                  Chuyển khoản ngân hàng
-                </label>
+                {methods.map((m) => (
+                  <label key={m.id} className={`checkout-payment-option ${form.paymentMethod === m.id ? 'active' : ''}`}>
+                    <input type="radio" checked={form.paymentMethod === m.id} onChange={() => update('paymentMethod', m.id)} />
+                    {m.label}
+                  </label>
+                ))}
               </div>
+              {selectedMethod?.bank && selectedMethod.bank.bankCode && selectedMethod.bank.accountNumber ? (
+                <div className="checkout-bank-info">
+                  <TransferQr
+                    bank={selectedMethod.bank}
+                    amount={total}
+                    note={fillTransferNote(selectedMethod.bank.transferNote, form.phone.replace(/\D/g, ''))}
+                    footnote="Bạn có thể chuyển khoản ngay, hoặc đặt hàng trước: sau khi đặt, hệ thống hiện mã QR kèm mã đơn hàng của bạn."
+                  />
+                </div>
+              ) : (
+                selectedMethod?.bank && (selectedMethod.bank.bankName || selectedMethod.bank.accountNumber) && (
+                  <div className="checkout-bank-info">
+                    {selectedMethod.bank.bankName && <div>Ngân hàng: <strong>{selectedMethod.bank.bankName}</strong></div>}
+                    {selectedMethod.bank.accountNumber && <div>Số tài khoản: <strong>{selectedMethod.bank.accountNumber}</strong></div>}
+                    {selectedMethod.bank.accountHolder && <div>Chủ tài khoản: <strong>{selectedMethod.bank.accountHolder}</strong></div>}
+                  </div>
+                )
+              )}
 
               {error && <p className="chat-error" style={{ marginTop: '16px' }}>{error}</p>}
             </div>
@@ -163,7 +216,7 @@ export default function Checkout() {
               </div>
               <div className="cart-summary-row">
                 <span>Phí vận chuyển</span>
-                <strong>{formatPrice(SHIPPING_FEE)}</strong>
+                <strong>{shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</strong>
               </div>
               <div className="cart-summary-row cart-summary-total">
                 <span>Tổng cộng</span>

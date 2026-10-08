@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js'
 import { toPlain } from '../utils/serialize.js'
+import { publishChat, openStream, ADMIN_CHANNEL, customerChannel } from '../lib/chatEvents.js'
 
 // --- Customer-facing -------------------------------------------------------
 
@@ -16,6 +17,7 @@ export async function startConversation(req, res) {
   const conversation = await prisma.conversation.create({
     data: { guestName: name, guestPhone: phone || null },
   })
+  publishChat(conversation.id, { type: 'conversation' }) // admin thấy cuộc trò chuyện mới ngay
   res.status(201).json(toPlain(conversation))
 }
 
@@ -30,10 +32,20 @@ export async function listMessages(req, res) {
   res.json({ conversation: toPlain(conversation), messages: toPlain(messages) })
 }
 
-export async function postMessage(req, res) {
-  const { content, sender } = req.body || {}
+// Route công khai: người gửi luôn là CUSTOMER, bỏ qua `sender` client gửi lên.
+export function postCustomerMessage(req, res) {
+  return createMessage(req, res, 'CUSTOMER')
+}
+
+// Route có quyền "messages": người gửi luôn là ADMIN.
+export function postAdminMessage(req, res) {
+  return createMessage(req, res, 'ADMIN')
+}
+
+async function createMessage(req, res, sender) {
+  const { content } = req.body || {}
   if (!content || !content.trim()) return res.status(400).json({ error: 'Tin nhắn không được để trống.' })
-  if (!['CUSTOMER', 'ADMIN'].includes(sender)) return res.status(400).json({ error: 'Người gửi không hợp lệ.' })
+  if (content.length > 2000) return res.status(400).json({ error: 'Tin nhắn quá dài.' })
 
   const conversation = await prisma.conversation.findUnique({ where: { id: req.params.id } })
   if (!conversation) return res.status(404).json({ error: 'Không tìm thấy cuộc trò chuyện.' })
@@ -55,6 +67,7 @@ export async function postMessage(req, res) {
     return m
   })
 
+  publishChat(conversation.id, { type: 'message', sender })
   res.status(201).json(toPlain(message))
 }
 
@@ -76,6 +89,7 @@ export async function markRead(req, res) {
       data: { readByCustomer: true },
     })
   }
+  publishChat(conversation.id, { type: 'read', by })
   res.json({ ok: true })
 }
 
@@ -107,5 +121,22 @@ export async function closeConversation(req, res) {
   if (!conversation) return res.status(404).json({ error: 'Không tìm thấy cuộc trò chuyện.' })
 
   const updated = await prisma.conversation.update({ where: { id: conversation.id }, data: { status: 'CLOSED' } })
+  publishChat(conversation.id, { type: 'closed' })
   res.json(toPlain(updated))
+}
+
+// --- Thời gian thực (SSE) -----------------------------------------------------------------------
+
+// Khách theo dõi cuộc trò chuyện của mình (biết mã cuộc trò chuyện, giống như API lấy tin nhắn).
+export async function customerStream(req, res) {
+  const conversation = await prisma.conversation.findUnique({ where: { id: req.params.id }, select: { id: true } })
+  if (!conversation) return res.status(404).json({ error: 'Không tìm thấy cuộc trò chuyện.' })
+  if (!openStream(req, res, customerChannel(conversation.id))) {
+    return res.status(429).json({ error: 'Quá nhiều kết nối, vui lòng thử lại sau.' })
+  }
+}
+
+// Admin (quyền "messages") theo dõi mọi cuộc trò chuyện.
+export function adminStream(req, res) {
+  if (!openStream(req, res, ADMIN_CHANNEL)) return res.status(429).json({ error: 'Quá nhiều kết nối, vui lòng thử lại sau.' })
 }

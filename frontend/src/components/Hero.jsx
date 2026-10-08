@@ -26,9 +26,9 @@ export default function Hero() {
         <div className="hero-visual">
           <div className="hero-visual-glow" />
           <div className="hero-3d-stack">
-            <img className="stack-card card-back" src="/images/curtains/blue.png" alt="Rèm xanh dương" />
-            <img className="stack-card card-mid" src="/images/curtains/brown.png" alt="Rèm nâu" />
-            <img className="stack-card card-front" src="/images/curtains/gold.png" alt="Rèm vàng gold" />
+            <img className="stack-card card-back" src="/images/curtains/blue.webp" alt="Rèm xanh dương" />
+            <img className="stack-card card-mid" src="/images/curtains/brown.webp" alt="Rèm nâu" />
+            <img className="stack-card card-front" src="/images/curtains/gold.webp" alt="Rèm vàng gold" />
             <img className="hero-badge-logo" src="/images/brand/logo.png" alt="Curtain Premium Quality" />
           </div>
         </div>

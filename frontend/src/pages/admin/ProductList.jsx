@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/dashboard/AdminLayout'
 import ProductStatusBadge from '../../components/dashboard/products/ProductStatusBadge'
+import MassUpdateModal from '../../components/dashboard/products/MassUpdateModal'
+import { PriceAlertsBanner } from '../../components/dashboard/PriceAlerts'
 import { listProducts, deleteProduct, duplicateProduct, toggleVisibility, getCategories } from '../../data/adminProducts'
 
 const ITEMS_PER_PAGE = 10
@@ -15,6 +17,8 @@ export default function ProductList() {
   const [sortBy, setSortBy] = useState('latest')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState(new Set())
+  const [massModal, setMassModal] = useState(null) // 'import' | 'export' | null
+  const [, setVersion] = useState(0)
 
   const categories = getCategories()
   const allProducts = listProducts()
@@ -123,6 +127,7 @@ export default function ProductList() {
 
   return (
     <AdminLayout activeNav="products" pageTitle="Sản phẩm" headerActions={null}>
+      <PriceAlertsBanner />
       <div className="dash-toolbar">
         <input
           type="text"
@@ -182,6 +187,12 @@ export default function ProductList() {
           <option value="price-asc">Giá tăng dần</option>
           <option value="price-desc">Giá giảm dần</option>
         </select>
+        <button className="dash-btn dash-btn-outline" onClick={() => setMassModal('import')}>
+          Nhập Excel
+        </button>
+        <button className="dash-btn dash-btn-outline" onClick={() => setMassModal('export')}>
+          Xuất Excel
+        </button>
         <button className="dash-btn" onClick={() => navigate('/dashboard/products/new')}>
           + Thêm sản phẩm
         </button>
@@ -291,6 +302,20 @@ export default function ProductList() {
             </div>
           )}
         </>
+      )}
+      {massModal && (
+        <MassUpdateModal
+          initialTab={massModal}
+          allProducts={allProducts}
+          filteredProducts={filtered}
+          selectedProducts={allProducts.filter((p) => selectedIds.has(p.id))}
+          onClose={() => setMassModal(null)}
+          onApplied={() => {
+            setSelectedIds(new Set())
+            setCurrentPage(1)
+            setVersion((v) => v + 1)
+          }}
+        />
       )}
     </AdminLayout>
   )

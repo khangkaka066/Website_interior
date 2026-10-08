@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+// Mặc định gọi cùng origin (/api) và để Vite proxy sang backend (xem vite.config.js): mở bằng link công khai/ngrok/điện thoại
+// vẫn gọi được API. Chỉ đặt VITE_API_BASE_URL khi backend nằm ở domain khác (lúc deploy).
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 const TOKEN_KEY = 'clevinum_token'
 
 export function getToken() {
@@ -33,5 +35,6 @@ export const api = {
   get: (path) => request(path),
   post: (path, body) => request(path, { method: 'POST', body }),
   patch: (path, body) => request(path, { method: 'PATCH', body }),
+  put: (path, body) => request(path, { method: 'PUT', body }),
   delete: (path) => request(path, { method: 'DELETE' }),
 }

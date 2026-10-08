@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
 import { formatDateTime } from '../../utils/format'
+import { openEventStream } from '../../utils/eventStream'
 
-const LIST_POLL_MS = 5000
-const THREAD_POLL_MS = 3000
+const FALLBACK_POLL_MS = 30000 // dự phòng; cập nhật chính đến qua luồng thời gian thực
 
 export default function MessagesInbox() {
   const [conversations, setConversations] = useState([])
@@ -27,7 +27,7 @@ export default function MessagesInbox() {
 
   useEffect(() => {
     loadConversations()
-    const id = setInterval(loadConversations, LIST_POLL_MS)
+    const id = setInterval(loadConversations, FALLBACK_POLL_MS)
     return () => clearInterval(id)
   }, [loadConversations])
 
@@ -41,10 +41,29 @@ export default function MessagesInbox() {
     if (!activeId) return
     loadThread()
     api.post(`/chat/conversations/${activeId}/read`, { by: 'admin' }).then(loadConversations)
-    const id = setInterval(loadThread, THREAD_POLL_MS)
+    const id = setInterval(loadThread, FALLBACK_POLL_MS)
     return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId])
+
+  // Thời gian thực: khách nhắn là danh sách và cuộc trò chuyện đang mở cập nhật ngay.
+  const live = useRef({})
+  live.current = { activeId, loadConversations, loadThread }
+  useEffect(
+    () =>
+      openEventStream('/chat/stream', (ev) => {
+        const { activeId: open, loadConversations: reloadList, loadThread: reloadThread } = live.current
+        reloadList()
+        if (ev.type === 'open' || ev.conversationId === open) {
+          reloadThread()
+          // Đang xem đúng cuộc trò chuyện có tin mới của khách: đánh dấu đã đọc để không hiện chưa đọc.
+          if (open && ev.type === 'message' && ev.sender === 'CUSTOMER' && ev.conversationId === open) {
+            api.post(`/chat/conversations/${open}/read`, { by: 'admin' }).then(reloadList)
+          }
+        }
+      }),
+    [],
+  )
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -56,7 +75,7 @@ export default function MessagesInbox() {
     const content = draft.trim()
     setDraft('')
     try {
-      await api.post(`/chat/conversations/${activeId}/messages`, { content, sender: 'ADMIN' })
+      await api.post(`/chat/conversations/${activeId}/admin-messages`, { content })
       await loadThread()
     } finally {
       setSending(false)

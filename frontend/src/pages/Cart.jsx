@@ -2,12 +2,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useCart } from '../context/CartContext'
+import { useSeo } from '../useSeo'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
 }
 
 export default function Cart() {
+  useSeo({ title: 'Giỏ hàng', noindex: true })
   const { items, updateQuantity, removeItem, totalPrice, lineKey } = useCart()
   const navigate = useNavigate()
 
@@ -32,7 +34,7 @@ export default function Cart() {
                   const key = lineKey(it)
                   return (
                     <div className="cart-row" key={key}>
-                      <img src={it.image} alt={it.name} className="cart-row-image" />
+                      <img src={it.image} alt={it.name} className="cart-row-image" loading="lazy" decoding="async" />
                       <div className="cart-row-info">
                         <span className="cart-row-name">{it.name}</span>
                         {it.size && <span className="cart-row-size">Kích thước: {it.size}</span>}

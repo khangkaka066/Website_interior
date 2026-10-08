@@ -1,0 +1,78 @@
+/* Tailwind không nạp lớp reset (preflight): CSS gốc của website (ui/styles) được viết cho trình duyệt mặc định, bật preflight sẽ đổi
+   cỡ chữ/kích thước ô nhập, nút... trên toàn bộ trang cũ. Các trang viết bằng Tailwind bọc trong class `tw-reset` bên dưới. */
+@layer theme, base, legacy, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+/* CSS gốc của website nằm trong layer `legacy` (thấp hơn `utilities`): nếu để ngoài layer, các quy tắc như `p { margin: 0 }`, `h2 { color }`
+   của CSS cũ sẽ thắng class tiện ích của Tailwind (mt-5, text-accent...) trên các trang viết bằng Tailwind. */
+@import "../ui/styles/theme.css" layer(legacy);
+@import "../ui/styles/layout.css" layer(legacy);
+@import "../ui/styles/dashboard.css" layer(legacy);
+@import "../ui/styles/responsive.css" layer(legacy);
+/* Tailwind chỉ quét thư mục viết bằng Tailwind. Không quét ui/ (mã giao diện cũ dùng class tự đặt như "container", "hidden"...):
+   quét vào đó sẽ sinh tiện ích trùng tên (vd. `container`) và đè lên CSS cũ. */
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "../app";
+@source "../components";
+@source "../lib";
+
+:root {
+  --border-soft: #ece0d6;
+}
+
+@theme inline {
+  --color-cream: var(--bg-cream);
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  --color-ink: var(--text-dark);
+  --color-muted: var(--text-muted);
+  --color-line: var(--border-soft);
+  --font-sans: var(--font-be-vietnam), system-ui, sans-serif;
+}
+
+/* Reset gọn cho vùng dùng Tailwind (thay cho preflight). Đặt trong layer `base` để class tiện ích của Tailwind (text-3xl, border...) vẫn thắng. */
+@layer base {
+  .tw-reset ul,
+  .tw-reset ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .tw-reset img,
+  .tw-reset svg,
+  .tw-reset canvas,
+  .tw-reset video {
+    display: block;
+    max-width: 100%;
+  }
+  .tw-reset button,
+  .tw-reset input,
+  .tw-reset select,
+  .tw-reset textarea {
+    font: inherit;
+    color: inherit;
+  }
+  .tw-reset h1,
+  .tw-reset h2,
+  .tw-reset h3,
+  .tw-reset h4,
+  .tw-reset h5,
+  .tw-reset h6 {
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+  }
+  .tw-reset p,
+  .tw-reset dl,
+  .tw-reset dd,
+  .tw-reset figure {
+    margin: 0;
+    color: inherit;
+  }
+  .tw-reset *,
+  .tw-reset ::before,
+  .tw-reset ::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: currentColor;
+  }
+}

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { shopInfo } from '../data/shop'
+import SearchBox from './SearchBox'
+import { useShopInfo } from '../useShopInfo'
 import { getSession, logout } from '../auth'
 import { useCart } from '../context/CartContext'
+import { useWishlist } from '../context/WishlistContext'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -12,6 +14,8 @@ export default function Header() {
   const [session, setSession] = useState(() => getSession())
   const navigate = useNavigate()
   const { totalCount, totalPrice } = useCart()
+  const { count: wishCount } = useWishlist()
+  const { shopInfo } = useShopInfo()
 
   function handleLogout() {
     logout()
@@ -40,15 +44,7 @@ export default function Header() {
           <span className="logo-text">{shopInfo.name}</span>
         </div>
 
-        <div className="search-bar">
-          <input type="text" placeholder="Tìm rèm bạn cần..." />
-          <button aria-label="Tìm kiếm">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="7" cy="7" r="5.2" stroke="white" strokeWidth="1.6" />
-              <line x1="11" y1="11" x2="15" y2="15" stroke="white" strokeWidth="1.6" />
-            </svg>
-          </button>
-        </div>
+        <SearchBox />
 
         <div className="header-actions">
           <div className="support">
@@ -91,14 +87,17 @@ export default function Header() {
               />
             </IconButton>
           )}
-          <IconButton label="Yêu thích">
-            <path
-              d="M12 20s-7-4.35-9.3-8.8C1.2 8 3 5 6.3 5c2 0 3.4 1.1 4.2 2.4C11.3 6.1 12.7 5 14.7 5 18 5 19.8 8 18.3 11.2 16 15.65 12 20 12 20Z"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              fill="none"
-            />
-          </IconButton>
+          <Link to="/wishlist" className="icon-btn wish-link" aria-label={`Yêu thích (${wishCount})`}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 20s-7-4.35-9.3-8.8C1.2 8 3 5 6.3 5c2 0 3.4 1.1 4.2 2.4C11.3 6.1 12.7 5 14.7 5 18 5 19.8 8 18.3 11.2 16 15.65 12 20 12 20Z"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                fill="none"
+              />
+            </svg>
+            {wishCount > 0 && <span className="wish-count">{wishCount}</span>}
+          </Link>
           <Link to="/cart" className="cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
@@ -120,12 +119,11 @@ export default function Header() {
           <nav className="main-nav">
             <Link to="/">Trang chủ</Link>
             <Link to="/products">Sản phẩm</Link>
-            <Link to="/products?category=dan-tuong">Rèm Dán Tường</Link>
-            <Link to="/products?category=chong-nang">
-              Rèm Cửa Chống Nắng <span className="badge badge-green">MỚI</span>
-            </Link>
+            <Link to="/products?category=dan-tuong">Rèm Dán Tường &amp; RIDO móc</Link>
+            <Link to="/products?category=chong-nang">Rèm Ore</Link>
             <Link to="/products?category=voan-lua">Rèm Voan Lụa</Link>
             <Link to="/products?category=thanh-treo">Thanh Treo Rèm</Link>
+            <Link to="/products?category=rem-khac">Rèm Khác</Link>
           </nav>
           <a className="best-offer" href="/#deal">
             % ƯU ĐÃI HÔM NAY

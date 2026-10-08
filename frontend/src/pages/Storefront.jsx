@@ -4,12 +4,23 @@ import CategoryGrid from '../components/CategoryGrid'
 import ProductSection from '../components/ProductSection'
 import DealOfTheDay from '../components/DealOfTheDay'
 import ProductColumns from '../components/ProductColumns'
-import Testimonials from '../components/Testimonials'
 import Perks from '../components/Perks'
 import InstagramGrid from '../components/InstagramGrid'
 import Footer from '../components/Footer'
+import { useSeo } from '../useSeo'
 
 export default function Storefront() {
+  useSeo({
+    description: 'CLEVINUM — rèm cửa chất lượng cao, giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo và phụ kiện. Giao hàng toàn quốc.',
+    image: `${window.location.origin}/images/curtains/room-blue.webp`,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'CLEVINUM',
+      url: window.location.origin,
+      logo: `${window.location.origin}/images/brand/logo.png`,
+    },
+  })
   return (
     <>
       <Header />
@@ -19,7 +30,6 @@ export default function Storefront() {
         <ProductSection />
         <DealOfTheDay />
         <ProductColumns />
-        <Testimonials />
         <Perks />
         <InstagramGrid />
       </main>

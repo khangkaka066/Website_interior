@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
-import { categories, shopInfo } from '../data/shop'
+import { categories } from '../data/shop'
+import { useShopInfo } from '../useShopInfo'
 
 export default function Footer() {
+  const { shopInfo, contact } = useShopInfo()
   return (
     <footer className="footer">
       <div className="container newsletter">
@@ -25,10 +27,12 @@ export default function Footer() {
         </div>
         <div className="footer-col">
           <h4>Tài khoản</h4>
-          <a href="#">Về chúng tôi</a>
-          <a href="#">Liên hệ</a>
-          <a href="#">FAQ</a>
-          <a href="#">Giỏ hàng</a>
+          {/* /about, /contact, /faq do app Next (web/) phục vụ nên dùng <a> tải trang đầy đủ, không dùng <Link> */}
+          <a href="/about">Về chúng tôi</a>
+          <a href="/contact">Liên hệ</a>
+          <a href="/faq">FAQ</a>
+          <Link to="/cart">Giỏ hàng</Link>
+          <Link to="/track-order">Tra cứu đơn hàng</Link>
         </div>
         <div className="footer-col">
           <h4>Danh mục</h4>
@@ -42,7 +46,12 @@ export default function Footer() {
           <h4>Liên hệ</h4>
           <span>{shopInfo.address}</span>
           <span>Hotline: {shopInfo.hotline}</span>
-          <span>shopee.vn/clevi.interior</span>
+          {shopInfo.email && <span>Email: {shopInfo.email}</span>}
+          {contact?.shopeeUrl && (
+            <a href={contact.shopeeUrl} target="_blank" rel="noopener noreferrer">
+              Shopee
+            </a>
+          )}
         </div>
       </div>
 

@@ -12,13 +12,13 @@ const NAV_ITEMS = [
   { id: 'overview', label: 'Tổng quan', to: '/dashboard' },
   { id: 'products', label: 'Sản phẩm', to: '/dashboard/products', permKey: 'products' },
   { id: 'orders', label: 'Đơn hàng', to: '/dashboard/orders', permKey: 'orders' },
+  { id: 'payments', label: 'Thanh toán', to: '/dashboard/payments', permKey: 'payments' },
   { id: 'customers', label: 'Khách hàng', to: '/dashboard/customers', permKey: 'customers' },
   { id: 'shipping', label: 'Vận chuyển', to: '/dashboard/shipping', permKey: 'shipping' },
   { id: 'messages', label: 'Tin nhắn', to: '/dashboard/messages', permKey: 'messages' },
   { id: 'campaigns', label: 'Quảng cáo', to: '/dashboard/campaigns', permKey: 'campaigns' },
   { id: 'analytics', label: 'Phân tích', to: '/dashboard/analytics', permKey: 'analytics' },
-  { id: 'accounts', label: 'Tài khoản & Phân quyền', to: '/dashboard/accounts', mainAdminOnly: true },
-  { id: 'settings', label: 'Cài đặt', anchor: true },
+  { id: 'settings', label: 'Cài đặt', to: '/dashboard/settings', mainAdminOnly: true },
 ]
 
 const UNREAD_POLL_MS = 10000

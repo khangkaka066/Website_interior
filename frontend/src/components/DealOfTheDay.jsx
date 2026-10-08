@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { products } from '../data/shop'
+import { useProducts } from '../data/liveProducts'
 
 function getTargetDate() {
   const target = new Date()
@@ -31,20 +31,21 @@ function formatPrice(n) {
 export default function DealOfTheDay() {
   const target = useMemo(getTargetDate, [])
   const { day, hrs, min, sec } = useCountdown(target)
-  const deal = products.reduce((a, b) => (b.discount > a.discount ? b : a), products[0])
+  const products = useProducts()
+  const deal = products.find((p) => p.categoryId === 'chong-nang') || products[0]
 
   return (
     <section className="deal-banner" id="deal">
       <div className="container deal-inner">
         <div className="deal-visual">
-          <img src={deal.image} alt={deal.name} />
+          <img src={deal.image} alt={deal.name} loading="lazy" decoding="async" />
         </div>
         <div className="deal-content">
           <span className="eyebrow">ƯU ĐÃI TRONG NGÀY</span>
           <h2>Ưu đãi tốt đến mức khó tin.</h2>
           <p className="deal-product-name">
-            {deal.name} — chỉ còn {formatPrice(deal.price)}{' '}
-            <span className="badge badge-discount">-{deal.discount}%</span>
+            {deal.name} — {deal.priceMax ? 'chỉ từ ' : 'chỉ '}
+            {formatPrice(deal.price)}
           </p>
           <div className="countdown">
             <Tile value={day} label="Ngày" />

@@ -7,10 +7,12 @@
 export const PERMISSION_DEFS = [
   { key: 'orders', label: 'Đơn hàng', defaultEnabled: true },
   { key: 'shipping', label: 'Vận chuyển', defaultEnabled: true },
+  { key: 'payments', label: 'Thanh toán (xác nhận, hoàn tiền)', defaultEnabled: false },
   { key: 'customers', label: 'Khách hàng', defaultEnabled: true },
   { key: 'messages', label: 'Tin nhắn', defaultEnabled: true },
   { key: 'products', label: 'Sản phẩm (sửa/xóa)', defaultEnabled: false },
   { key: 'campaigns', label: 'Quảng cáo', defaultEnabled: false },
+  { key: 'posts', label: 'Tin tức (viết bài)', defaultEnabled: false },
   { key: 'analytics', label: 'Báo cáo & Phân tích', defaultEnabled: false },
 ]
 

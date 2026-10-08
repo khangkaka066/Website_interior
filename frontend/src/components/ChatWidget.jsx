@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { api } from '../api'
+import { useShopInfo } from '../useShopInfo'
+import { openEventStream } from '../utils/eventStream'
 
 const STORAGE_KEY = 'clevinum_chat_conversation_id'
 const SEEN_KEY = 'clevinum_chat_last_seen'
-const POLL_MS = 5000
+const FALLBACK_POLL_MS = 30000 // tin nhắn tới tức thì qua luồng thời gian thực; vòng tải lại này chỉ để dự phòng
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false)
@@ -17,6 +19,7 @@ export default function ChatWidget() {
   const [error, setError] = useState('')
   const [hasUnread, setHasUnread] = useState(false)
   const scrollRef = useRef(null)
+  const { shopInfo, contact } = useShopInfo()
 
   const load = useCallback(async () => {
     if (!conversationId) return
@@ -34,11 +37,20 @@ export default function ChatWidget() {
     }
   }, [conversationId, open])
 
+  const loadRef = useRef(load)
+  loadRef.current = load
+
   useEffect(() => {
     load()
-    const id = setInterval(load, POLL_MS)
+    const id = setInterval(load, FALLBACK_POLL_MS)
     return () => clearInterval(id)
   }, [load])
+
+  // Thời gian thực: admin trả lời là tin nhắn hiện ngay, không phải chờ lần tải lại.
+  useEffect(() => {
+    if (!conversationId) return undefined
+    return openEventStream(`/chat/conversations/${conversationId}/stream`, () => loadRef.current())
+  }, [conversationId])
 
   useEffect(() => {
     if (open && scrollRef.current) {
@@ -151,6 +163,26 @@ export default function ChatWidget() {
           )}
         </div>
       )}
+
+      {/* Kênh tư vấn nhanh cho khách đang phân vân (link Zalo/Facebook sửa ở dashboard > Cài đặt > Nội dung trang) */}
+      <div className="quick-contact">
+        <a className="quick-contact-btn quick-call" href={`tel:${shopInfo.hotline.replace(/[^\d+]/g, '')}`} aria-label={`Gọi ${shopInfo.hotline}`}>
+          <span aria-hidden="true">📞</span>
+          <b>Gọi ngay</b>
+        </a>
+        {contact?.zaloUrl && (
+          <a className="quick-contact-btn quick-zalo" href={contact.zaloUrl} target="_blank" rel="noopener noreferrer" aria-label="Chat Zalo">
+            <span aria-hidden="true">Z</span>
+            <b>Zalo</b>
+          </a>
+        )}
+        {contact?.facebookUrl && (
+          <a className="quick-contact-btn quick-fb" href={contact.facebookUrl} target="_blank" rel="noopener noreferrer" aria-label="Chat Messenger">
+            <span aria-hidden="true">f</span>
+            <b>Messenger</b>
+          </a>
+        )}
+      </div>
 
       <button className="chat-bubble-btn" onClick={() => setOpen((o) => !o)} aria-label="Mở chat hỗ trợ">
         {hasUnread && <span className="chat-unread-dot" />}

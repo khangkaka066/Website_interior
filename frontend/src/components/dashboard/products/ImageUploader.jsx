@@ -1,15 +1,15 @@
 import { useRef, useState, useEffect } from 'react'
 
 const PRESET_IMAGES = [
-  '/images/curtains/blue.png',
-  '/images/curtains/black.png',
-  '/images/curtains/brown.png',
-  '/images/curtains/silver.png',
-  '/images/curtains/purple-gray.png',
-  '/images/curtains/gold.png',
-  '/images/curtains/pillow.png',
-  '/images/curtains/collage-dan-tuong.png',
-  '/images/curtains/room-sheer-white.png',
+  '/images/curtains/blue.webp',
+  '/images/curtains/black.webp',
+  '/images/curtains/brown.webp',
+  '/images/curtains/silver.webp',
+  '/images/curtains/purple-gray.webp',
+  '/images/curtains/gold.webp',
+  '/images/curtains/pillow.webp',
+  '/images/curtains/collage-dan-tuong.webp',
+  '/images/curtains/room-sheer-white.webp',
 ]
 
 export default function ImageUploader({ images, onChange }) {

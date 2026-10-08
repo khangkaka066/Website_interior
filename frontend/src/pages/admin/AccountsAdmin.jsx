@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
 import { getSession } from '../../auth'
 import { formatDateTime } from '../../utils/format'
@@ -13,7 +12,8 @@ const ADMIN_ROLE_LABEL = {
   SUPPORT_ADMIN: { label: 'Support Admin', cls: 'status-processing' },
 }
 
-export default function AccountsAdmin() {
+// Nội dung "Tài khoản & Phân quyền", hiển thị trong tab của trang Cài đặt.
+export default function AccountsPanel() {
   const session = getSession()
   const [users, setUsers] = useState([])
   const [permissions, setPermissions] = useState([])
@@ -76,7 +76,7 @@ export default function AccountsAdmin() {
   }
 
   return (
-    <AdminLayout activeNav="accounts" pageTitle="Tài khoản & Phân quyền">
+    <>
       <div className="dash-card" style={{ marginBottom: '24px' }}>
         <h3 className="form-card-title">Quyền của Support Admin</h3>
         <p style={{ fontSize: '12px', color: 'var(--dash-muted)', marginBottom: '14px' }}>
@@ -196,6 +196,6 @@ export default function AccountsAdmin() {
           </table>
         </div>
       )}
-    </AdminLayout>
+    </>
   )
 }

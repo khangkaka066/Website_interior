@@ -4,13 +4,9 @@ import AdminLayout from '../components/dashboard/AdminLayout'
 import KpiCards from '../components/dashboard/KpiCards'
 import RevenueChart from '../components/dashboard/RevenueChart'
 import OrderOverview from '../components/dashboard/OrderOverview'
-import TopProducts from '../components/dashboard/TopProducts'
-import InventoryAlerts from '../components/dashboard/InventoryAlerts'
-import CustomerOverview from '../components/dashboard/CustomerOverview'
-import SalesByCategory from '../components/dashboard/SalesByCategory'
-import ConversionFunnel from '../components/dashboard/ConversionFunnel'
+import SellingProducts from '../components/dashboard/SellingProducts'
+import PriceAlerts from '../components/dashboard/PriceAlerts'
 import RecentOrders from '../components/dashboard/RecentOrders'
-import AiInsights from '../components/dashboard/AiInsights'
 import { shopInfo } from '../data/shop'
 
 export default function Dashboard() {
@@ -51,30 +47,24 @@ export default function Dashboard() {
         </a>
       </section>
 
-      <KpiCards />
+      <KpiCards range={range} />
+
+      <section className="dash-grid pa-grid">
+        <PriceAlerts />
+      </section>
 
       <section className="dash-grid" id="analytics">
-        <RevenueChart />
+        <RevenueChart range={range} />
         <OrderOverview />
       </section>
 
       <section className="dash-grid" id="products">
-        <TopProducts />
-        <InventoryAlerts />
+        <SellingProducts />
       </section>
-
-      <section className="dash-grid dash-grid-even" id="customers">
-        <CustomerOverview />
-        <SalesByCategory />
-      </section>
-
-      <ConversionFunnel />
 
       <div id="orders">
         <RecentOrders />
       </div>
-
-      <AiInsights />
     </AdminLayout>
   )
 }

@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { products, categories } from '../data/shop'
+import { categories } from '../data/shop'
+import { useProducts } from '../data/liveProducts'
 import { useCart } from '../context/CartContext'
 import { trackEvent } from '../analytics'
+import { useSeo } from '../useSeo'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -19,11 +21,40 @@ const ACCORDION_SECTIONS = [
 export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const products = useProducts()
   const product = products.find((p) => p.id === id)
+  const inStock = !product?.variants?.length || product.variants.some((v) => v.stock > 0)
+  useSeo(
+    product
+      ? {
+          title: product.name,
+          description: (product.description || product.name).replace(/\s+/g, ' ').slice(0, 155),
+          image: product.image,
+          jsonLd: {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.name,
+            image: (product.images?.length ? product.images : [product.image]).filter(Boolean).slice(0, 6),
+            description: (product.description || product.name).replace(/\s+/g, ' ').slice(0, 500),
+            sku: product.shopeeId || product.id,
+            brand: { '@type': 'Brand', name: 'CLEVINUM' },
+            offers: {
+              '@type': product.priceMax ? 'AggregateOffer' : 'Offer',
+              priceCurrency: 'VND',
+              ...(product.priceMax ? { lowPrice: product.price, highPrice: product.priceMax } : { price: product.price }),
+              availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+              url: `${window.location.origin}/products/${product.id}`,
+            },
+          },
+        }
+      : { title: 'Không tìm thấy sản phẩm', noindex: true },
+  )
 
   const { addItem } = useCart()
   const [activeImage, setActiveImage] = useState(0)
-  const [selectedSize, setSelectedSize] = useState(0)
+  // true khi khách vừa bấm một ảnh nhỏ: khi đó ảnh lớn là ảnh đó, không bị ảnh của màu đang chọn đè lên
+  const [galleryPinned, setGalleryPinned] = useState(false)
+  const [picked, setPicked] = useState({}) // { [tên nhóm]: giá trị đã chọn }
   const [quantity, setQuantity] = useState(1)
   const [openSection, setOpenSection] = useState('info')
   const [added, setAdded] = useState(false)
@@ -45,9 +76,21 @@ export default function ProductDetail() {
     )
   }
 
+  const options = product.options || []
+  const selection = options.map((o) => picked[o.name] ?? o.values[0])
+  const variant = product.variants?.find((v) => v.label === selection.join(' / ')) || null
+  const optionImage = options[0]?.images?.[selection[0]] || null
+  const price = variant?.price ?? product.price
+  const outOfStock = variant ? variant.stock <= 0 : false
   const gallery = product.images && product.images.length > 0 ? product.images : [product.image]
+  const mainImage = (!galleryPinned && optionImage) || gallery[activeImage] || gallery[0]
+  const shortDescription = product.description
+    ? product.description.length > 220
+      ? product.description.slice(0, 220).replace(/\s+\S*$/, '') + '…'
+      : product.description
+    : ''
   const category = categories.find((c) => c.id === product.categoryId)
-  const salePrice = product.discount ? Math.round(product.price / (1 - product.discount / 100)) : null
+  const salePrice = product.discount ? Math.round(price / (1 - product.discount / 100)) : null
 
   return (
     <>
@@ -64,15 +107,18 @@ export default function ProductDetail() {
                 {gallery.map((img, idx) => (
                   <button
                     key={img + idx}
-                    className={`pdp-thumb ${activeImage === idx ? 'pdp-thumb-active' : ''}`}
-                    onClick={() => setActiveImage(idx)}
+                    className={`pdp-thumb ${mainImage === img ? 'pdp-thumb-active' : ''}`}
+                    onClick={() => {
+                      setActiveImage(idx)
+                      setGalleryPinned(true)
+                    }}
                   >
-                    <img src={img} alt={`${product.name} ${idx + 1}`} />
+                    <img src={img} alt={`${product.name} ${idx + 1}`} loading="lazy" decoding="async" />
                   </button>
                 ))}
               </div>
               <div className="pdp-main-image">
-                <img src={gallery[activeImage]} alt={product.name} />
+                <img src={mainImage} alt={product.name} />
               </div>
             </div>
 
@@ -80,31 +126,42 @@ export default function ProductDetail() {
               {category && <span className="pdp-category">{category.name}</span>}
               <h1 className="pdp-name">{product.name}</h1>
               <div className="pdp-price-row">
-                <span className="pdp-price">{formatPrice(product.price)}</span>
+                <span className="pdp-price">{formatPrice(price)}</span>
                 {salePrice && <span className="pdp-price-old">{formatPrice(salePrice)}</span>}
                 {product.discount ? <span className="badge badge-discount">-{product.discount}%</span> : null}
               </div>
-              <div className="pdp-rating">
-                ★ {product.rating} · {product.sold} đã bán
-              </div>
+              {product.rating ? (
+                <div className="pdp-rating">
+                  ★ {product.rating}
+                  {product.sold ? ` · ${product.sold} đã bán` : ''}
+                </div>
+              ) : null}
 
-              <p className="pdp-description">{product.description}</p>
+              {shortDescription && <p className="pdp-description">{shortDescription}</p>}
 
-              {product.sizes && product.sizes.length > 0 && (
-                <div className="pdp-size-block">
-                  <span className="pdp-block-label">Kích thước</span>
+              {options.map((opt, i) => (
+                <div className="pdp-size-block" key={opt.name}>
+                  <span className="pdp-block-label">{opt.name}</span>
                   <div className="pdp-size-options">
-                    {product.sizes.map((size, idx) => (
+                    {opt.values.map((val) => (
                       <button
-                        key={size}
-                        className={`pdp-size-pill ${selectedSize === idx ? 'pdp-size-pill-active' : ''}`}
-                        onClick={() => setSelectedSize(idx)}
+                        key={val}
+                        className={`pdp-size-pill ${selection[i] === val ? 'pdp-size-pill-active' : ''}`}
+                        onClick={() => {
+                          setPicked({ ...picked, [opt.name]: val })
+                          setGalleryPinned(false) // chọn màu thì hiện ảnh của màu đó
+                        }}
                       >
-                        {size}
+                        {val}
                       </button>
                     ))}
                   </div>
                 </div>
+              ))}
+              {variant && (
+                <p className="pdp-stock-note" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  {outOfStock ? 'Phân loại này tạm hết hàng.' : 'Còn hàng'}
+                </p>
               )}
 
               <div className="pdp-purchase-row">
@@ -119,8 +176,9 @@ export default function ProductDetail() {
                 </div>
                 <button
                   className="btn pdp-add-to-cart"
+                  disabled={outOfStock}
                   onClick={() => {
-                    addItem(product, { size: product.sizes?.[selectedSize], quantity })
+                    addItem(product, { size: variant?.label, quantity, price, image: optionImage || undefined })
                     trackEvent('ADD_TO_CART', { productId: product.id })
                     setAdded(true)
                     setTimeout(() => setAdded(false), 2000)
@@ -158,7 +216,7 @@ export default function ProductDetail() {
                               ))}
                             </ul>
                           ) : (
-                            <p>{value}</p>
+                            <p style={{ whiteSpace: 'pre-line' }}>{value}</p>
                           )}
                         </div>
                       )}

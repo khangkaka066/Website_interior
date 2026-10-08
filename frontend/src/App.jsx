@@ -1,11 +1,14 @@
 import { useEffect } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import Storefront from './pages/Storefront'
 import AllProducts from './pages/AllProducts'
 import PublicProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import OrderConfirmation from './pages/OrderConfirmation'
+import TrackOrder from './pages/TrackOrder'
+import ResetPassword from './pages/ResetPassword'
+import Wishlist from './pages/Wishlist'
 import { trackEvent } from './analytics'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
@@ -25,7 +28,8 @@ import MessagesInbox from './pages/admin/MessagesInbox'
 import CampaignList from './pages/admin/CampaignList'
 import CampaignDetail from './pages/admin/CampaignDetail'
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard'
-import AccountsAdmin from './pages/admin/AccountsAdmin'
+import PaymentsAdmin from './pages/admin/PaymentsAdmin'
+import SettingsAdmin from './pages/admin/SettingsAdmin'
 import ChatWidget from './components/ChatWidget'
 
 function guarded(permKey, element) {
@@ -41,6 +45,10 @@ export default function App() {
   const isDashboard = location.pathname.startsWith('/dashboard')
 
   useEffect(() => {
+    if (!location.hash) window.scrollTo(0, 0)
+  }, [location.pathname])
+
+  useEffect(() => {
     if (!isDashboard) trackEvent('PAGE_VIEW')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
@@ -54,7 +62,11 @@ export default function App() {
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmation />} />
+      <Route path="/wishlist" element={<Wishlist />} />
+      <Route path="/track-order" element={<TrackOrder />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ResetPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         path="/dashboard"
         element={
@@ -78,14 +90,26 @@ export default function App() {
       <Route path="/dashboard/campaigns" element={guarded('campaigns', <CampaignList />)} />
       <Route path="/dashboard/campaigns/:id" element={guarded('campaigns', <CampaignDetail />)} />
       <Route path="/dashboard/analytics" element={guarded('analytics', <AnalyticsDashboard />)} />
+      <Route path="/dashboard/payments" element={guarded('payments', <PaymentsAdmin />)} />
       <Route
-        path="/dashboard/accounts"
+        path="/dashboard/settings"
         element={
           <RequireAdmin>
             <RequirePermission mainAdminOnly>
-              <AccountsAdmin />
+              <SettingsAdmin />
             </RequirePermission>
           </RequireAdmin>
+        }
+      />
+      {/* Tài khoản & Phân quyền đã gộp vào Cài đặt */}
+      <Route path="/dashboard/accounts" element={<Navigate to="/dashboard/settings?tab=accounts" replace />} />
+      <Route
+        path="*"
+        element={
+          <div style={{ padding: '80px 20px', textAlign: 'center' }}>
+            <h1>Không tìm thấy trang</h1>
+            <p><a href="/">Về trang chủ</a></p>
+          </div>
         }
       />
     </Routes>

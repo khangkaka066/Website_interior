@@ -37,10 +37,25 @@ model User {
   customerId String?   @unique
   customer   Customer? @relation(fields: [customerId], references: [id])
 
+  passwordResetTokens PasswordResetToken[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([role])
+}
+
+// Mã đặt lại mật khẩu: chỉ lưu bản băm (SHA-256) của mã gửi qua email, dùng một lần, hết hạn sau 1 giờ.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 // One row per manageable feature area. SUPPORT_ADMIN accounts can use a
@@ -144,6 +159,8 @@ model Order {
   paymentStatus PaymentStatus @default(AWAITING_PAYMENT)
   paymentMethod String
   transactionId String?
+  // Tồn kho đã được trừ cho đơn này (đơn tạo trước khi có tính năng trừ kho thì false, để hủy đơn không cộng lại nhầm).
+  stockReserved Boolean       @default(false)
 
   subtotal    Decimal @db.Decimal(12, 2)
   discount    Decimal @default(0) @db.Decimal(12, 2)
@@ -472,4 +489,43 @@ model AnalyticsEvent {
   @@index([type])
   @@index([createdAt])
   @@index([utmCampaign])
+}
+
+// ---------------------------------------------------------------------------
+// Catalogue
+// ---------------------------------------------------------------------------
+
+// Sản phẩm do quản trị viên quản lý (nhập Excel, sửa giá...). Các cột rời để lọc/đánh chỉ mục;
+// toàn bộ sản phẩm (phân loại, ảnh, mô tả...) nằm nguyên trong `data` đúng như trang quản trị lưu.
+model Product {
+  id         String   @id
+  shopeeId   String?  @unique
+  sku        String?
+  name       String
+  status     String   @default("active")
+  categoryId String?
+  price      Int      @default(0)
+  data       Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status])
+  @@index([categoryId])
+}
+
+// Bài viết (mục Tin tức trên website). Nội dung là văn bản thuần: dòng trống tách đoạn, dòng bắt đầu bằng "## " là tiêu đề nhỏ
+// (website tự dựng HTML, không nhận HTML từ admin nên không có rủi ro XSS).
+model Post {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String    @default("")
+  content     String    @default("")
+  coverUrl    String?
+  status      String    @default("draft") // draft | published
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, publishedAt])
 }

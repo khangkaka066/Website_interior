@@ -7,7 +7,7 @@ export default function InstagramGrid() {
       <div className="instagram-grid">
         {instagramImages.map((src, i) => (
           <div className="instagram-tile" key={i}>
-            <img src={src} alt="Clevinum curtain" />
+            <img src={src} alt="Clevinum curtain" loading="lazy" decoding="async" />
           </div>
         ))}
       </div>

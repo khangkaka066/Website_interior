@@ -23,7 +23,7 @@ export function CartProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   }, [items])
 
-  function addItem(product, { size, quantity = 1 } = {}) {
+  function addItem(product, { size, quantity = 1, price, image } = {}) {
     setItems((prev) => {
       const key = lineKey({ productId: product.id, size })
       const existing = prev.find((it) => lineKey(it) === key)
@@ -35,8 +35,8 @@ export function CartProvider({ children }) {
         {
           productId: product.id,
           name: product.name,
-          image: product.image,
-          price: product.price,
+          image: image || product.image,
+          price: price ?? product.price,
           size: size || null,
           quantity,
         },

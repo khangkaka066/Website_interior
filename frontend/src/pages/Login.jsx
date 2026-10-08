@@ -1,79 +1,50 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { login, registerCustomer, loginWithGoogleProfile } from '../auth'
+import { login, registerCustomer, loginWithGoogleCredential } from '../auth'
 import { shopInfo } from '../data/shop'
+import { useSeo } from '../useSeo'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18">
-      <path
-        fill="#4285F4"
-        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62Z"
-      />
-      <path
-        fill="#34A853"
-        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A9 9 0 0 0 9 18Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M3.97 10.71A5.41 5.41 0 0 1 3.68 9c0-.59.1-1.17.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3.01-2.33Z"
-      />
-      <path
-        fill="#EA4335"
-        d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z"
-      />
-    </svg>
-  )
-}
+// Nút "Đăng nhập bằng Google" chính thức (Google Identity Services): Google trả về ID token, server xác minh lại token đó.
+// Chưa cấu hình VITE_GOOGLE_CLIENT_ID thì ẩn hẳn, không hiện nút không dùng được.
+function GoogleButton({ onCredential }) {
+  const holder = useRef(null)
+  const latest = useRef(onCredential)
+  latest.current = onCredential // luôn gọi bản mới nhất mà không phải khởi tạo lại nút Google
 
-function GoogleButton({ onProfile }) {
-  const [notice, setNotice] = useState('')
-
-  function requestProfile(tokenResponse) {
-    fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-    })
-      .then((res) => res.json())
-      .then((profile) => {
-        onProfile({ name: profile.name, email: profile.email, picture: profile.picture })
-      })
-      .catch(() => setNotice('Không lấy được thông tin tài khoản Google, thử lại sau.'))
-  }
-
-  function handleClick() {
-    setNotice('')
-
-    if (!GOOGLE_CLIENT_ID) {
-      setNotice('Chưa cấu hình VITE_GOOGLE_CLIENT_ID trong file .env (xem .env.example).')
-      return
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return undefined
+    let stopped = false
+    const mount = () => {
+      const gsi = window.google?.accounts?.id
+      if (stopped || !gsi || !holder.current) return !!gsi
+      gsi.initialize({ client_id: GOOGLE_CLIENT_ID, callback: (res) => latest.current(res.credential) })
+      gsi.renderButton(holder.current, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', width: 320 })
+      return true
     }
-    if (!window.google?.accounts?.oauth2) {
-      setNotice('Google SDK chưa tải xong, vui lòng thử lại sau vài giây.')
-      return
+    // Script của Google tải bất đồng bộ: thử lại cho đến khi sẵn sàng.
+    if (mount()) return undefined
+    const timer = setInterval(() => mount() && clearInterval(timer), 300)
+    return () => {
+      stopped = true
+      clearInterval(timer)
     }
+  }, [])
 
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: 'openid email profile',
-      callback: requestProfile,
-    })
-    client.requestAccessToken()
-  }
-
+  if (!GOOGLE_CLIENT_ID) return null
   return (
     <>
-      <button type="button" className="google-btn" onClick={handleClick}>
-        <GoogleIcon />
-        Đăng nhập bằng Google
-      </button>
-      {notice && <span className="login-notice">{notice}</span>}
+      <div className="login-divider">
+        <span>hoặc</span>
+      </div>
+      <div ref={holder} className="google-btn-holder" />
     </>
   )
 }
 
 export default function Login() {
+  useSeo({ title: 'Đăng nhập', noindex: true })
   const [mode, setMode] = useState('signin') // 'signin' | 'signup'
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
@@ -109,9 +80,9 @@ export default function Login() {
     }
   }
 
-  async function handleGoogleProfile(profile) {
+  async function handleGoogleCredential(credential) {
     try {
-      const user = await loginWithGoogleProfile(profile)
+      const user = await loginWithGoogleCredential(credential)
       goAfterLogin(user)
     } catch (err) {
       setError(err.message)
@@ -182,16 +153,17 @@ export default function Login() {
             />
           </label>
           {error && <span className="login-error">{error}</span>}
+          {mode === 'signin' && (
+            <Link to="/forgot-password" className="login-forgot">
+              Quên mật khẩu?
+            </Link>
+          )}
           <button type="submit" className="login-submit" disabled={submitting}>
             {submitting ? 'Đang xử lý...' : mode === 'signin' ? 'Đăng nhập' : 'Tạo tài khoản'}
           </button>
         </form>
 
-        <div className="login-divider">
-          <span>hoặc</span>
-        </div>
-
-        <GoogleButton onProfile={handleGoogleProfile} />
+        <GoogleButton onCredential={handleGoogleCredential} />
 
         <Link to="/" className="login-back">
           ← Về trang bán hàng

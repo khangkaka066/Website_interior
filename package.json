@@ -3,10 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "concurrently -n backend,frontend -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev": "concurrently -n backend,web -c blue,magenta \"npm:dev:backend\" \"npm:dev:web\"",
     "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm run dev",
-    "setup": "npm install --prefix backend && npm install --prefix frontend"
+    "dev:web": "cd web && npm run dev",
+    "setup": "npm install --prefix backend && npm install --prefix web",
+    "test": "npm test --prefix backend && npm test --prefix web",
+    "build": "npm run build --prefix web"
   },
   "devDependencies": {
     "concurrently": "^9.0.1"

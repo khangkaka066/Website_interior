@@ -1,19 +1,16 @@
-import { useState, useMemo } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { products, categories } from '../data/shop'
+import { categories } from '../data/shop'
+import { useProducts } from '../data/liveProducts'
+import WishlistButton from '../components/WishlistButton'
+import { useSeo } from '../useSeo'
+import { buildIndex, searchProducts, COLOR_FILTERS, WIDTH_FILTERS, POPULAR_KEYWORDS } from '../data/smartSearch'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
 }
-
-const COLLECTIONS = [
-  { id: 'new', label: 'Mới về' },
-  { id: 'best', label: 'Bán chạy' },
-  { id: 'sale', label: 'Đang giảm giá' },
-  { id: 'latest', label: 'Mới nhất' },
-]
 
 const PRICE_RANGES = [
   { id: 'under100', label: 'Dưới 100.000đ', test: (p) => p.price < 100000 },
@@ -23,25 +20,39 @@ const PRICE_RANGES = [
 
 const SORT_OPTIONS = [
   { id: 'relevance', label: 'Liên quan' },
-  { id: 'newest', label: 'Mới nhất' },
   { id: 'price-asc', label: 'Giá tăng dần' },
   { id: 'price-desc', label: 'Giá giảm dần' },
-  { id: 'bestselling', label: 'Bán chạy nhất' },
+  { id: 'newest', label: 'Mới nhất' },
+  { id: 'bestseller', label: 'Bán chạy nhất' },
 ]
 
 export default function AllProducts() {
+  const products = useProducts()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const initialCategory = searchParams.get('category')
-  const [collectionFilters, setCollectionFilters] = useState(new Set())
+  const searchQuery = (searchParams.get('q') || '').trim()
+  // Trang kết quả tìm kiếm không cho Google lập chỉ mục (vô số biến thể trùng nội dung).
+  useSeo({
+    title: searchQuery ? `Tìm “${searchQuery}”` : 'Tất cả sản phẩm',
+    description: 'Rèm cửa và phụ kiện rèm CLEVINUM giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo. Lọc theo giá, màu, kích thước.',
+    noindex: !!searchQuery,
+  })
   const [categoryFilters, setCategoryFilters] = useState(
     initialCategory ? new Set([initialCategory]) : new Set(),
   )
+  useEffect(() => {
+    setCategoryFilters(initialCategory ? new Set([initialCategory]) : new Set())
+    window.scrollTo(0, 0)
+  }, [initialCategory])
   const [typeFilters, setTypeFilters] = useState(new Set())
   const [priceFilter, setPriceFilter] = useState('')
+  const [colorFilters, setColorFilters] = useState(new Set())
+  const [widthFilters, setWidthFilters] = useState(new Set())
+  const [inStockOnly, setInStockOnly] = useState(false)
   const [sortBy, setSortBy] = useState('relevance')
 
-  const types = useMemo(() => [...new Set(products.map((p) => p.type))], [])
+  const types = useMemo(() => [...new Set(products.map((p) => p.type))], [products])
 
   function toggleFilter(setFn, current, value) {
     const next = new Set(current)
@@ -50,43 +61,59 @@ export default function AllProducts() {
     setFn(next)
   }
 
-  const activeFilterCount = collectionFilters.size + categoryFilters.size + typeFilters.size + (priceFilter ? 1 : 0)
+  const activeFilterCount =
+    categoryFilters.size + typeFilters.size + colorFilters.size + widthFilters.size + (priceFilter ? 1 : 0) + (inStockOnly ? 1 : 0)
 
   function clearFilters() {
-    setCollectionFilters(new Set())
     setCategoryFilters(new Set())
     setTypeFilters(new Set())
     setPriceFilter('')
+    setColorFilters(new Set())
+    setWidthFilters(new Set())
+    setInStockOnly(false)
   }
 
-  const filtered = useMemo(() => {
-    let result = products
+  const index = useMemo(() => buildIndex(products), [products])
+  const searched = useMemo(() => (searchQuery ? searchProducts(index, searchQuery) : null), [index, searchQuery])
 
-    if (collectionFilters.size > 0) {
-      result = result.filter((p) => {
-        if (collectionFilters.has('sale') && p.discount > 0) return true
-        return collectionFilters.has(p.tab)
-      })
-    }
-    if (categoryFilters.size > 0) {
-      result = result.filter((p) => categoryFilters.has(p.categoryId))
-    }
-    if (typeFilters.size > 0) {
-      result = result.filter((p) => typeFilters.has(p.type))
-    }
+  const filtered = useMemo(() => {
+    // Có từ khóa: lấy kết quả đã xếp theo độ liên quan; không thì lấy cả danh mục theo thứ tự gốc.
+    let docs = searched ? searched.results.map((r) => r.doc) : index.docs
+
+    if (categoryFilters.size > 0) docs = docs.filter((d) => categoryFilters.has(d.product.categoryId))
+    if (typeFilters.size > 0) docs = docs.filter((d) => typeFilters.has(d.product.type))
     if (priceFilter) {
       const range = PRICE_RANGES.find((r) => r.id === priceFilter)
-      if (range) result = result.filter(range.test)
+      if (range) docs = docs.filter((d) => range.test(d.product))
     }
+    if (colorFilters.size > 0) docs = docs.filter((d) => [...colorFilters].some((c) => d.colors.has(c)))
+    if (widthFilters.size > 0) {
+      const tests = WIDTH_FILTERS.filter((w) => widthFilters.has(w.id))
+      docs = docs.filter((d) => d.widths.some((w) => tests.some((t) => t.test(w))))
+    }
+    if (inStockOnly) docs = docs.filter((d) => d.inStock)
 
-    result = [...result]
-    if (sortBy === 'newest') result.sort((a, b) => (a.tab === 'new' ? -1 : 1) - (b.tab === 'new' ? -1 : 1))
-    else if (sortBy === 'price-asc') result.sort((a, b) => a.price - b.price)
+    const result = docs.map((d) => d.product)
+    if (sortBy === 'price-asc') result.sort((a, b) => a.price - b.price)
     else if (sortBy === 'price-desc') result.sort((a, b) => b.price - a.price)
-    else if (sortBy === 'bestselling') result.sort((a, b) => (b.tab === 'best' ? 1 : 0) - (a.tab === 'best' ? 1 : 0))
+    else if (sortBy === 'newest') result.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+    else if (sortBy === 'bestseller') result.sort((a, b) => (b.sold || 0) - (a.sold || 0))
 
     return result
-  }, [collectionFilters, categoryFilters, typeFilters, priceFilter, sortBy])
+  }, [index, searched, categoryFilters, typeFilters, priceFilter, colorFilters, widthFilters, inStockOnly, sortBy])
+
+  // Trang không có kết quả: gợi ý sản phẩm bán chạy / phổ biến (mỗi danh mục một sản phẩm đầu tiên) thay vì để trống.
+  const popular = useMemo(() => {
+    const ranked = [...products].sort((a, b) => (b.sold || 0) - (a.sold || 0))
+    const seen = new Set()
+    const picks = []
+    for (const p of ranked) {
+      if (seen.has(p.categoryId)) continue
+      seen.add(p.categoryId)
+      picks.push(p)
+    }
+    return picks.slice(0, 4)
+  }, [products])
 
   return (
     <>
@@ -99,7 +126,7 @@ export default function AllProducts() {
               <p>Rèm cửa và phụ kiện phối hợp hài hòa cho mọi không gian sống.</p>
             </div>
             <div className="shop-all-hero-image">
-              <img src="/images/curtains/room-sheer-white.png" alt="Không gian phòng khách với rèm Clevinum" />
+              <img src="/images/curtains/room-sheer-white.webp" alt="Không gian phòng khách với rèm Clevinum" decoding="async" />
             </div>
           </div>
 
@@ -113,17 +140,6 @@ export default function AllProducts() {
                   </button>
                 )}
               </div>
-
-              <FilterGroup title="Bộ sưu tập">
-                {COLLECTIONS.map((c) => (
-                  <FilterCheckbox
-                    key={c.id}
-                    label={c.label}
-                    checked={collectionFilters.has(c.id)}
-                    onChange={() => toggleFilter(setCollectionFilters, collectionFilters, c.id)}
-                  />
-                ))}
-              </FilterGroup>
 
               <FilterGroup title="Danh mục">
                 {categories.map((c) => (
@@ -160,11 +176,47 @@ export default function AllProducts() {
                   </label>
                 ))}
               </FilterGroup>
+
+              <FilterGroup title="Màu sắc">
+                {COLOR_FILTERS.map((c) => (
+                  <FilterCheckbox
+                    key={c.id}
+                    label={c.label}
+                    checked={colorFilters.has(c.id)}
+                    onChange={() => toggleFilter(setColorFilters, colorFilters, c.id)}
+                  />
+                ))}
+              </FilterGroup>
+
+              <FilterGroup title="Kích thước">
+                {WIDTH_FILTERS.map((w) => (
+                  <FilterCheckbox
+                    key={w.id}
+                    label={w.label}
+                    checked={widthFilters.has(w.id)}
+                    onChange={() => toggleFilter(setWidthFilters, widthFilters, w.id)}
+                  />
+                ))}
+              </FilterGroup>
+
+              <FilterGroup title="Tình trạng">
+                <FilterCheckbox label="Chỉ hiện còn hàng" checked={inStockOnly} onChange={() => setInStockOnly(!inStockOnly)} />
+              </FilterGroup>
             </aside>
 
             <div className="shop-all-results">
               <div className="shop-all-toolbar">
-                <span className="all-products-sub">{filtered.length} sản phẩm từ Clevinum</span>
+                <span className="all-products-sub">
+                  {searchQuery
+                    ? `${filtered.length} kết quả cho “${searchQuery}”`
+                    : `${filtered.length} sản phẩm từ Clevinum`}
+                  {searchQuery && (
+                    <>
+                      {' · '}
+                      <Link to="/products">Xóa tìm kiếm</Link>
+                    </>
+                  )}
+                </span>
                 <select className="shop-all-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                   {SORT_OPTIONS.map((o) => (
                     <option key={o.id} value={o.id}>
@@ -174,8 +226,56 @@ export default function AllProducts() {
                 </select>
               </div>
 
+              {searched?.correctedQuery && (
+                <p className="search-corrected">
+                  Đang hiển thị kết quả cho <strong>“{searched.correctedQuery}”</strong> (đã sửa chính tả từ “{searchQuery}”).
+                </p>
+              )}
+
               {filtered.length === 0 ? (
-                <p className="shop-all-empty">Không tìm thấy sản phẩm phù hợp bộ lọc.</p>
+                <div className="shop-all-empty search-no-results">
+                  <h3>{searchQuery ? `Không tìm thấy “${searchQuery}”` : 'Không có sản phẩm phù hợp'}</h3>
+                  <p>
+                    {activeFilterCount > 0 && searched?.results.length
+                      ? 'Có sản phẩm khớp từ khóa nhưng bị bộ lọc loại hết.'
+                      : 'Bạn thử gõ ngắn hơn, bỏ dấu, hoặc xem các gợi ý bên dưới nhé.'}
+                  </p>
+                  {activeFilterCount > 0 && (
+                    <button className="btn btn-accent" onClick={clearFilters}>
+                      Xóa bộ lọc
+                    </button>
+                  )}
+                  <div className="no-results-chips">
+                    {POPULAR_KEYWORDS.map((k) => (
+                      <Link key={k} to={`/products?q=${encodeURIComponent(k)}`}>
+                        {k}
+                      </Link>
+                    ))}
+                    {categories.map((c) => (
+                      <Link key={c.id} to={`/products?category=${c.id}`}>
+                        {c.name}
+                      </Link>
+                    ))}
+                  </div>
+                  <h4>Sản phẩm được quan tâm</h4>
+                  <div className="product-grid product-grid-all">
+                    {popular.map((p) => (
+                      <Link className="product-card" key={p.id} to={`/products/${p.id}`}>
+                        <div className="product-thumb">
+                          <img src={p.image} alt={p.name} loading="lazy" />
+                        </div>
+                        <span className="product-type">{p.type}</span>
+                        <h4>{p.name}</h4>
+                        <div className="product-meta">
+                          <span className="price">
+                            {p.priceMax ? 'Từ ' : ''}
+                            {formatPrice(p.price)}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <div className="product-grid product-grid-all">
                   {filtered.map((p) => (
@@ -186,20 +286,16 @@ export default function AllProducts() {
                       role="button"
                       tabIndex={0}
                     >
-                      {p.discount >= 40 ? (
-                        <span className="badge badge-discount card-badge">-{p.discount}%</span>
-                      ) : p.tab === 'new' ? (
-                        <span className="badge badge-green card-badge">MỚI</span>
-                      ) : null}
                       <div className="product-thumb">
-                        <img src={p.image} alt={p.name} />
+                        <img src={p.image} alt={p.name} loading="lazy" />
+                        <WishlistButton productId={p.id} />
                       </div>
                       <span className="product-type">{p.type}</span>
                       <h4>{p.name}</h4>
                       <div className="product-meta">
-                        <span className="price">{formatPrice(p.price)}</span>
-                        <span className="rating">
-                          ★ {p.rating} · {p.sold} đã bán
+                        <span className="price">
+                          {p.priceMax ? 'Từ ' : ''}
+                          {formatPrice(p.price)}
                         </span>
                       </div>
                     </div>
