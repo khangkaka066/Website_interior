@@ -2129,3 +2129,38 @@ a.product-card {
 .nav-products-link {
   font-weight: 700;
 }
+
+/* ---- Hiệu ứng tải trang nhẹ: thanh tiến trình, khung xương, vòng xoay, hiện dần ---- */
+.top-loader { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 10000; pointer-events: none; transition: opacity 0.3s ease; }
+.top-loader-bar { height: 100%; background: linear-gradient(90deg, var(--accent), #e0a559); box-shadow: 0 0 8px rgba(224, 165, 89, 0.7); transition: width 0.25s ease-out; }
+
+.page-spinner { min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--text-muted); font-size: 13px; }
+.page-spinner-ring { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #eadfd5; border-top-color: var(--accent); animation: page-spin 0.8s linear infinite; }
+
+.skeleton { background: linear-gradient(100deg, #f1e8df 30%, #f9f4ee 50%, #f1e8df 70%); background-size: 200% 100%; animation: skeleton-shimmer 1.3s ease-in-out infinite; border-radius: 6px; }
+.skeleton-page { padding-top: 40px; padding-bottom: 60px; }
+.skeleton-title { height: 34px; width: min(340px, 70%); margin-bottom: 14px; }
+.skeleton-line { height: 14px; width: 100%; margin: 10px 0; }
+.skeleton-line.short { width: 55%; }
+.skeleton-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; margin-top: 28px; }
+.skeleton-card { padding: 14px; border: 1px solid #f0e6dc; border-radius: 8px; background: var(--bg-white); }
+.skeleton-thumb { aspect-ratio: 1 / 1; width: 100%; margin-bottom: 14px; }
+@media (max-width: 1024px) { .skeleton-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .skeleton-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
+
+/* Ô ảnh sản phẩm có nền kem trong lúc ảnh tải, tránh ô trắng nhấp nháy. */
+.product-thumb { background-color: #f6efe8; }
+
+/* Nội dung hiện dần rất nhanh khi vào trang mới. */
+main { animation: page-in 0.22s ease-out; }
+@keyframes page-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes page-spin { to { transform: rotate(360deg); } }
+@keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* Người dùng chọn giảm chuyển động trong hệ điều hành: tắt các hiệu ứng. */
+@media (prefers-reduced-motion: reduce) {
+  main { animation: none; }
+  .skeleton { animation: none; }
+  .page-spinner-ring { animation-duration: 2.4s; }
+  .top-loader-bar { transition: none; }
+}

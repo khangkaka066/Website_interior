@@ -2,11 +2,12 @@
 
 import dynamic from 'next/dynamic'
 import ClientOnly from './components/ClientOnly'
+import { PageSpinner } from './components/PageLoading'
 import RequireAdmin from './components/RequireAdmin'
 import RequirePermission from './components/RequirePermission'
 
 // Mọi trang quản trị chạy ở trình duyệt (đọc phiên đăng nhập và localStorage), kèm thư viện biểu đồ cần `window`.
-const lazy = (loader) => dynamic(loader, { ssr: false })
+const lazy = (loader) => dynamic(loader, { ssr: false, loading: () => <PageSpinner /> })
 
 const VIEWS = {
   dashboard: lazy(() => import('./pages/Dashboard')),
@@ -34,7 +35,7 @@ export default function AdminView({ view, perm, mainAdminOnly }) {
   const View = VIEWS[view]
   const page = <View />
   return (
-    <ClientOnly>
+    <ClientOnly fallback={<PageSpinner />}>
       <RequireAdmin>
         {perm || mainAdminOnly ? (
           <RequirePermission permKey={perm} mainAdminOnly={mainAdminOnly}>
