@@ -5,7 +5,7 @@ import { categories } from '../data/shop'
 import { useShopInfo } from '../useShopInfo'
 
 export default function Footer() {
-  const { shopInfo, contact } = useShopInfo()
+  const { shopInfo } = useShopInfo()
   return (
     <footer className="footer">
       <div className="container newsletter">
@@ -49,12 +49,6 @@ export default function Footer() {
           <span>{shopInfo.address}</span>
           <a href={`tel:${String(shopInfo.hotline).replace(/[^\d+]/g, '')}`}>Hotline: {shopInfo.hotline}</a>
           {shopInfo.email && <a href={`mailto:${shopInfo.email}`}>{shopInfo.email}</a>}
-          {shopInfo.email && <span>Email: {shopInfo.email}</span>}
-          {contact?.shopeeUrl && (
-            <a href={contact.shopeeUrl} target="_blank" rel="noopener noreferrer">
-              Shopee
-            </a>
-          )}
         </div>
       </div>
 
