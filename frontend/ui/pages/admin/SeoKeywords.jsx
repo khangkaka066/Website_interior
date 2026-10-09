@@ -34,27 +34,66 @@ function Counter({ text, max }) {
 const JOB_KEY = 'clevinum_seo_job' // mã việc đang chạy, để tải lại trang vẫn tiếp tục chờ được
 const POLL_MS = 2000
 const TIPS = [
-  'Đang phân tích ý định tìm kiếm của khách (mua hàng, so sánh, tìm hiểu)…',
-  'Đang nhóm từ khóa thành các cụm chủ đề…',
-  'Đang tìm từ khóa dài, ít cạnh tranh…',
-  'Đang soạn tiêu đề và mô tả theo chuẩn SEO…',
-  'Đang nghĩ các câu hỏi khách hay gõ trên Google…',
-  'Mô hình miễn phí có thể mất 30–90 giây, bạn cứ để trang mở nhé.',
+  'Mỗi bước là một yêu cầu nhỏ cho AI và được kiểm tra bằng quy tắc SEO; chưa đạt thì AI được nhắc sửa lại.',
+  'Mô hình miễn phí có thể mất vài phút cho cả quy trình, bạn cứ để trang mở nhé.',
+  'Tiêu đề tối đa 60 ký tự, mô tả 140–160 ký tự và phải có lời kêu gọi hành động.',
+  'Mỗi trang đích chỉ nhắm một từ khóa chính để các trang không tự cạnh tranh nhau.',
 ]
 
 const mmss = (ms) => `${String(Math.floor(ms / 60000)).padStart(2, '0')}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')}`
 
-// Hiệu ứng chờ: vòng xoay + thanh chạy + đồng hồ + bước AI đang làm (lấy từ server) + câu gợi ý đổi mỗi 5 giây. Không có giới hạn thời gian.
-function Waiting({ stage, elapsedMs, onCancel, cancelling }) {
+const STEP_ICON = { done: '✓', error: '!', pending: '', running: '' }
+const dur = (ms) => (ms == null ? '' : ms < 1000 ? '<1s' : ms < 60000 ? `${Math.round(ms / 1000)}s` : `${Math.floor(ms / 60000)}p${String(Math.round((ms % 60000) / 1000)).padStart(2, '0')}s`)
+
+// Màn hình chờ theo từng bước của quy trình SEO: bước nào xong (✓ kèm kết quả tóm tắt và thời gian), bước nào AI đang làm (vòng xoay + ghi chú
+// như "đang sửa theo góp ý"), bước nào còn chờ. Mỗi bước ghi rõ kỹ năng marketing nó dựa vào. Không có giới hạn thời gian.
+function Waiting({ stage, steps, elapsedMs, onCancel, cancelling }) {
+  const total = steps?.length || 0
+  const done = (steps || []).filter((s) => s.status === 'done' || s.status === 'error').length
+  const pct = total ? Math.round((done / total) * 100) : 0
   const tip = TIPS[Math.floor(elapsedMs / 5000) % TIPS.length]
   return (
-    <div className="dash-card ai-wait" style={{ padding: '24px', marginBottom: '16px', textAlign: 'center' }} role="status" aria-live="polite">
-      <div className="ai-spinner" aria-hidden="true" />
-      <p style={{ fontWeight: 600, marginTop: '14px' }}>{stage || 'AI đang phân tích…'}</p>
-      <div className="ai-bar" aria-hidden="true"><span /></div>
-      <p style={{ ...muted, marginTop: '10px' }} key={tip} className="ai-tip">{tip}</p>
-      <p style={{ marginTop: '10px', fontVariantNumeric: 'tabular-nums' }}>Đã chờ <strong>{mmss(elapsedMs)}</strong></p>
-      <button type="button" className="dash-btn-outline" style={{ marginTop: '12px' }} onClick={onCancel} disabled={cancelling}>
+    <div className="dash-card ai-wait" style={{ padding: '20px', marginBottom: '16px' }} role="status" aria-live="polite">
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="ai-spinner ai-spinner-sm" aria-hidden="true" />
+          <div>
+            <strong>{total ? `Bước ${Math.min(done + 1, total)}/${total}` : 'Đang khởi động'}</strong>
+            <div style={muted}>{stage || 'AI đang phân tích…'}</div>
+          </div>
+        </div>
+        <div style={{ fontVariantNumeric: 'tabular-nums' }}>Đã chờ <strong>{mmss(elapsedMs)}</strong></div>
+      </div>
+
+      <div className="ai-progress" aria-hidden="true"><span style={{ width: `${Math.max(pct, 4)}%` }} /></div>
+
+      {total > 0 && (
+        <ol className="ai-steps">
+          {steps.map((st, i) => (
+            <li key={st.id} className={`ai-step ai-step-${st.status}`}>
+              <span className="ai-step-dot" aria-hidden="true">{st.status === 'running' ? <i className="ai-spinner ai-spinner-xs" /> : STEP_ICON[st.status] || i + 1}</span>
+              <div className="ai-step-body">
+                <div className="ai-step-title">
+                  {st.title}
+                  <span className="ai-step-skill" title="Kỹ năng marketing mà bước này dựa vào">{st.skill}</span>
+                  {st.durationMs != null && st.status !== 'pending' && st.status !== 'running' && <span style={muted}> · {dur(st.durationMs)}</span>}
+                </div>
+                {st.status === 'running' && <div style={muted}>{st.note || 'AI đang làm bước này…'}</div>}
+                {st.status === 'done' && (
+                  <>
+                    <div style={muted}>{st.summary}{st.note ? ` — ${st.note}` : ''}</div>
+                    {st.preview?.length > 0 && <div className="ai-step-preview">{st.preview.map((t) => <span key={t}>{t}</span>)}</div>}
+                  </>
+                )}
+                {st.status === 'error' && <div style={{ ...muted, color: 'var(--dash-danger)' }}>Bước này chưa hoàn thành, bỏ qua và chạy tiếp. {st.note}</div>}
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <p style={{ ...muted, marginTop: '12px' }} key={tip} className="ai-tip">{tip}</p>
+      <button type="button" className="dash-btn-outline" style={{ marginTop: '10px' }} onClick={onCancel} disabled={cancelling}>
         {cancelling ? 'Đang hủy…' : 'Hủy phân tích'}
       </button>
     </div>
@@ -95,7 +134,7 @@ export default function SeoKeywords() {
         const v = await api.get(`/seo/jobs/${job.id}`)
         if (!alive.current) return
         if (v.status === 'running') {
-          setJob((j) => (j && j.id === v.id ? { ...j, stage: v.stage, startedAt: Date.now() - v.elapsedMs } : j))
+          setJob((j) => (j && j.id === v.id ? { ...j, stage: v.stage, steps: v.steps || j.steps, startedAt: Date.now() - v.elapsedMs } : j))
           timer = setTimeout(tick, POLL_MS)
         } else {
           if (v.status === 'done') setOut(v.data)
@@ -131,7 +170,7 @@ export default function SeoKeywords() {
         if (!alive.current || !cur) return
         if (cur.status === 'running') {
           try { sessionStorage.setItem(JOB_KEY, cur.id) } catch {}
-          setJob({ id: cur.id, stage: cur.stage, startedAt: Date.now() - cur.elapsedMs })
+          setJob({ id: cur.id, stage: cur.stage, steps: cur.steps, startedAt: Date.now() - cur.elapsedMs })
         } else if (cur.status === 'done') {
           setOut(cur.data)
           setRecent(Math.round((cur.finishedAgoMs || 0) / 60000))
@@ -238,7 +277,7 @@ export default function SeoKeywords() {
         {error && <p style={{ color: 'var(--dash-danger)', fontSize: '13px', marginTop: '10px' }} role="alert">{error}</p>}
       </div>
 
-      {busy && <Waiting stage={job.stage} elapsedMs={elapsed} onCancel={cancel} cancelling={cancelling} />}
+      {busy && <Waiting stage={job.stage} steps={job.steps} elapsedMs={elapsed} onCancel={cancel} cancelling={cancelling} />}
 
       {r && (
         <>
@@ -249,6 +288,21 @@ export default function SeoKeywords() {
               Đây là gợi ý của AI dựa trên cách người Việt thường tìm kiếm, <strong>không phải số lượt tìm thật</strong>. Hãy kiểm tra lại bằng Google Keyword Planner hoặc Search Console. Bấm vào từ khóa để chép.
             </p>
           </div>
+
+          {r.audit && (
+            <div className="dash-card" style={{ padding: '16px', marginBottom: '16px' }}>
+              <h3 style={{ marginBottom: '4px' }}>Kiểm tra chất lượng SEO: {r.audit.passed}/{r.audit.total} tiêu chí ({r.audit.score}%)</h3>
+              <p style={{ ...muted, marginBottom: '10px' }}>Kiểm tra bằng code theo danh mục của kỹ năng seo-audit, không phụ thuộc AI.</p>
+              <ul className="ai-audit">
+                {r.audit.checks.map((c) => (
+                  <li key={c.label} className={c.ok ? 'ok' : 'bad'}>
+                    <span aria-hidden="true">{c.ok ? '✓' : '✕'}</span> {c.label}{c.detail ? <span style={muted}> — {c.detail}</span> : null}
+                  </li>
+                ))}
+              </ul>
+              {r.warnings?.length > 0 && <p style={{ ...muted, marginTop: '8px' }}>Lưu ý: {r.warnings.join(' · ')}</p>}
+            </div>
+          )}
 
           <div className="dash-card" style={{ padding: '16px', marginBottom: '16px' }}>
             <h3 style={{ marginBottom: '10px' }}>Từ khóa chính</h3>
@@ -342,10 +396,10 @@ export default function SeoKeywords() {
               <h3 style={{ marginBottom: '4px' }}>Ý tưởng bài viết Tin tức</h3>
               <p style={{ ...muted, marginBottom: '10px' }}>Viết trong mục Tin tức; mỗi bài nhắm một từ khóa chính.</p>
               <table className="dash-table">
-                <thead><tr><th>Tiêu đề gợi ý</th><th>Từ khóa chính</th></tr></thead>
+                <thead><tr><th>Tiêu đề gợi ý</th><th>Từ khóa chính</th><th>Loại</th></tr></thead>
                 <tbody>
                   {r.blogIdeas.map((b) => (
-                    <tr key={b.title}><td>{b.title}</td><td>{b.keyword || '—'}</td></tr>
+                    <tr key={b.title}><td>{b.title}</td><td>{b.keyword || '—'}</td><td>{b.type || '—'}</td></tr>
                   ))}
                 </tbody>
               </table>

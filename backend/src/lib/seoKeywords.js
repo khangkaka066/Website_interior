@@ -40,15 +40,19 @@ export async function generateKeywords(input, { fetchImpl = fetch, env = process
   const source = describeSource(input)
   if (!source) return null
 
-  const { ask, model } = createAsk({ env, fetchImpl, signal })
+  // Bộ hủy chung: người dùng bấm Hủy, hoặc một bước gặp lỗi nặng thì hủy luôn các lời gọi AI đang chạy song song.
+  const all = new AbortController()
+  if (signal) signal.aborted ? all.abort() : signal.addEventListener('abort', () => all.abort(), { once: true })
+  const { ask, model } = createAsk({ env, fetchImpl, signal: all.signal })
   const { result, steps } = await runPipeline({
     source,
     ask,
-    signal,
+    signal: all.signal,
+    abortAll: () => all.abort(),
     onSteps: (list) => {
       onSteps(list)
-      const running = list.find((s) => s.status === 'running')
-      if (running) onStage(`${running.title}…`)
+      const running = list.filter((s) => s.status === 'running')
+      if (running.length) onStage(running.length > 1 ? `Đang chạy ${running.length} bước song song: ${running.map((s) => s.title).join(' · ')}` : `${running[0].title}…`)
     },
   })
   return { source: { type: source.type, name: source.name }, model, result, steps }

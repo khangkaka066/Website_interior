@@ -55,15 +55,28 @@ export function lenientJsonParse(raw) {
   return null
 }
 
+// Tài khoản OpenRouter chưa nạp tiền chỉ được ~50 lượt gọi mô hình miễn phí MỖI NGÀY (nạp tối thiểu 10 USD thì được 1000 lượt/ngày). Hết hạn mức
+// ngày thì thử lại vô ích (khác với giới hạn tần suất tạm thời), nên nhận ra riêng để báo rõ và dừng ngay.
+export const isDailyLimit = (text) => /per-day|per_day|daily/i.test(String(text || ''))
+
 function upstreamError(status, detail) {
   console.error('OpenRouter lỗi', status, String(detail).slice(0, 300)) // chỉ ghi log máy chủ, không trả chi tiết (có thể lộ cấu hình) cho trình duyệt
   if (status === 401 || status === 403) return new SeoConfigError('OPENROUTER_API_KEY không hợp lệ hoặc đã bị thu hồi.')
   if (status === 402) return new SeoUpstreamError('Tài khoản OpenRouter đã hết tín dụng.')
   if (status === 404) return new SeoConfigError('OPENROUTER_MODEL không tồn tại hoặc hiện không có nhà cung cấp. Hãy chọn mô hình khác trên openrouter.ai/models.')
+  if (status === 429 && isDailyLimit(detail)) return new SeoUpstreamError('Đã hết lượt dùng mô hình miễn phí trong ngày của tài khoản OpenRouter (khoảng 50 lượt/ngày; mỗi lần phân tích tốn nhiều lượt). Hãy chờ sang ngày mới hoặc nạp tối thiểu 10 USD credits trên openrouter.ai để có 1000 lượt/ngày, hay dùng mô hình trả phí.')
   if (status === 429) return new SeoUpstreamError('Mô hình đang bị giới hạn tần suất (mô hình miễn phí hay gặp), vui lòng thử lại sau ít phút hoặc đổi mô hình.')
   return new SeoUpstreamError('OpenRouter trả về lỗi, vui lòng thử lại.')
 }
 
+// Thời gian chờ (ms) trước mỗi lần thử lại khi bị 429; đặt về 0 trong kiểm thử.
+export const RATE_LIMIT_WAITS = [4000, 9000]
+const sleep = (ms, signal) =>
+  new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(new SeoCancelledError('Đã hủy.'))
+    const t = setTimeout(resolve, ms)
+    signal?.addEventListener('abort', () => { clearTimeout(t); reject(new SeoCancelledError('Đã hủy.')) }, { once: true })
+  })
 const REMINDER = '\n\nLƯU Ý: chỉ trả về đúng một đối tượng JSON hoàn chỉnh theo cấu trúc đã cho, bắt đầu bằng { và kết thúc bằng }.'
 
 // Tạo hàm ask({ system, user }) -> đối tượng JSON. Mỗi lần ask:
@@ -73,10 +86,13 @@ const REMINDER = '\n\nLƯU Ý: chỉ trả về đúng một đối tượng JSO
 export function createAsk({ env = process.env, fetchImpl = fetch, signal, onNote = () => {}, retries = 2 } = {}) {
   const apiKey = env.OPENROUTER_API_KEY
   if (!apiKey) throw new SeoConfigError('Chưa cấu hình OPENROUTER_API_KEY trong backend/.env.')
-  const model = env.OPENROUTER_MODEL || DEFAULT_MODEL
+  // OPENROUTER_MODEL có thể là một danh sách cách nhau bằng dấu phẩy: mỗi lần phải hỏi lại vì câu trả lời hỏng thì chuyển sang mô hình kế tiếp
+  // (hữu ích với mô hình miễn phí chất lượng không đều). Chỉ một mô hình thì luôn dùng mô hình đó.
+  const models = String(env.OPENROUTER_MODEL || DEFAULT_MODEL).split(',').map((m) => m.trim()).filter(Boolean)
+  const model = models.join(',')
   let lastModel = '' // mô hình thực sự đã trả lời lần gần nhất, đưa vào thông báo lỗi để biết mô hình nào kém
 
-  const request = async ({ system, user, strict, extra = '' }) => {
+  const request = async ({ system, user, strict, extra = '', attempt = 0 }) => {
     const messages = strict
       ? [{ role: 'system', content: system }, { role: 'user', content: user + extra }]
       : [{ role: 'user', content: `${system}\n\n${user}${extra}` }]
@@ -86,11 +102,12 @@ export function createAsk({ env = process.env, fetchImpl = fetch, signal, onNote
         signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)]) : AbortSignal.timeout(TIMEOUT_MS),
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'HTTP-Referer': shopUrl(), 'X-Title': 'CLEVINUM SEO' },
         body: JSON.stringify({
-          model,
+          model: models[attempt % models.length],
           temperature: 0.4,
           // Mô hình miễn phí thường là mô hình "suy luận": phần nghĩ cũng tính vào max_tokens và có thể ngốn hết trước khi viết ra JSON.
-          // Hạ mức suy luận xuống thấp và chừa chỗ cho phần trả lời.
-          max_tokens: 6000,
+          // Hạ mức suy luận xuống thấp; mỗi bước của quy trình chỉ cần câu trả lời ngắn nên 3500 là đủ, đồng thời mô hình nào cứ "nghĩ" mãi
+          // sẽ bị cắt sớm (không phải chờ hết 6-8 nghìn token rồi mới biết là hỏng).
+          max_tokens: 3500,
           reasoning: { effort: 'low' },
           ...(strict && { response_format: { type: 'json_object' } }),
           messages,
@@ -122,17 +139,28 @@ export function createAsk({ env = process.env, fetchImpl = fetch, signal, onNote
     return data
   }
 
+  // Mô hình miễn phí hay trả 429 tạm thời (giới hạn tần suất của nhà cung cấp): chờ rồi thử lại tối đa 2 lần trước khi báo lỗi.
+  async function send(args) {
+    let res = await request(args)
+    for (let i = 0; i < RATE_LIMIT_WAITS.length && res.status === 429; i++) {
+      if (isDailyLimit(await res.clone().text().catch(() => ''))) break // hết hạn mức trong ngày: chờ vài giây cũng không hết
+      await sleep(RATE_LIMIT_WAITS[i], signal)
+      res = await request(args)
+    }
+    return res
+  }
+
   async function ask({ system, user, onNote: perCall }) {
     const note = perCall || onNote
-    let res = await request({ system, user, strict: true })
-    if (res.status === 400 || res.status === 422) res = await request({ system, user, strict: false })
+    let res = await send({ system, user, strict: true })
+    if (res.status === 400 || res.status === 422) res = await send({ system, user, strict: false })
     for (let attempt = 0; ; attempt++) {
       if (!res.ok) throw upstreamError(res.status, await res.text().catch(() => ''))
       const data = await read(res)
       if (data) return data
       if (attempt >= retries) break
-      note(`AI trả lời chưa đúng định dạng, đang yêu cầu lại (lần ${attempt + 1}/${retries})…`)
-      res = await request({ system, user, strict: false, extra: REMINDER })
+      note(`AI trả lời chưa đúng định dạng, đang yêu cầu lại (lần ${attempt + 1}/${retries})${models.length > 1 ? ' bằng mô hình khác' : ''}…`)
+      res = await send({ system, user, strict: false, extra: REMINDER, attempt: attempt + 1 })
     }
     throw new SeoFormatError(
       `AI (${lastModel || 'mô hình miễn phí'}) trả về dữ liệu không đọc được sau ${retries + 1} lần thử. Hãy thử lại — với openrouter/free mỗi lần có thể rơi vào một mô hình khác — hoặc đặt OPENROUTER_MODEL cụ thể.`,

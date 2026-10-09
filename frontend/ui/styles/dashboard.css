@@ -2098,3 +2098,28 @@
 @media (prefers-reduced-motion: reduce) {
   .ai-spinner, .ai-bar span, .ai-tip { animation-duration: 3s; }
 }
+
+/* ---------- Các bước của quy trình AI (Từ khóa SEO) ---------- */
+.ai-spinner-sm { width: 30px; height: 30px; margin: 0; border-width: 3px; }
+.ai-spinner-xs { display: block; width: 14px; height: 14px; margin: 0; border-width: 2px; }
+
+.ai-progress { height: 6px; margin: 14px 0 6px; overflow: hidden; border-radius: 999px; background: var(--dash-border); }
+.ai-progress span { display: block; height: 100%; border-radius: 999px; background: var(--dash-primary); transition: width 0.5s ease; }
+
+.ai-steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 4px; }
+.ai-step { display: flex; gap: 12px; align-items: flex-start; padding: 8px 10px; border-radius: 8px; opacity: 0.55; transition: opacity 0.3s, background 0.3s; }
+.ai-step-running { opacity: 1; background: var(--dash-active-bg); }
+.ai-step-done, .ai-step-error { opacity: 1; }
+.ai-step-dot { flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin-top: 1px; border-radius: 50%; border: 2px solid var(--dash-border); font-size: 12px; font-weight: 700; color: var(--dash-muted); }
+.ai-step-running .ai-step-dot { border-color: var(--dash-primary); }
+.ai-step-done .ai-step-dot { background: var(--dash-primary); border-color: var(--dash-primary); color: #fff; }
+.ai-step-error .ai-step-dot { background: var(--dash-danger); border-color: var(--dash-danger); color: #fff; }
+.ai-step-body { min-width: 0; }
+.ai-step-title { font-weight: 600; font-size: 14px; }
+.ai-step-skill { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--dash-hover-bg); color: var(--dash-muted); font-size: 11px; font-weight: 500; white-space: nowrap; }
+.ai-step-preview { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.ai-step-preview span { padding: 1px 8px; border: 1px solid var(--dash-border); border-radius: 999px; font-size: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ai-audit { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.ai-audit li.ok span:first-child { color: var(--dash-primary); font-weight: 700; }
+.ai-audit li.bad span:first-child { color: var(--dash-danger); font-weight: 700; }

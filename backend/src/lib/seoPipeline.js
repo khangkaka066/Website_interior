@@ -187,8 +187,13 @@ export function auditResult(r) {
 
 const now = () => Date.now()
 
-// ask: hàm trong openrouterClient.createAsk. onSteps(danh sách bước) được gọi mỗi khi tiến độ đổi.
-export async function runPipeline({ source, ask, onSteps = () => {}, signal }) {
+// Các bước độc lập nhau chạy SONG SONG trong cùng một giai đoạn để rút ngắn thời gian chờ (mô hình miễn phí chậm):
+//   1) từ khóa chính  ->  2) từ khóa dài/cụm chủ đề + tiêu đề/mô tả + câu hỏi (cùng chỉ cần từ khóa chính)  ->  3) trang đích (cần cụm chủ đề) + bài viết (cần câu hỏi).
+const PHASES = [['intent'], ['longtail', 'meta', 'questions'], ['pages', 'blog']]
+
+// ask: hàm trong openrouterClient.createAsk. onSteps(danh sách bước) được gọi mỗi khi tiến độ đổi. abortAll(): hủy các lời gọi AI còn lại
+// khi một bước gặp lỗi nặng (kết nối/khóa/hết tín dụng) để không chờ vô ích.
+export async function runPipeline({ source, ask, onSteps = () => {}, signal, abortAll = () => {} }) {
   const state = [
     ...STEPS.map((s) => ({ id: s.id, skill: s.skill, title: s.title, status: 'pending', note: '', summary: '', preview: [], attempts: 0, durationMs: null })),
     { id: 'audit', skill: 'seo-audit', title: 'Kiểm tra chất lượng SEO bằng danh mục kiểm tra', status: 'pending', note: '', summary: '', preview: [], attempts: 0, durationMs: null },
@@ -198,16 +203,15 @@ export async function runPipeline({ source, ask, onSteps = () => {}, signal }) {
   const warnings = []
   emit()
 
-  for (const [i, step] of STEPS.entries()) {
-    if (signal?.aborted) throw new SeoCancelledError('Đã hủy.')
-    const st = state[i]
+  async function runStep(step) {
+    const st = state.find((x) => x.id === step.id)
     const t0 = now()
     st.status = 'running'
     st.attempts = 1
     emit()
     const ctx = { source, results }
     const system = [SHOP, `[BƯỚC:${step.id}] Quy tắc áp dụng:\n${step.rules}`, `Chỉ trả về MỘT đối tượng JSON hợp lệ (không giải thích, không dùng markdown) đúng cấu trúc:\n${step.schema}`, `Ví dụ định dạng (chỉ để tham khảo cấu trúc):\n${step.example}`, GUARD].join('\n\n')
-    const context = (results.primary?.length ? `\nTừ khóa chính đã chọn: ${results.primary.map((k) => k.keyword).join('; ')}.` : '')
+    const context = results.primary?.length ? `\nTừ khóa chính đã chọn: ${results.primary.map((k) => k.keyword).join('; ')}.` : ''
     const user = `DỮ LIỆU:\n${source.prompt}\n${context}\n\n${step.task(ctx)}`
     const onNote = (t) => { st.note = t; emit() }
     try {
@@ -242,6 +246,22 @@ export async function runPipeline({ source, ask, onSteps = () => {}, signal }) {
     }
     st.durationMs = now() - t0
     emit()
+  }
+
+  for (const ids of PHASES) {
+    if (signal?.aborted) throw new SeoCancelledError('Đã hủy.')
+    let fatal = null
+    const settled = await Promise.allSettled(
+      ids.map((id) =>
+        runStep(STEPS.find((s) => s.id === id)).catch((err) => {
+          if (!fatal && !(err instanceof SeoCancelledError)) { fatal = err; abortAll() } // lỗi thật đầu tiên; các bước còn lại bị hủy theo
+          throw err
+        }),
+      ),
+    )
+    if (fatal) throw fatal
+    const cancelled = settled.find((r) => r.status === 'rejected')
+    if (cancelled) throw cancelled.reason
   }
 
   const last = state[state.length - 1]

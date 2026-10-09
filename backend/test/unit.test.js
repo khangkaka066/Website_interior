@@ -7,6 +7,7 @@ import { toStorefront } from '../src/lib/productStore.js'
 import { analyzeImport } from '../src/lib/discountImport.js'
 import { parseKeywordResult, lenientJsonParse, generateKeywords, SeoConfigError, SeoUpstreamError } from '../src/lib/seoKeywords.js'
 import { keywordsSchema } from '../src/schemas/seo.js'
+import { RATE_LIMIT_WAITS } from '../src/lib/openrouterClient.js'
 import { startJob, getJob, currentJob, cancelJob, jobView, JobLimitError } from '../src/lib/seoJobs.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { extractOrderNumber } from '../src/lib/paymentWebhook.js'
@@ -237,23 +238,29 @@ describe('gợi ý từ khóa SEO (OpenRouter) — quy trình nhiều bước', 
   test('thiếu OPENROUTER_API_KEY -> báo lỗi cấu hình, không gọi mạng', async () => {
     await assert.rejects(generateKeywords({ topic: 'rèm' }, { env: {}, fetchImpl: async () => assert.fail('không được gọi mạng') }), SeoConfigError)
   })
-  test('chạy đủ các bước theo thứ tự, mỗi bước một yêu cầu nhỏ chỉ chứa quy tắc của bước đó, kết quả bước trước đưa vào bước sau', async () => {
+  test('chạy đủ các bước: mỗi bước một yêu cầu nhỏ chỉ chứa quy tắc của bước đó, kết quả bước trước đưa vào bước sau', async () => {
     const f = stepFetch()
     const stages = []
     const snapshots = []
     const out = await generateKeywords({ topic: 'rèm dán tường' }, { env: { ...env, OPENROUTER_MODEL: 'x/y' }, fetchImpl: f, onStage: (t) => stages.push(t), onSteps: (l) => snapshots.push(l) })
-    assert.deepEqual(f.calls.map((c) => c.id), ['intent', 'longtail', 'pages', 'meta', 'questions', 'blog'])
-    assert.equal(f.calls[0].url, 'https://openrouter.ai/api/v1/chat/completions')
-    assert.equal(f.calls[0].init.headers.Authorization, 'Bearer sk-test')
-    assert.equal(f.calls[0].body.model, 'x/y')
-    const sys = (i) => f.calls[i].body.messages[0].content
-    assert.match(sys(0), /content-strategy|Ý định tìm kiếm|mua hàng/)
-    assert.ok(!/Mẫu trang đích/.test(sys(0)), 'bước 1 không được nhận quy tắc của bước trang đích')
-    assert.match(sys(2), /Mẫu trang đích/)
-    assert.match(sys(3), /TUYỆT ĐỐI không quá 60/)
-    assert.ok(sys(0).length < 3500, 'lời nhắc mỗi bước phải gọn cho mô hình miễn phí')
-    assert.match(f.calls[1].body.messages[1].content, /rèm dán tường phòng ngủ/) // từ khóa chính của bước 1 đã được đưa vào bước 2
-    assert.match(f.calls[2].body.messages[1].content, /Rèm không khoan/) // cụm chủ đề của bước 2 đưa vào bước 3
+    const ids = f.calls.map((c) => c.id)
+    assert.equal(ids[0], 'intent') // bước 1 chạy một mình
+    assert.deepEqual([...ids.slice(1, 4)].sort(), ['longtail', 'meta', 'questions']) // giai đoạn 2 gồm ba bước độc lập
+    assert.deepEqual([...ids.slice(4)].sort(), ['blog', 'pages']) // giai đoạn 3 cần kết quả giai đoạn 2
+    const call = (id) => f.calls.find((c) => c.id === id)
+    assert.equal(call('intent').url, 'https://openrouter.ai/api/v1/chat/completions')
+    assert.equal(call('intent').init.headers.Authorization, 'Bearer sk-test')
+    assert.equal(call('intent').body.model, 'x/y')
+    const sys = (id) => call(id).body.messages[0].content
+    const usr = (id) => call(id).body.messages[1].content
+    assert.match(sys('intent'), /mua hàng/)
+    assert.ok(!/Mẫu trang đích/.test(sys('intent')), 'bước 1 không được nhận quy tắc của bước trang đích')
+    assert.match(sys('pages'), /Mẫu trang đích/)
+    assert.match(sys('meta'), /TUYỆT ĐỐI không quá 60/)
+    assert.ok(sys('intent').length < 3500, 'lời nhắc mỗi bước phải gọn cho mô hình miễn phí')
+    assert.match(usr('longtail'), /rèm dán tường phòng ngủ/) // từ khóa chính của bước 1 đã được đưa vào bước sau
+    assert.match(usr('pages'), /Rèm không khoan/) // cụm chủ đề của bước từ khóa dài đưa vào bước trang đích
+    assert.match(usr('blog'), /Rèm dán tường có bền không\?|Rèm dán tường dùng được bao lâu\?/) // câu hỏi đưa vào bước bài viết
     const r = out.result
     assert.equal(r.primary.length, 6)
     assert.equal(r.longTail.length, 9)
@@ -266,9 +273,61 @@ describe('gợi ý từ khóa SEO (OpenRouter) — quy trình nhiều bước', 
     assert.deepEqual(out.steps.map((s) => s.id), ['intent', 'longtail', 'pages', 'meta', 'questions', 'blog', 'audit'])
     assert.ok(out.steps.every((s) => s.summary))
     assert.ok(snapshots.length > 7)
-    assert.ok(stages.some((t) => /Tìm từ khóa chính/.test(t)) && stages.some((t) => /Viết tiêu đề/.test(t)))
+    assert.ok(stages.some((t) => /Tìm từ khóa chính/.test(t)) && stages.some((t) => /song song/.test(t)))
     assert.ok(!JSON.stringify(out).includes('sk-test'), 'không được lộ khóa trong kết quả')
     assert.equal(out.model, 'x/y')
+  })
+  test('các bước độc lập chạy song song (cùng lúc 3 yêu cầu), không chạy lần lượt', async () => {
+    let inFlight = 0
+    let peak = 0
+    const slow = (id) => async (n, init) => {
+      inFlight++
+      peak = Math.max(peak, inFlight)
+      await new Promise((r) => setTimeout(r, 25))
+      inFlight--
+      return wrap(STEP[id])
+    }
+    await generateKeywords({ topic: 'rèm' }, { env, fetchImpl: stepFetch({ longtail: slow('longtail'), meta: slow('meta'), questions: slow('questions') }) })
+    assert.equal(peak, 3)
+  })
+  test('một bước gặp lỗi nặng (hết tín dụng) -> hủy các bước đang chạy song song và báo đúng lỗi đó', async () => {
+    let aborted = 0
+    const waitAbort = () => (n, init) => new Promise((_, reject) => init.signal.addEventListener('abort', () => { aborted++; reject(new DOMException('aborted', 'AbortError')) }))
+    await assert.rejects(
+      generateKeywords({ topic: 'rèm' }, { env, fetchImpl: stepFetch({ longtail: () => new Response('x', { status: 402 }), meta: waitAbort(), questions: waitAbort() }) }),
+      /hết tín dụng/,
+    )
+    assert.equal(aborted, 2)
+  })
+  test('bị giới hạn tần suất (429): chờ rồi thử lại, qua được thì chạy tiếp; vẫn 429 sau 3 lần thì báo lỗi', async () => {
+    const saved = [...RATE_LIMIT_WAITS]
+    RATE_LIMIT_WAITS.splice(0, RATE_LIMIT_WAITS.length, 0, 0)
+    try {
+      const f = stepFetch({ intent: (n) => (n < 2 ? new Response('slow down', { status: 429 }) : wrap(STEP.intent)) })
+      const out = await generateKeywords({ topic: 'rèm' }, { env, fetchImpl: f })
+      assert.equal(f.calls.filter((c) => c.id === 'intent').length, 3)
+      assert.equal(out.result.primary.length, 6)
+      const g = stepFetch({ intent: () => new Response('slow down', { status: 429 }) })
+      await assert.rejects(generateKeywords({ topic: 'rèm' }, { env, fetchImpl: g }), /giới hạn/)
+      assert.equal(g.calls.length, 3)
+    } finally {
+      RATE_LIMIT_WAITS.splice(0, RATE_LIMIT_WAITS.length, ...saved)
+    }
+  })
+  test('hết hạn mức miễn phí trong ngày (429 per-day) -> báo rõ, không chờ/thử lại, dừng cả quy trình ngay', async () => {
+    const daily = () => new Response(JSON.stringify({ error: { message: 'Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day', code: 429 } }), { status: 429 })
+    const f = stepFetch({ intent: daily })
+    const t = Date.now()
+    await assert.rejects(generateKeywords({ topic: 'rèm' }, { env, fetchImpl: f }), /hết lượt dùng mô hình miễn phí trong ngày[\s\S]*10 USD/)
+    assert.equal(f.calls.length, 1) // không thử lại
+    assert.ok(Date.now() - t < 1000, 'không được chờ giữa các lần thử')
+  })
+  test('OPENROUTER_MODEL là danh sách: câu trả lời hỏng thì lần hỏi lại dùng mô hình kế tiếp', async () => {
+    const usedModels = []
+    const f = stepFetch({ intent: (n, init) => { usedModels.push(JSON.parse(init.body).model); return n === 0 ? new Response(JSON.stringify({ choices: [{ message: { content: 'không phải json' } }] })) : wrap(STEP.intent) } })
+    const out = await generateKeywords({ topic: 'rèm' }, { env: { ...env, OPENROUTER_MODEL: 'a/một:free, b/hai:free' }, fetchImpl: f })
+    assert.deepEqual(usedModels, ['a/một:free', 'b/hai:free'])
+    assert.equal(out.result.primary.length, 6)
   })
   test('bước viết tiêu đề sai quy tắc (quá dài, thiếu lời kêu gọi) -> AI được nhắc sửa đúng chỗ sai và kết quả đạt', async () => {
     const longTitle = 'Rèm dán tường phòng ngủ giá xưởng, lắp nhanh không cần khoan tường, nhiều màu, giao toàn quốc | CLEVINUM'
@@ -326,7 +385,6 @@ describe('gợi ý từ khóa SEO (OpenRouter) — quy trình nhiều bước', 
     await assert.rejects(generateKeywords({ topic: 'rèm' }, err(401)), SeoConfigError)
     await assert.rejects(generateKeywords({ topic: 'rèm' }, err(402)), /hết tín dụng/)
     await assert.rejects(generateKeywords({ topic: 'rèm' }, err(404)), /OPENROUTER_MODEL/)
-    await assert.rejects(generateKeywords({ topic: 'rèm' }, err(429)), /giới hạn/)
     await assert.rejects(generateKeywords({ topic: 'rèm' }, err(500)), (e) => e instanceof SeoUpstreamError && !e.message.includes('secret'))
     let n = 0
     await assert.rejects(generateKeywords({ topic: 'rèm' }, { env, fetchImpl: async () => { n++; return new Response('x', { status: 500 }) } }))
