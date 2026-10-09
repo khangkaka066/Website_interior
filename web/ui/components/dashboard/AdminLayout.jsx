@@ -13,6 +13,7 @@ import { api } from '../../api'
 const NAV_ITEMS = [
   { id: 'overview', label: 'Tổng quan', to: '/dashboard' },
   { id: 'products', label: 'Sản phẩm', to: '/dashboard/products', permKey: 'products' },
+  { id: 'discounts', label: 'Giảm giá', to: '/dashboard/discounts', permKey: 'products' },
   { id: 'orders', label: 'Đơn hàng', to: '/dashboard/orders', permKey: 'orders' },
   { id: 'payments', label: 'Thanh toán', to: '/dashboard/payments', permKey: 'payments' },
   { id: 'customers', label: 'Khách hàng', to: '/dashboard/customers', permKey: 'customers' },

@@ -75,9 +75,13 @@ export default function Header() {
           {session ? (
             <div className="account-menu">
               <span className="account-greeting">Xin chào, {session.name}</span>
-              {session.role === 'ADMIN' && (
+              {session.role === 'ADMIN' ? (
                 <Link to="/dashboard" className="account-admin-link">
                   Quản trị
+                </Link>
+              ) : (
+                <Link to="/account" className="account-admin-link">
+                  Tài khoản
                 </Link>
               )}
               <button className="account-logout" onClick={handleLogout}>

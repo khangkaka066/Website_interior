@@ -26,6 +26,7 @@ const VIEWS = {
   campaignDetail: lazy(() => import('./pages/admin/CampaignDetail')),
   analytics: lazy(() => import('./pages/admin/AnalyticsDashboard')),
   payments: lazy(() => import('./pages/admin/PaymentsAdmin')),
+  discounts: lazy(() => import('./pages/admin/DiscountsAdmin')),
   news: lazy(() => import('./pages/admin/NewsAdmin')),
   settings: lazy(() => import('./pages/admin/SettingsAdmin')),
 }

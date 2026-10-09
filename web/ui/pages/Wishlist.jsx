@@ -4,6 +4,7 @@ import { Link } from '@/lib/router'
 import WishlistButton from '../components/WishlistButton'
 import { useProducts } from '../data/liveProducts'
 import { useWishlist } from '../context/WishlistContext'
+import PriceOld from '../components/PriceOld'
 
 const formatPrice = (n) => n.toLocaleString('vi-VN') + 'đ'
 
@@ -39,6 +40,7 @@ export default function Wishlist() {
                     <span className="price">
                       {p.priceMax ? 'Từ ' : ''}
                       {formatPrice(p.price)}
+                      <PriceOld product={p} />
                     </span>
                   </div>
                 </Link>

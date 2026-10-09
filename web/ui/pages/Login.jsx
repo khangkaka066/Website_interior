@@ -58,7 +58,9 @@ export default function Login() {
     if (user.role === 'ADMIN') {
       navigate(location.state?.from || '/dashboard', { replace: true })
     } else {
-      navigate('/', { replace: true })
+      // Khách bị chuyển tới đăng nhập từ trang tài khoản thì quay lại đúng đó; địa chỉ khác bỏ qua (chống chuyển hướng lạ).
+      const from = location.state?.from
+      navigate(from === '/account' ? from : '/', { replace: true })
     }
   }
 

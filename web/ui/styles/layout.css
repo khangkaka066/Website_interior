@@ -2164,3 +2164,16 @@ main { animation: page-in 0.22s ease-out; }
   .page-spinner-ring { animation-duration: 2.4s; }
   .top-loader-bar { transition: none; }
 }
+
+/* Giá gốc gạch ngang + % giảm trên thẻ sản phẩm (giảm giá theo SKU). */
+.price-old {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.price-pct {
+  font-size: 0.75em;
+  font-weight: 700;
+  color: var(--discount-red);
+}

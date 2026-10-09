@@ -1,6 +1,7 @@
 import { products as staticProducts } from '../data/shop.js'
 import { Prisma } from '../generated/prisma/client.js'
 import { prisma } from './prisma.js'
+import { getSettings } from './settingsStore.js'
 
 // Kho sản phẩm do quản trị viên quản lý (kể cả nhập Excel), lưu trong bảng Product của database.
 // Trang quản trị gửi từng sản phẩm "dạng admin"; website bán hàng đọc bản đã chuyển sang "dạng cửa hàng".
@@ -21,9 +22,20 @@ const TYPE_BY_CATEGORY = {
 const staticByShopeeId = new Map(staticProducts.filter((p) => p.shopeeId).map((p) => [p.shopeeId, p]))
 
 // Sản phẩm dạng admin -> dạng cửa hàng (cùng hình dạng với data/shop.js).
-export function toStorefront(p) {
-  const variants = p.hasVariants ? (p.variants || []) : []
-  const prices = variants.length ? variants.map((v) => Number(v.price)) : [Number(p.price)]
+export const normSku = (sku) => String(sku ?? '').trim().toLowerCase()
+const discounted = (price, percent) => (percent ? Math.max(1, Math.round(price * (1 - percent / 100))) : price)
+
+// rules: Map(SKU viết thường -> % giảm). Giá trên website và giá tính tiền khi đặt hàng đều lấy từ đây, nên luôn là giá đã giảm.
+// SKU phân loại ưu tiên hơn SKU sản phẩm. `originalPrice` là giá trước giảm của đúng mức giá đang hiển thị.
+export function toStorefront(p, rules = new Map()) {
+  const productPct = rules.get(normSku(p.sku)) || 0
+  const variants = (p.hasVariants ? (p.variants || []) : []).map((v) => {
+    const percent = rules.get(normSku(v.sku)) || productPct
+    const price = Number(v.price)
+    return { ...v, percent, listPrice: price, price: discounted(price, percent) }
+  })
+  const listPrice = Number(p.price)
+  const prices = variants.length ? variants.map((v) => v.price) : [discounted(listPrice, productPct)]
   const images = (p.images || []).filter(Boolean)
   const out = {
     id: p.shopeeId ? `sp${p.shopeeId}` : p.id,
@@ -39,6 +51,8 @@ export function toStorefront(p) {
     createdAt: p.createdAt || '',
   }
   if (variants.length) {
+    const cheapest = variants.reduce((a, b) => (b.price < a.price ? b : a))
+    if (cheapest.percent) Object.assign(out, { originalPrice: cheapest.listPrice, discountPercent: cheapest.percent })
     const max = Math.max(...prices)
     if (max !== out.price) out.priceMax = max
     out.options = (p.variantAttributes || []).map((a) => ({
@@ -46,20 +60,34 @@ export function toStorefront(p) {
       values: a.values,
       ...(a.optionImages && Object.keys(a.optionImages).length ? { images: a.optionImages } : {}),
     }))
-    out.variants = variants.map((v) => ({ label: v.label, price: Number(v.price), stock: Number(v.stock) || 0 }))
+    out.variants = variants.map((v) => ({
+      label: v.label,
+      price: v.price,
+      ...(v.percent ? { originalPrice: v.listPrice, discountPercent: v.percent } : {}),
+      stock: Number(v.stock) || 0,
+    }))
+  } else if (productPct) {
+    Object.assign(out, { originalPrice: listPrice, discountPercent: productPct })
   }
   return out
 }
 
 let storefront = staticProducts
+let skuIndex = new Map() // SKU (viết thường) -> { kind: 'product' | 'variant', name, label?, price }; dùng để kiểm tra SKU khi nhập giảm giá
 let storefrontById = new Map(storefront.map((p) => [p.id, p]))
 
 const REFRESH_MS = 15000 // nhiều server cùng chạy thì sau tối đa chừng này sẽ thấy thay đổi của nhau
 
 // Chỉ sản phẩm đang bán (active) và còn giá hợp lệ mới lên website.
-function rebuild(list) {
+function rebuild(list, discountRules = []) {
+  const rules = new Map(discountRules.map((r) => [normSku(r.sku), Number(r.percent)]))
+  skuIndex = new Map()
+  for (const p of list) {
+    if (p.sku) skuIndex.set(normSku(p.sku), { kind: 'product', name: p.name, price: Number(p.price) || 0 })
+    if (p.hasVariants) for (const v of p.variants || []) if (v.sku) skuIndex.set(normSku(v.sku), { kind: 'variant', name: p.name, label: v.label, price: Number(v.price) || 0 })
+  }
   storefront = list.length
-    ? list.filter((p) => p.status === 'active').map(toStorefront).filter((p) => Number.isFinite(p.price) && p.price > 0)
+    ? list.filter((p) => p.status === 'active').map((p) => toStorefront(p, rules)).filter((p) => Number.isFinite(p.price) && p.price > 0)
     : staticProducts
   storefrontById = new Map(storefront.map((p) => [p.id, p]))
 }
@@ -69,8 +97,11 @@ async function readAll() {
 }
 
 export async function loadProducts() {
-  rebuild((await readAll()).map((r) => r.data))
+  const [rows, settings] = await Promise.all([readAll(), getSettings()])
+  rebuild(rows.map((r) => r.data), settings.discounts.rules)
 }
+
+export const getSkuInfo = (sku) => skuIndex.get(normSku(sku))
 
 let timer = null
 export function startProductRefresh() {

@@ -5,6 +5,7 @@ import { Link } from '@/lib/router'
 import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
 import WishlistButton from './WishlistButton'
+import PriceOld from './PriceOld'
 
 // Chỉ danh mục có ảnh (nhóm rèm) làm tab ở trang chủ; các nhóm khác xem ở menu Sản phẩm.
 const TABS = categories.filter((c) => c.image).map((c) => ({ id: c.id, label: c.name.toUpperCase() }))
@@ -47,6 +48,7 @@ export default function ProductSection() {
               <span className="price">
                 {p.priceMax ? 'Từ ' : ''}
                 {formatPrice(p.price)}
+                <PriceOld product={p} />
               </span>
             </div>
           </Link>

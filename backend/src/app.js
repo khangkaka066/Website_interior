@@ -16,6 +16,8 @@ import settingsRoutes from './routes/settings.js'
 import adminProductRoutes from './routes/adminProducts.js'
 import postRoutes from './routes/posts.js'
 import seoRoutes from './routes/seo.js'
+import accountRoutes from './routes/account.js'
+import discountRoutes from './routes/discounts.js'
 import { authenticate } from './middleware/auth.js'
 import { securityHeaders, compress, globalLimiter } from './middleware/security.js'
 
@@ -50,6 +52,8 @@ app.get('/api/health', (req, res) => {
 app.use(seoRoutes) // /robots.txt, /sitemap.xml
 app.use('/api/shop', shopRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api/account', accountRoutes)
+app.use('/api/discounts', discountRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/shipping', shippingRoutes)
 app.use('/api/customers', customerRoutes)

@@ -184,11 +184,7 @@ export async function createOrder(req, res) {
   const shippingFee = shippingFeeFor(settings, subtotal)
   const total = subtotal - discount + shippingFee + tax
 
-  const dbCustomer = await prisma.customer.upsert({
-    where: { phone: customer.phone },
-    update: { name: customer.name, email: customer.email },
-    create: { name: customer.name, phone: customer.phone, email: customer.email },
-  })
+  const dbCustomer = await resolveOrderCustomer(req.user, customer)
 
   let campaignId = null
   if (utmCampaign) {
@@ -251,9 +247,35 @@ export async function createOrder(req, res) {
   res.status(201).json(body)
 }
 
-const normPhone = (p) => {
+export const normPhone = (p) => {
   const d = String(p || '').replace(/\D/g, '')
   return d.startsWith('84') ? `0${d.slice(2)}` : d
+}
+
+// Khách đã đăng nhập: đơn gắn vào hồ sơ của tài khoản để hiện trong trang Tài khoản. Số điện thoại trong form thanh toán có thể
+// khác (mua tặng) nên không dùng nó để chọn hồ sơ. Chưa có hồ sơ thì tạo mới và gắn vào tài khoản, nhưng KHÔNG gắn vào hồ sơ có
+// sẵn của số điện thoại đó (chưa xác minh chủ số thì không được cho xem lịch sử đơn của người khác).
+async function resolveOrderCustomer(user, customer) {
+  const byPhone = () =>
+    prisma.customer.upsert({
+      where: { phone: customer.phone },
+      update: { name: customer.name, email: customer.email },
+      create: { name: customer.name, phone: customer.phone, email: customer.email },
+    })
+  if (user?.role !== 'CUSTOMER') return byPhone()
+  if (user.customerId) {
+    const own = await prisma.customer.findUnique({ where: { id: user.customerId } })
+    if (own) return own
+  }
+  const existing = await prisma.customer.findUnique({ where: { phone: customer.phone } })
+  if (existing) return byPhone()
+  // Email của hồ sơ là duy nhất: đã có hồ sơ khác dùng thì bỏ qua email thay vì làm hỏng đơn.
+  const emailTaken = customer.email && (await prisma.customer.findUnique({ where: { email: customer.email } }))
+  const created = await prisma.customer.create({
+    data: { name: customer.name, phone: customer.phone, email: emailTaken ? undefined : customer.email },
+  })
+  await prisma.user.update({ where: { id: user.id }, data: { customerId: created.id } })
+  return created
 }
 
 // Khách tạo lại link thanh toán PayOS cho đơn chưa trả tiền (link cũ hết hạn hoặc lỗi). Cần mã đơn + số điện thoại.
@@ -364,6 +386,49 @@ export async function refundOrder(req, res) {
 // Cần cả mã đơn lẫn số điện thoại đặt hàng; sai một trong hai đều trả cùng một thông báo để không dò được mã đơn.
 // Chỉ trả những gì khách cần xem: không có ghi chú nội bộ, nhật ký hoạt động hay thông tin khách khác.
 
+// Dạng đơn hàng gửi cho khách (tra cứu công khai và trang tài khoản): không có ghi chú nội bộ, nhật ký hoạt động.
+export const PUBLIC_ORDER_INCLUDE = {
+  customer: true,
+  items: true,
+  statusEvents: { orderBy: { createdAt: 'asc' } },
+  shipment: { include: { carrier: true, trackingEvents: { orderBy: { createdAt: 'asc' } } } },
+}
+
+export function publicOrderView(order) {
+  return toPlain({
+    orderNumber: order.orderNumber,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    paymentMethod: order.paymentMethod,
+    createdAt: order.createdAt,
+    subtotal: order.subtotal,
+    shippingFee: order.shippingFee,
+    discount: order.discount,
+    total: order.total,
+    recipientName: order.recipientName,
+    addressLine: order.addressLine,
+    ward: order.ward,
+    district: order.district,
+    province: order.province,
+    items: order.items.map((i) => ({
+      productId: i.productId,
+      name: i.name,
+      variant: i.variant,
+      image: i.image,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      lineTotal: i.lineTotal,
+    })),
+    statusEvents: order.statusEvents.map((e) => ({ status: e.status, createdAt: e.createdAt })),
+    shipment: order.shipment && {
+      carrier: order.shipment.carrier?.name,
+      trackingId: order.shipment.trackingId,
+      status: order.shipment.status,
+      events: order.shipment.trackingEvents.map((t) => ({ status: t.status, note: t.note, location: t.location, createdAt: t.createdAt })),
+    },
+  })
+}
+
 export async function trackOrder(req, res) {
   const orderNumber = String(req.query.orderNumber || '').trim().toUpperCase()
   const phone = normPhone(req.query.phone)
@@ -372,48 +437,10 @@ export async function trackOrder(req, res) {
 
   const order = await prisma.order.findUnique({
     where: { orderNumber },
-    include: {
-      customer: true,
-      items: true,
-      statusEvents: { orderBy: { createdAt: 'asc' } },
-      shipment: { include: { carrier: true, trackingEvents: { orderBy: { createdAt: 'asc' } } } },
-    },
+    include: PUBLIC_ORDER_INCLUDE,
   })
   if (!order || ![order.recipientPhone, order.customer?.phone].some((p) => normPhone(p) === phone)) return notFound()
 
   res.set('Cache-Control', 'no-store')
-  res.json(
-    toPlain({
-      orderNumber: order.orderNumber,
-      status: order.status,
-      paymentStatus: order.paymentStatus,
-      paymentMethod: order.paymentMethod,
-      createdAt: order.createdAt,
-      subtotal: order.subtotal,
-      shippingFee: order.shippingFee,
-      discount: order.discount,
-      total: order.total,
-      recipientName: order.recipientName,
-      addressLine: order.addressLine,
-      ward: order.ward,
-      district: order.district,
-      province: order.province,
-      items: order.items.map((i) => ({
-        productId: i.productId,
-        name: i.name,
-        variant: i.variant,
-        image: i.image,
-        quantity: i.quantity,
-        unitPrice: i.unitPrice,
-        lineTotal: i.lineTotal,
-      })),
-      statusEvents: order.statusEvents.map((e) => ({ status: e.status, createdAt: e.createdAt })),
-      shipment: order.shipment && {
-        carrier: order.shipment.carrier?.name,
-        trackingId: order.shipment.trackingId,
-        status: order.shipment.status,
-        events: order.shipment.trackingEvents.map((t) => ({ status: t.status, note: t.note, location: t.location, createdAt: t.createdAt })),
-      },
-    }),
-  )
+  res.json(publicOrderView(order))
 }

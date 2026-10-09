@@ -62,7 +62,10 @@ export default function ProductDetail() {
       : product.description
     : ''
   const category = categories.find((c) => c.id === product.categoryId)
-  const salePrice = product.discount ? Math.round(price / (1 - product.discount / 100)) : null
+  // Giá gốc + % giảm do server tính từ quy tắc giảm giá theo SKU (phân loại đang chọn ưu tiên hơn mức của cả sản phẩm).
+  const priceInfo = variant ? variant : product
+  const salePrice = priceInfo.originalPrice || (product.discount ? Math.round(price / (1 - product.discount / 100)) : null)
+  const salePercent = priceInfo.discountPercent || product.discount || 0
 
   return (
     <>
@@ -99,7 +102,7 @@ export default function ProductDetail() {
               <div className="pdp-price-row">
                 <span className="pdp-price">{formatPrice(price)}</span>
                 {salePrice && <span className="pdp-price-old">{formatPrice(salePrice)}</span>}
-                {product.discount ? <span className="badge badge-discount">-{product.discount}%</span> : null}
+                {salePercent ? <span className="badge badge-discount">-{salePercent}%</span> : null}
               </div>
               {product.rating ? (
                 <div className="pdp-rating">

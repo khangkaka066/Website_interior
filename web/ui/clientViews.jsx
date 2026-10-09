@@ -14,6 +14,7 @@ export const OrderConfirmation = lazy(() => import('./pages/OrderConfirmation'))
 export const TrackOrder = lazy(() => import('./pages/TrackOrder'))
 export const Wishlist = lazy(() => import('./pages/Wishlist'))
 export const Login = lazy(() => import('./pages/Login'))
+export const Account = lazy(() => import('../components/account/AccountPage'))
 export const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
 export function Client({ children }) {

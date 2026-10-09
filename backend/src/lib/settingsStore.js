@@ -37,6 +37,8 @@ export const DEFAULTS = {
     ],
   },
   shipping: { fee: 25000, freeShippingOver: 0 },
+  // Giảm giá theo SKU (Dashboard > Giảm giá): [{ sku, percent }]. SKU của sản phẩm thì giảm mọi phân loại, SKU của phân loại thì chỉ giảm phân loại đó.
+  discounts: { rules: [] },
   // Nội dung các trang Về chúng tôi / Liên hệ / FAQ (sửa ở Cài đặt > Nội dung trang).
   content: {
     about: {
@@ -76,6 +78,7 @@ function merge(saved) {
     store: { ...DEFAULTS.store, ...(s.store || {}) },
     payment: { methods },
     shipping: { ...DEFAULTS.shipping, ...(s.shipping || {}) },
+    discounts: { rules: Array.isArray(s.discounts?.rules) ? s.discounts.rules : [] },
     content: {
       about: { ...DEFAULTS.content.about, ...(s.content?.about || {}) },
       contact: { ...DEFAULTS.content.contact, ...(s.content?.contact || {}) },

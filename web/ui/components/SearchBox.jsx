@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from '@/lib/router'
 import { useProducts } from '../data/liveProducts'
 import { buildIndex, suggest } from '../data/smartSearch'
+import PriceOld from './PriceOld'
 
 const formatPrice = (n) => n.toLocaleString('vi-VN') + 'đ'
 
@@ -146,6 +147,7 @@ export default function SearchBox() {
                     <span className="ss-price">
                       {p.priceMax ? 'Từ ' : ''}
                       {formatPrice(p.price)}
+                      <PriceOld product={p} />
                     </span>
                   </button>
                 )

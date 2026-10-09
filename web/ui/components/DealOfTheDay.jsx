@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useProducts } from '../data/liveProducts'
+import PriceOld from './PriceOld'
 
 function getTargetDate() {
   const target = new Date()
@@ -50,6 +51,7 @@ export default function DealOfTheDay() {
           <p className="deal-product-name">
             {deal.name} — {deal.priceMax ? 'chỉ từ ' : 'chỉ '}
             {formatPrice(deal.price)}
+            <PriceOld product={deal} />
           </p>
           <div className="countdown">
             <Tile value={day} label="Ngày" />

@@ -3,6 +3,7 @@
 import { Link } from '@/lib/router'
 import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
+import PriceOld from './PriceOld'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -29,6 +30,7 @@ export default function ProductColumns() {
                 <span className="product-row-price">
                   {p.priceMax ? 'Từ ' : ''}
                   {formatPrice(p.price)}
+                  <PriceOld product={p} />
                 </span>
               </div>
             </Link>

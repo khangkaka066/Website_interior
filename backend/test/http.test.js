@@ -48,6 +48,9 @@ describe('yêu cầu đăng nhập', () => {
     ['GET', '/api/settings'], ['PUT', '/api/settings/store'], ['GET', '/api/users'], ['GET', '/api/admin-products'],
     ['POST', '/api/admin-products/sync'], ['GET', '/api/analytics/overview'], ['GET', '/api/payments'],
     ['GET', '/api/posts'], ['POST', '/api/posts'], ['PATCH', '/api/posts/x'], ['DELETE', '/api/posts/x'],
+    ['GET', '/api/discounts'], ['PUT', '/api/discounts'], ['GET', '/api/account/profile'], ['PATCH', '/api/account/profile'], ['POST', '/api/account/password'], ['GET', '/api/account/orders'],
+    ['GET', '/api/account/orders/ORD-1'], ['POST', '/api/account/orders/claim'], ['GET', '/api/account/addresses'],
+    ['POST', '/api/account/addresses'], ['PATCH', '/api/account/addresses/x'], ['DELETE', '/api/account/addresses/x'],
   ]) {
     test(`${method} ${path} -> 401`, async () => {
       const r = await call(path, { method, body: method === 'GET' ? undefined : '{}' })

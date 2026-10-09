@@ -8,6 +8,7 @@ import WishlistButton from '../components/WishlistButton'
 import { buildIndex, searchProducts, COLOR_FILTERS, WIDTH_FILTERS, POPULAR_KEYWORDS } from '../data/smartSearch'
 import { CATEGORY_NOTES } from '../data/menu'
 import { useShopInfo } from '../useShopInfo'
+import PriceOld from '../components/PriceOld'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -286,6 +287,7 @@ export default function AllProducts() {
                           <span className="price">
                             {p.priceMax ? 'Từ ' : ''}
                             {formatPrice(p.price)}
+                            <PriceOld product={p} />
                           </span>
                         </div>
                       </Link>
@@ -312,6 +314,7 @@ export default function AllProducts() {
                         <span className="price">
                           {p.priceMax ? 'Từ ' : ''}
                           {formatPrice(p.price)}
+                          <PriceOld product={p} />
                         </span>
                       </div>
                     </div>

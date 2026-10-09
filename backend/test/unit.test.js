@@ -49,6 +49,34 @@ describe('toStorefront (sản phẩm admin -> dạng website)', () => {
   test('không có Mã Shopee thì dùng id admin', () => {
     assert.equal(toStorefront({ ...admin, shopeeId: '' }).id, 'abc-1')
   })
+  test('giảm giá theo SKU sản phẩm: mọi phân loại giảm, có giá gốc và % giảm', () => {
+    const s = toStorefront({ ...admin, sku: 'REM-01' }, new Map([['rem-01', 10]]))
+    assert.deepEqual(s.variants.map((v) => v.price), [180000, 315000])
+    assert.equal(s.price, 180000)
+    assert.equal(s.priceMax, 315000)
+    assert.equal(s.originalPrice, 200000)
+    assert.equal(s.discountPercent, 10)
+    assert.equal(s.variants[0].originalPrice, 200000)
+  })
+  test('SKU phân loại ưu tiên hơn SKU sản phẩm; phân loại không giảm thì không có giá gốc', () => {
+    const p = { ...admin, sku: 'REM-01', variants: [{ label: 'A', sku: 'V-A', price: 100000, stock: 1 }, { label: 'B', sku: 'V-B', price: 120000, stock: 1 }] }
+    const s = toStorefront(p, new Map([['rem-01', 10], ['v-a', 50]]))
+    assert.equal(s.variants[0].price, 50000)
+    assert.equal(s.variants[1].price, 108000)
+    assert.equal(s.price, 50000)
+    assert.equal(s.originalPrice, 100000)
+    assert.equal(s.discountPercent, 50)
+    const only = toStorefront({ ...p, sku: 'X' }, new Map([['v-b', 20]]))
+    assert.equal(only.price, 96000) // phân loại rẻ nhất sau giảm là B
+    assert.equal(only.variants[0].originalPrice, undefined)
+  })
+  test('sản phẩm không phân loại + không có quy tắc thì giữ nguyên giá', () => {
+    const plain = { ...admin, hasVariants: false, variants: [], price: 50000, sku: 'P' }
+    assert.equal(toStorefront(plain, new Map([['p', 20]])).price, 40000)
+    const s = toStorefront(plain)
+    assert.equal(s.price, 50000)
+    assert.equal('originalPrice' in s, false)
+  })
 })
 
 describe('PayOS: chữ ký webhook', () => {
