@@ -8,3 +8,7 @@ backend/.agents
 backend/.claude
 backend/.windsurf
 backend/skills-lock.json
+
+# Tệp khóa tạm của LibreOffice / Office (xuất hiện khi đang mở file Excel)
+.~*
+~$*
