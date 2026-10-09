@@ -38,5 +38,8 @@ export const analyticsLimiter = limiter(minutes(1), 120)
 // Tra cứu đơn của khách (công khai): chặn dò mã đơn + số điện thoại hàng loạt.
 export const trackLimiter = limiter(minutes(15), 30)
 
+// Gọi AI (OpenRouter) từ trang quản trị: mỗi lần tốn tín dụng nên giới hạn cho cả khi tài khoản admin bị lạm dụng.
+export const aiLimiter = limiter(minutes(60), 30)
+
 // Quên mật khẩu / đặt lại mật khẩu (công khai): chặn spam email và dò mã.
 export const forgotLimiter = limiter(minutes(15), 10)

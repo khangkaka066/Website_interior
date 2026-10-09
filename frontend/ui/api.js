@@ -26,7 +26,11 @@ async function request(path, options = {}) {
 
   const data = await res.json().catch(() => null)
   if (!res.ok) {
-    throw new Error(data?.error || 'Đã có lỗi xảy ra, vui lòng thử lại.')
+    // Lỗi không phải JSON (ví dụ proxy cắt vì quá lâu) thì kèm mã lỗi để dễ tìm nguyên nhân.
+    const err = new Error(data?.error || `Đã có lỗi xảy ra, vui lòng thử lại (mã ${res.status}).`)
+    err.status = res.status
+    err.data = data // phần JSON server trả về (ví dụ jobId của phân tích đang chạy)
+    throw err
   }
   return data
 }

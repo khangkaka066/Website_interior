@@ -7,6 +7,7 @@ import { getSettings, shippingFeeFor } from '../lib/settingsStore.js'
 import { sendMail } from '../lib/mailer.js'
 import { PAYOS_METHOD_ID, payosConfigured, createPaymentLink } from '../lib/payos.js'
 import { orderCreatedEmail, orderStatusEmail, NOTIFY_STATUSES } from '../lib/emailTemplates.js'
+import { invalidateUser } from '../lib/authCache.js'
 
 // Đơn công khai: giá, phí ship, giảm giá do server quyết định, không tin client.
 const MAX_LINE_QTY = 999
@@ -111,6 +112,12 @@ export async function listOrders(req, res) {
     page: Number(page) || 1,
     pageSize: take,
   })
+}
+
+// Số đơn theo từng trạng thái trong một truy vấn (trang Tổng quan trước đây gọi riêng từng trạng thái).
+export async function orderStatusCounts(req, res) {
+  const groups = await prisma.order.groupBy({ by: ['status'], _count: { _all: true } })
+  res.json(Object.fromEntries(groups.map((g) => [g.status, g._count._all])))
 }
 
 export async function getOrder(req, res) {
@@ -275,6 +282,7 @@ async function resolveOrderCustomer(user, customer) {
     data: { name: customer.name, phone: customer.phone, email: emailTaken ? undefined : customer.email },
   })
   await prisma.user.update({ where: { id: user.id }, data: { customerId: created.id } })
+  invalidateUser(user.id)
   return created
 }
 

@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js'
 import { PERMISSION_DEFS } from '../constants/permissions.js'
+import { invalidatePermissions } from '../lib/authCache.js'
 
 export async function listPermissions(req, res) {
   const rows = await prisma.supportPermission.findMany()
@@ -25,5 +26,6 @@ export async function updatePermission(req, res) {
     update: { enabledForSupport: !!enabledForSupport },
     create: { key, label: def.label, enabledForSupport: !!enabledForSupport },
   })
+  invalidatePermissions()
   res.json({ key: updated.key, label: updated.label, enabledForSupport: updated.enabledForSupport })
 }

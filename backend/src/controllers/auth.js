@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js'
 import { hashPassword, comparePassword, signToken, publicUser } from '../lib/auth.js'
 import { sendMail } from '../lib/mailer.js'
 import { passwordResetEmail } from '../lib/emailTemplates.js'
+import { invalidateUser } from '../lib/authCache.js'
 
 export async function register(req, res) {
   const { name, email, password, phone } = req.body || {}
@@ -135,5 +136,6 @@ export async function resetPassword(req, res) {
     prisma.user.update({ where: { id: record.userId }, data: { passwordHash: await hashPassword(password) } }),
     prisma.passwordResetToken.updateMany({ where: { userId: record.userId, usedAt: null }, data: { usedAt: new Date() } }),
   ])
+  invalidateUser(record.userId)
   res.json({ ok: true, message: 'Đã đặt lại mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.' })
 }

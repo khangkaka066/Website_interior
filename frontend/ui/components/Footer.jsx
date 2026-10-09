@@ -29,7 +29,7 @@ export default function Footer() {
         </div>
         <div className="footer-col">
           <h4>Tài khoản</h4>
-          {/* /about, /contact, /faq do app Next (web/) phục vụ nên dùng <a> tải trang đầy đủ, không dùng <Link> */}
+          {/* /about, /contact, /faq do app Next (frontend/) phục vụ nên dùng <a> tải trang đầy đủ, không dùng <Link> */}
           <a href="/about">Về chúng tôi</a>
           <a href="/contact">Liên hệ</a>
           <a href="/faq">FAQ</a>

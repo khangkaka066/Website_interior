@@ -43,12 +43,12 @@ describe('chung', () => {
 
 describe('yêu cầu đăng nhập', () => {
   for (const [method, path] of [
-    ['GET', '/api/orders'], ['PATCH', '/api/orders/x/status'], ['GET', '/api/customers'], ['POST', '/api/customers'],
+    ['GET', '/api/orders'], ['GET', '/api/orders/status-counts'], ['PATCH', '/api/orders/x/status'], ['GET', '/api/customers'], ['POST', '/api/customers'],
     ['GET', '/api/shipping'], ['POST', '/api/campaigns'], ['GET', '/api/chat/conversations'], ['GET', '/api/chat/stream'],
     ['GET', '/api/settings'], ['PUT', '/api/settings/store'], ['GET', '/api/users'], ['GET', '/api/admin-products'],
     ['POST', '/api/admin-products/sync'], ['GET', '/api/analytics/overview'], ['GET', '/api/payments'],
     ['GET', '/api/posts'], ['POST', '/api/posts'], ['PATCH', '/api/posts/x'], ['DELETE', '/api/posts/x'],
-    ['GET', '/api/discounts'], ['PUT', '/api/discounts'], ['GET', '/api/account/profile'], ['PATCH', '/api/account/profile'], ['POST', '/api/account/password'], ['GET', '/api/account/orders'],
+    ['GET', '/api/discounts'], ['GET', '/api/seo/status'], ['POST', '/api/seo/keywords'], ['GET', '/api/seo/jobs/x'], ['GET', '/api/seo/jobs/current'], ['POST', '/api/seo/jobs/x/cancel'], ['PUT', '/api/discounts'], ['POST', '/api/discounts/import'], ['GET', '/api/account/profile'], ['PATCH', '/api/account/profile'], ['POST', '/api/account/password'], ['GET', '/api/account/orders'],
     ['GET', '/api/account/orders/ORD-1'], ['POST', '/api/account/orders/claim'], ['GET', '/api/account/addresses'],
     ['POST', '/api/account/addresses'], ['PATCH', '/api/account/addresses/x'], ['DELETE', '/api/account/addresses/x'],
   ]) {

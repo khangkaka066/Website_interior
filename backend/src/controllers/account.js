@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma.js'
 import { hashPassword, comparePassword, publicUser } from '../lib/auth.js'
 import { toPlain } from '../utils/serialize.js'
 import { PUBLIC_ORDER_INCLUDE, publicOrderView, normPhone } from './orders.js'
+import { invalidateUser } from '../lib/authCache.js'
 
 // Trang "Tài khoản của tôi": chỉ tài khoản khách (CUSTOMER) và chỉ dữ liệu của chính họ. Mọi truy vấn đều lọc theo
 // customerId của người đang đăng nhập, không nhận customerId từ client.
@@ -56,6 +57,7 @@ export async function updateProfile(req, res) {
     where: { id: req.user.id },
     data: { name, ...(saved && !customer && { customerId: saved.id }) },
   })
+  invalidateUser(req.user.id)
   res.json(profileOf(user, saved))
 }
 
@@ -65,6 +67,7 @@ export async function changePassword(req, res) {
     return res.status(400).json({ error: 'Mật khẩu hiện tại không đúng.' })
   }
   await prisma.user.update({ where: { id: req.user.id }, data: { passwordHash: await hashPassword(newPassword) } })
+  invalidateUser(req.user.id)
   res.json({ ok: true, message: 'Đã đổi mật khẩu.' })
 }
 
@@ -125,6 +128,7 @@ export async function claimOrder(req, res) {
     if (order.customer?.account) return res.status(409).json({ error: 'Đơn hàng này đã được liên kết với một tài khoản khác.' })
     await prisma.user.update({ where: { id: req.user.id }, data: { customerId: order.customerId } })
   }
+  invalidateUser(req.user.id)
   res.json({ ok: true, orderNumber })
 }
 
@@ -148,6 +152,7 @@ async function ensureCustomerId(req, res, phone) {
   }
   const customer = await prisma.customer.create({ data: { name: req.user.name, phone } })
   await prisma.user.update({ where: { id: req.user.id }, data: { customerId: customer.id } })
+  invalidateUser(req.user.id)
   return customer.id
 }
 

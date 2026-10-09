@@ -22,20 +22,36 @@ const TYPE_BY_CATEGORY = {
 const staticByShopeeId = new Map(staticProducts.filter((p) => p.shopeeId).map((p) => [p.shopeeId, p]))
 
 // Sản phẩm dạng admin -> dạng cửa hàng (cùng hình dạng với data/shop.js).
-export const normSku = (sku) => String(sku ?? '').trim().toLowerCase()
+export const normCode = (c) => String(c ?? '').trim().toLowerCase()
+// Mã nhận diện sản phẩm khi nhập giảm giá: SKU, Mã Shopee, mã admin, hoặc mã trên website ("sp<Mã Shopee>").
+const productCodes = (p) => [p.sku, p.shopeeId, p.id, p.shopeeId && `sp${p.shopeeId}`].map(normCode).filter(Boolean)
+// Mã nhận diện phân loại: mã phân loại Shopee, id phân loại (sản phẩm tạo tay), SKU phân loại.
+const variantCodes = (v) => [v.shopeeVariantId, v.id, v.sku].map(normCode).filter(Boolean)
+// Quy tắc là { percent, originalPrice?, salePrice? } (hoặc chỉ là số %). Có salePrice (nhập từ file) thì giá bán cố định đúng bằng salePrice.
+const asRule = (r) => (typeof r === 'number' ? { percent: r } : r)
+const firstRule = (rules, codes) => {
+  for (const c of codes) if (rules.get(c)) return asRule(rules.get(c))
+  return null
+}
 const discounted = (price, percent) => (percent ? Math.max(1, Math.round(price * (1 - percent / 100))) : price)
 
-// rules: Map(SKU viết thường -> % giảm). Giá trên website và giá tính tiền khi đặt hàng đều lấy từ đây, nên luôn là giá đã giảm.
-// SKU phân loại ưu tiên hơn SKU sản phẩm. `originalPrice` là giá trước giảm của đúng mức giá đang hiển thị.
+// rules: Map(mã viết thường -> % giảm). Giá trên website và giá tính tiền khi đặt hàng đều lấy từ đây, nên luôn là giá đã giảm.
+// Mã sản phẩm giảm mọi phân loại; mã phân loại chỉ giảm phân loại đó và được ưu tiên hơn. `originalPrice` là giá trước giảm của đúng mức giá đang hiển thị.
 export function toStorefront(p, rules = new Map()) {
-  const productPct = rules.get(normSku(p.sku)) || 0
+  const productRule = firstRule(rules, productCodes(p))
+  const productPct = productRule?.percent || 0
   const variants = (p.hasVariants ? (p.variants || []) : []).map((v) => {
-    const percent = rules.get(normSku(v.sku)) || productPct
-    const price = Number(v.price)
-    return { ...v, percent, listPrice: price, price: discounted(price, percent) }
+    const own = firstRule(rules, variantCodes(v))
+    const catalog = Number(v.price)
+    const percent = own?.percent || productPct
+    if (own?.salePrice) return { ...v, percent, listPrice: own.originalPrice || catalog, price: own.salePrice }
+    return { ...v, percent, listPrice: catalog, price: discounted(catalog, percent) }
   })
-  const listPrice = Number(p.price)
-  const prices = variants.length ? variants.map((v) => v.price) : [discounted(listPrice, productPct)]
+  const catalogPrice = Number(p.price)
+  // Sản phẩm không phân loại: quy tắc của sản phẩm có thể mang giá cố định (nhập từ file).
+  const fixedSale = !variants.length && productRule?.salePrice ? productRule.salePrice : 0
+  const listPrice = fixedSale ? productRule.originalPrice || catalogPrice : catalogPrice
+  const prices = variants.length ? variants.map((v) => v.price) : [fixedSale || discounted(catalogPrice, productPct)]
   const images = (p.images || []).filter(Boolean)
   const out = {
     id: p.shopeeId ? `sp${p.shopeeId}` : p.id,
@@ -49,6 +65,7 @@ export function toStorefront(p, rules = new Map()) {
     description: p.description || p.shortDescription || '',
     sold: Number(p.sold) || 0,
     createdAt: p.createdAt || '',
+    ...(p.updatedAt && { updatedAt: p.updatedAt }), // ngày cập nhật cho sitemap
   }
   if (variants.length) {
     const cheapest = variants.reduce((a, b) => (b.price < a.price ? b : a))
@@ -73,18 +90,29 @@ export function toStorefront(p, rules = new Map()) {
 }
 
 let storefront = staticProducts
-let skuIndex = new Map() // SKU (viết thường) -> { kind: 'product' | 'variant', name, label?, price }; dùng để kiểm tra SKU khi nhập giảm giá
+let codeIndex = new Map() // mã (viết thường: SKU, Mã Shopee, mã phân loại...) -> { kind: 'product' | 'variant', target, name, price, ... }; dùng để kiểm tra mã khi nhập giảm giá
 let storefrontById = new Map(storefront.map((p) => [p.id, p]))
 
 const REFRESH_MS = 15000 // nhiều server cùng chạy thì sau tối đa chừng này sẽ thấy thay đổi của nhau
 
 // Chỉ sản phẩm đang bán (active) và còn giá hợp lệ mới lên website.
 function rebuild(list, discountRules = []) {
-  const rules = new Map(discountRules.map((r) => [normSku(r.sku), Number(r.percent)]))
-  skuIndex = new Map()
+  // r.variantId / r.sku: dạng lưu cũ (SKU + mã phân loại), vẫn đọc được.
+  const rules = new Map(discountRules.map((r) => [normCode(r.code ?? r.variantId ?? r.sku), { percent: Number(r.percent), originalPrice: r.originalPrice, salePrice: r.salePrice }]))
+  codeIndex = new Map()
   for (const p of list) {
-    if (p.sku) skuIndex.set(normSku(p.sku), { kind: 'product', name: p.name, price: Number(p.price) || 0 })
-    if (p.hasVariants) for (const v of p.variants || []) if (v.sku) skuIndex.set(normSku(v.sku), { kind: 'variant', name: p.name, label: v.label, price: Number(v.price) || 0 })
+    const variants = p.hasVariants ? p.variants || [] : []
+    const price = variants.length ? Math.min(...variants.map((v) => Number(v.price) || 0)) : Number(p.price) || 0
+    const info = { kind: 'product', target: `p:${p.id}`, name: p.name, price, sku: p.sku || '', shopeeId: p.shopeeId || '', hasVariants: variants.length > 0 }
+    for (const c of productCodes(p)) if (!codeIndex.has(c)) codeIndex.set(c, info)
+  }
+  // Phân loại nạp sau: mã trùng với mã sản phẩm thì giữ nghĩa sản phẩm.
+  for (const p of list) {
+    if (!p.hasVariants) continue
+    for (const v of p.variants || []) {
+      const info = { kind: 'variant', target: `v:${p.id}:${normCode(v.id)}`, productCodes: productCodes(p), name: p.name, label: v.label, price: Number(v.price) || 0, sku: v.sku || '', variantId: String(v.shopeeVariantId || v.id || '') }
+      for (const c of variantCodes(v)) if (!codeIndex.has(c)) codeIndex.set(c, info)
+    }
   }
   storefront = list.length
     ? list.filter((p) => p.status === 'active').map((p) => toStorefront(p, rules)).filter((p) => Number.isFinite(p.price) && p.price > 0)
@@ -101,7 +129,7 @@ export async function loadProducts() {
   rebuild(rows.map((r) => r.data), settings.discounts.rules)
 }
 
-export const getSkuInfo = (sku) => skuIndex.get(normSku(sku))
+export const getCodeInfo = (code) => codeIndex.get(normCode(code))
 
 let timer = null
 export function startProductRefresh() {

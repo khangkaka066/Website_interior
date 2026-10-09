@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js'
 import { publicUser } from '../lib/auth.js'
+import { invalidateUser } from '../lib/authCache.js'
 
 export async function listUsers(req, res) {
   const { role, search = '' } = req.query
@@ -34,5 +35,6 @@ export async function updateUserRole(req, res) {
     where: { id: target.id },
     data: { role, adminRole: role === 'ADMIN' ? adminRole : null },
   })
+  invalidateUser(target.id)
   res.json({ user: publicUser(updated) })
 }

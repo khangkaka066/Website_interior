@@ -6,7 +6,7 @@ import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
 import WishlistButton from '../components/WishlistButton'
 import { buildIndex, searchProducts, COLOR_FILTERS, WIDTH_FILTERS, POPULAR_KEYWORDS } from '../data/smartSearch'
-import { CATEGORY_NOTES } from '../data/menu'
+import { CATEGORY_NOTES, PRODUCT_GROUPS } from '../data/menu'
 import { useShopInfo } from '../useShopInfo'
 import PriceOld from '../components/PriceOld'
 
@@ -27,6 +27,12 @@ const SORT_OPTIONS = [
   { id: 'newest', label: 'Mới nhất' },
   { id: 'bestseller', label: 'Bán chạy nhất' },
 ]
+
+// Tiêu đề trang danh mục (?category=): mỗi danh mục có <h1> riêng thay vì dùng chung "Tất cả sản phẩm" (tốt cho SEO).
+const CATEGORY_TITLES = {
+  ...Object.fromEntries(categories.map((c) => [c.id, c.name])),
+  ...Object.fromEntries(PRODUCT_GROUPS.filter((g) => g.categoryId).map((g) => [g.categoryId, g.title])),
+}
 
 export default function AllProducts() {
   const products = useProducts()
@@ -123,7 +129,7 @@ export default function AllProducts() {
         <section className="shop-all">
           <div className="shop-all-hero container">
             <div className="shop-all-hero-text">
-              <h1>Tất cả sản phẩm</h1>
+              <h1>{(initialCategory && CATEGORY_TITLES[initialCategory]) || 'Tất cả sản phẩm'}</h1>
               <p>Rèm cửa và phụ kiện phối hợp hài hòa cho mọi không gian sống.</p>
             </div>
             <div className="shop-all-hero-image">

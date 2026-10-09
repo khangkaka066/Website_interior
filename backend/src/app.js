@@ -18,6 +18,7 @@ import postRoutes from './routes/posts.js'
 import seoRoutes from './routes/seo.js'
 import accountRoutes from './routes/account.js'
 import discountRoutes from './routes/discounts.js'
+import seoKeywordRoutes from './routes/seo-keywords.js'
 import { authenticate } from './middleware/auth.js'
 import { securityHeaders, compress, globalLimiter } from './middleware/security.js'
 
@@ -42,6 +43,8 @@ const origins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3000').split('
 app.use(cors({ origin: origins }))
 // Kho sản phẩm admin có mô tả + ảnh nên lớn hơn 1mb; parser này chạy trước và bỏ qua parser chung bên dưới.
 app.use('/api/admin-products', express.json({ limit: '30mb' }))
+// Nhập giảm giá từ file Excel gửi tới 5000 dòng nên lớn hơn 1mb.
+app.use('/api/discounts', express.json({ limit: '5mb' }))
 app.use(express.json({ limit: '1mb' }))
 app.use(authenticate)
 
@@ -54,6 +57,7 @@ app.use('/api/shop', shopRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/account', accountRoutes)
 app.use('/api/discounts', discountRoutes)
+app.use('/api/seo', seoKeywordRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/shipping', shippingRoutes)
 app.use('/api/customers', customerRoutes)

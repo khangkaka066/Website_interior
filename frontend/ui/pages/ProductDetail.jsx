@@ -17,11 +17,14 @@ const ACCORDION_SECTIONS = [
   { id: 'material', label: 'Chất liệu', field: 'material' },
 ]
 
-export default function ProductDetail() {
+// initialProduct: sản phẩm đầy đủ do máy chủ truyền xuống (danh sách chung trong HTML chỉ là bản rút gọn, xem slimProduct), nên HTML đầu
+// tiên đã có mô tả/phân loại cho Google; khi danh sách đầy đủ về tới trình duyệt thì dùng bản mới nhất trong đó.
+export default function ProductDetail({ initialProduct } = {}) {
   const { id } = useParams()
   const navigate = useNavigate()
   const products = useProducts()
-  const product = products.find((p) => p.id === id)
+  const live = products.find((p) => p.id === id)
+  const product = live && 'description' in live ? live : initialProduct?.id === id ? initialProduct : live
   const inStock = !product?.variants?.length || product.variants.some((v) => v.stock > 0)
 
   const { addItem } = useCart()

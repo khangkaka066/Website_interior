@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma.js'
+import { getUserCached, isPermissionEnabledCached } from '../lib/authCache.js'
 import { verifyToken } from '../lib/auth.js'
 
 // Attaches req.user when a valid Bearer token is present; never rejects by
@@ -11,7 +11,7 @@ export async function authenticate(req, res, next) {
 
   try {
     const payload = verifyToken(token)
-    const user = await prisma.user.findUnique({ where: { id: payload.sub } })
+    const user = await getUserCached(payload.sub)
     if (user) req.user = user
   } catch {
     // Invalid/expired token — treat as anonymous rather than erroring, the
@@ -49,8 +49,7 @@ export function requirePermission(key) {
     if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Bạn không có quyền truy cập.' })
     if (req.user.adminRole === 'MAIN_ADMIN') return next()
 
-    const perm = await prisma.supportPermission.findUnique({ where: { key } })
-    if (perm?.enabledForSupport) return next()
+    if (await isPermissionEnabledCached(key)) return next()
     return res.status(403).json({ error: 'Tài khoản của bạn chưa được cấp quyền cho mục này.' })
   }
 }

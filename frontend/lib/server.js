@@ -16,3 +16,21 @@ export const fetchProduct = (id) => get(`/api/shop/products/${encodeURIComponent
 // Tin tức: làm mới tối đa 10 giây một lần (bài mới đăng/gỡ xuống khách thấy nhanh).
 export const fetchPosts = () => get('/api/shop/posts', 10)
 export const fetchPost = (slug) => get(`/api/shop/posts/${encodeURIComponent(slug)}`, 10)
+
+// Bản rút gọn của sản phẩm để nhúng vào HTML mọi trang (thẻ sản phẩm, menu, tìm nhanh): bỏ mô tả, phân loại, ảnh phụ.
+// Danh sách đầy đủ (~560KB) trước đây bị nhúng vào TỪNG trang (kể cả Giới thiệu, Tin tức), làm HTML nặng ~640KB, chậm tải và tốn
+// ngân sách thu thập của Google. Trình duyệt tự tải bản đầy đủ ngay sau khi mở trang (xem ProductsProvider); trang chi tiết sản phẩm
+// nhận sản phẩm đầy đủ riêng từ máy chủ nên nội dung cho Google vẫn đủ.
+export const slimProduct = (p) => ({
+  id: p.id,
+  shopeeId: p.shopeeId,
+  name: p.name,
+  price: p.price,
+  ...(p.priceMax && { priceMax: p.priceMax }),
+  ...(p.originalPrice && { originalPrice: p.originalPrice, discountPercent: p.discountPercent }),
+  image: p.image,
+  categoryId: p.categoryId,
+  type: p.type,
+  sold: p.sold,
+  createdAt: p.createdAt,
+})

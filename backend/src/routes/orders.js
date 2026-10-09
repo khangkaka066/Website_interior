@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import {
   listOrders,
+  orderStatusCounts,
   trackOrder,
   payosRelink,
   getOrder,
@@ -29,6 +30,7 @@ router.get('/track', trackLimiter, asyncHandler(trackOrder))
 router.post('/payos-link', trackLimiter, validate(payosRelinkSchema), asyncHandler(payosRelink))
 
 router.get('/', guard, asyncHandler(listOrders))
+router.get('/status-counts', guard, asyncHandler(orderStatusCounts))
 router.get('/:id', guard, asyncHandler(getOrder))
 router.patch('/:id/status', guard, validate(orderStatusSchema), asyncHandler(updateOrderStatus))
 router.post('/:id/confirm', guard, validate(noteOnlySchema), asyncHandler(confirmOrder))
