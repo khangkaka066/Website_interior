@@ -1,26 +1,26 @@
 {
-  "name": "clevinum",
-  "private": true,
+  "name": "web",
   "version": "0.1.0",
-  "type": "module",
+  "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "test": "vitest run"
   },
   "dependencies": {
-    "apexcharts": "^7.6.1",
+    "apexcharts": "^7.8.0",
     "exceljs": "^4.4.0",
+    "next": "16.3.8",
     "qrcode": "^1.5.4",
-    "react": "^19.3.0",
+    "react": "19.2.8",
     "react-apexcharts": "^2.1.1",
-    "react-dom": "^19.3.0",
-    "react-router-dom": "^7.18.4"
+    "react-dom": "19.2.8",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.3",
-    "vite": "^5.4.10",
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4",
     "vitest": "^2.1.9"
   }
 }
