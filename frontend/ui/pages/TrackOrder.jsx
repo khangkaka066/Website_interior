@@ -7,14 +7,18 @@ import { ORDER_STATUS, PAYMENT_STATUS } from '../constants/orderStatus'
 import { SHIPPING_STATUS } from '../constants/shippingStatus'
 
 const money = (n) => Number(n || 0).toLocaleString('vi-VN') + 'đ'
+// Đơn đã kết thúc (vào mục Lịch sử); còn lại là đơn đang xử lý.
+const FINISHED = ['DELIVERED', 'CANCELLED', 'RETURNED']
 const when = (d) => new Date(d).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
 
-// Khách tự tra cứu đơn bằng mã đơn + số điện thoại đặt hàng (không cần tài khoản).
+// Khách tự tra cứu đơn bằng mã đơn HOẶC số điện thoại đặt hàng (không cần tài khoản). Nhập cả hai thì xem đầy đủ thông tin giao hàng;
+// chỉ nhập một thì tên và địa chỉ nhận hàng được ẩn bớt (chỉ số điện thoại: hiện danh sách đơn để chọn).
 export default function TrackOrder() {
   const [params] = useSearchParams()
   const [orderNumber, setOrderNumber] = useState(params.get('orderNumber') || '')
   const [phone, setPhone] = useState('')
   const [order, setOrder] = useState(null)
+  const [list, setList] = useState(null) // danh sách đơn khi tra bằng số điện thoại
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [paying, setPaying] = useState(false)
@@ -23,14 +27,15 @@ export default function TrackOrder() {
     window.scrollTo(0, 0)
   }, [])
 
-  async function onSubmit(e) {
-    e.preventDefault()
+  async function lookup(params) {
     setError('')
     setOrder(null)
+    setList(null)
     setLoading(true)
     try {
-      const q = new URLSearchParams({ orderNumber: orderNumber.trim(), phone: phone.trim() })
-      setOrder(await api.get(`/orders/track?${q}`))
+      const data = await api.get(`/orders/track?${new URLSearchParams(params)}`)
+      if (data.orders) setList(data.orders)
+      else setOrder(data)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -38,9 +43,25 @@ export default function TrackOrder() {
     }
   }
 
+  function onSubmit(e) {
+    e.preventDefault()
+    const params = {}
+    if (orderNumber.trim()) params.orderNumber = orderNumber.trim()
+    if (phone.trim()) params.phone = phone.trim()
+    if (!params.orderNumber && !params.phone) return setError('Vui lòng nhập mã đơn hàng hoặc số điện thoại đặt hàng.')
+    lookup(params)
+  }
+
+  // Chọn một đơn trong danh sách (tra bằng số điện thoại): xem theo mã đơn, thông tin giao hàng được ẩn bớt.
+  function openFromList(number) {
+    setOrderNumber(number)
+    setPhone('')
+    lookup({ orderNumber: number })
+  }
+
   // Đơn chọn thanh toán online mà chưa trả tiền: cho khách thanh toán (hoặc thanh toán lại khi link cũ hết hạn).
   const canPayOnline =
-    order && order.paymentMethod === 'PAYOS' && order.paymentStatus === 'AWAITING_PAYMENT' && !['CANCELLED', 'RETURNED'].includes(order.status)
+    order && !order.masked && order.paymentMethod === 'PAYOS' && order.paymentStatus === 'AWAITING_PAYMENT' && !['CANCELLED', 'RETURNED'].includes(order.status)
 
   async function payNow() {
     setError('')
@@ -62,7 +83,7 @@ export default function TrackOrder() {
       <main>
         <div className="container track-order">
           <h1>Tra cứu đơn hàng</h1>
-          <p className="track-intro">Nhập mã đơn hàng (dạng ORD-12345) và số điện thoại bạn đã dùng khi đặt hàng.</p>
+          <p className="track-intro">Nhập mã đơn hàng (dạng ORD-12345) <strong>hoặc</strong> số điện thoại bạn đã dùng khi đặt hàng. Nhập cả hai để xem đầy đủ thông tin giao hàng.</p>
 
           <form className="track-form" onSubmit={onSubmit}>
             <input
@@ -70,7 +91,6 @@ export default function TrackOrder() {
               onChange={(e) => setOrderNumber(e.target.value)}
               placeholder="Mã đơn hàng, ví dụ ORD-12345"
               maxLength={30}
-              required
             />
             <input
               value={phone}
@@ -78,7 +98,6 @@ export default function TrackOrder() {
               placeholder="Số điện thoại đặt hàng"
               inputMode="tel"
               maxLength={20}
-              required
             />
             <button className="btn btn-accent" disabled={loading}>
               {loading ? 'Đang tra cứu…' : 'Tra cứu'}
@@ -86,6 +105,38 @@ export default function TrackOrder() {
           </form>
 
           {error && <p className="track-error">{error}</p>}
+
+          {list && (
+            <div className="track-result">
+              {[
+                { title: 'Đơn đang xử lý', orders: list.filter((o) => !FINISHED.includes(o.status)) },
+                { title: 'Lịch sử đơn hàng', orders: list.filter((o) => FINISHED.includes(o.status)) },
+              ].map(
+                (g) =>
+                  g.orders.length > 0 && (
+                    <div key={g.title}>
+                      <h3>{g.title}</h3>
+                      <ul className="track-items">
+                        {g.orders.map((o) => (
+                          <li key={o.orderNumber}>
+                            <div>
+                              <button type="button" className="btn-link" onClick={() => openFromList(o.orderNumber)}>
+                                {o.orderNumber}
+                              </button>
+                              <small>
+                                {when(o.createdAt)} · {ORDER_STATUS[o.status]?.label || o.status}
+                              </small>
+                              <small>{o.items.map((i) => `${i.name}${i.variant ? ` (${i.variant})` : ''} ×${i.quantity}`).join(', ')}</small>
+                            </div>
+                            <strong>{money(o.total)}</strong>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ),
+              )}
+            </div>
+          )}
 
           {order && (
             <div className="track-result">
@@ -167,6 +218,7 @@ export default function TrackOrder() {
               <p className="track-address">
                 Giao tới: <strong>{order.recipientName}</strong>, {[order.addressLine, order.ward, order.district, order.province].filter(Boolean).join(', ')}
               </p>
+              {order.masked && <p className="track-intro">Tên và địa chỉ được ẩn bớt. Nhập cả mã đơn và số điện thoại đặt hàng để xem đầy đủ.</p>}
             </div>
           )}
         </div>

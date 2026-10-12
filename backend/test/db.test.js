@@ -103,6 +103,31 @@ suite('luồng với database', () => {
         for (const k of ['id', 'customer', 'activityLogs', 'stockReserved', 'transactionId']) assert.ok(!(k in r.body), `lộ ${k}`)
       }
     })
+    test('chỉ mã đơn -> trả đơn nhưng ẩn tên và địa chỉ nhận hàng', async () => {
+      const r = await req('GET', `/orders/track?orderNumber=${num}`)
+      assert.equal(r.status, 200)
+      assert.equal(r.body.orderNumber, num)
+      assert.equal(r.body.masked, true)
+      assert.equal(r.body.recipientName, 'Z***') // "ZZ" -> chỉ chữ cái đầu
+      assert.equal(r.body.addressLine, null)
+      assert.equal((await req('GET', `/orders/track?orderNumber=${num}&phone=123`)).status, 404) // số điện thoại quá ngắn không coi là bỏ trống
+    })
+    test('đủ mã + số điện thoại -> đầy đủ tên và địa chỉ', async () => {
+      const r = await req('GET', `/orders/track?orderNumber=${num}&phone=${PHONE}`)
+      assert.equal(r.body.masked, false)
+      assert.equal(r.body.recipientName, 'ZZ')
+      assert.equal(r.body.addressLine, 'x')
+    })
+    test('chỉ số điện thoại (kể cả dạng +84) -> danh sách đơn, không kèm thông tin giao hàng', async () => {
+      for (const phone of [PHONE, '+84900000099', '0900 000 099']) {
+        const r = await req('GET', `/orders/track?phone=${encodeURIComponent(phone)}`)
+        assert.equal(r.status, 200)
+        assert.ok(r.body.orders.some((o) => o.orderNumber === num))
+        for (const k of ['recipientName', 'addressLine']) assert.ok(!(k in r.body.orders[0]), `lộ ${k}`)
+        assert.ok(r.body.orders[0].items.length > 0)
+      }
+      assert.equal((await req('GET', '/orders/track?phone=0911111111')).status, 404)
+    })
     test('sai số điện thoại hoặc sai mã -> 404 cùng thông báo', async () => {
       const a = await req('GET', `/orders/track?orderNumber=${num}&phone=0911111111`)
       const b = await req('GET', `/orders/track?orderNumber=ORD-00000&phone=${PHONE}`)

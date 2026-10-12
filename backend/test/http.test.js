@@ -85,7 +85,7 @@ describe('kiểm tra đầu vào (400 trước khi chạm database)', () => {
 })
 
 describe('công khai', () => {
-  test('tra cứu đơn thiếu thông tin -> 404 chung', async () => {
+  test('tra cứu đơn thiếu cả mã lẫn số điện thoại -> 404 chung', async () => {
     const r = await call('/api/orders/track?orderNumber=&phone=')
     assert.equal(r.status, 404)
     assert.match(json(r).error, /Không tìm thấy đơn hàng/)

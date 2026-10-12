@@ -406,7 +406,11 @@ export const PUBLIC_ORDER_INCLUDE = {
   shipment: { include: { carrier: true, trackingEvents: { orderBy: { createdAt: 'asc' } } } },
 }
 
-export function publicOrderView(order) {
+// Che tên người nhận: chỉ chữ cái đầu mỗi từ ("Nguyễn Văn A" -> "N*** V*** A***").
+const maskName = (name) => String(name || '').split(/\s+/).filter(Boolean).map((w) => `${w[0]}***`).join(' ')
+
+// masked = khách chỉ cung cấp MỘT trong hai thông tin (mã đơn hoặc số điện thoại): ẩn tên và địa chỉ nhận hàng chi tiết, chỉ giữ tỉnh/thành.
+export function publicOrderView(order, { masked = false } = {}) {
   return toPlain({
     orderNumber: order.orderNumber,
     status: order.status,
@@ -417,10 +421,11 @@ export function publicOrderView(order) {
     shippingFee: order.shippingFee,
     discount: order.discount,
     total: order.total,
-    recipientName: order.recipientName,
-    addressLine: order.addressLine,
-    ward: order.ward,
-    district: order.district,
+    masked,
+    recipientName: masked ? maskName(order.recipientName) : order.recipientName,
+    addressLine: masked ? null : order.addressLine,
+    ward: masked ? null : order.ward,
+    district: masked ? null : order.district,
     province: order.province,
     items: order.items.map((i) => ({
       productId: i.productId,
@@ -441,18 +446,50 @@ export function publicOrderView(order) {
   })
 }
 
+// Tra cứu bằng mã đơn HOẶC số điện thoại (hoặc cả hai):
+//  - cả hai: trả đầy đủ thông tin giao hàng như trước;
+//  - chỉ mã đơn: trả đơn đó nhưng ẩn tên/địa chỉ nhận hàng (mã đơn chỉ có 5 chữ số nên không được coi là bí mật);
+//  - chỉ số điện thoại: trả danh sách đơn gần đây (mã, ngày, trạng thái, tổng tiền, tên sản phẩm), không kèm thông tin giao hàng.
 export async function trackOrder(req, res) {
   const orderNumber = String(req.query.orderNumber || '').trim().toUpperCase()
   const phone = normPhone(req.query.phone)
-  const notFound = () => res.status(404).json({ error: 'Không tìm thấy đơn hàng với mã đơn và số điện thoại này.' })
-  if (!orderNumber || phone.length < 8) return notFound()
-
-  const order = await prisma.order.findUnique({
-    where: { orderNumber },
-    include: PUBLIC_ORDER_INCLUDE,
-  })
-  if (!order || ![order.recipientPhone, order.customer?.phone].some((p) => normPhone(p) === phone)) return notFound()
-
+  const hasPhone = phone.length >= 8
+  const notFound = () => res.status(404).json({ error: 'Không tìm thấy đơn hàng với thông tin này.' })
+  const matchesPhone = (o) => [o.recipientPhone, o.customer?.phone].some((p) => normPhone(p) === phone)
   res.set('Cache-Control', 'no-store')
-  res.json(publicOrderView(order))
+
+  if (orderNumber) {
+    const order = await prisma.order.findUnique({ where: { orderNumber }, include: PUBLIC_ORDER_INCLUDE })
+    if (!order) return notFound()
+    if (hasPhone) {
+      if (!matchesPhone(order)) return notFound()
+      return res.json(publicOrderView(order))
+    }
+    if (req.query.phone) return notFound() // có nhập số điện thoại nhưng quá ngắn: không coi như bỏ trống
+    return res.json(publicOrderView(order, { masked: true }))
+  }
+
+  if (!hasPhone) return notFound()
+  // Số điện thoại trong database có thể có dấu cách/chấm/+84: so khớp 8 chữ số cuối sau khi bỏ ký tự không phải số, rồi lọc lại chính xác bằng normPhone.
+  const tail = phone.slice(-8)
+  const ids = await prisma.$queryRaw`
+    SELECT o."id" FROM "Order" o LEFT JOIN "Customer" c ON c."id" = o."customerId"
+    WHERE right(regexp_replace(o."recipientPhone", '\D', '', 'g'), 8) = ${tail}
+       OR right(regexp_replace(c."phone", '\D', '', 'g'), 8) = ${tail}
+    ORDER BY o."createdAt" DESC LIMIT 50`
+  const found = ids.length
+    ? await prisma.order.findMany({ where: { id: { in: ids.map((r) => r.id) } }, include: { customer: true, items: true }, orderBy: { createdAt: 'desc' } })
+    : []
+  const mine = found.filter(matchesPhone).slice(0, 20)
+  if (!mine.length) return notFound()
+  res.json({
+    orders: mine.map((o) => toPlain({
+        orderNumber: o.orderNumber,
+        status: o.status,
+        paymentStatus: o.paymentStatus,
+        createdAt: o.createdAt,
+        total: o.total,
+        items: o.items.map((i) => ({ name: i.name, variant: i.variant, quantity: i.quantity })),
+      })),
+  })
 }

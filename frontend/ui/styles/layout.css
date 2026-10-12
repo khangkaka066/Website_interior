@@ -2235,3 +2235,6 @@ main { animation: page-in 0.22s ease-out; }
   font-weight: 700;
   color: var(--discount-red);
 }
+
+.btn-link { padding: 0; border: 0; background: none; color: var(--accent); font-weight: 600; text-decoration: underline; cursor: pointer; }
+.track-items li small { display: block; color: var(--text-muted); }
