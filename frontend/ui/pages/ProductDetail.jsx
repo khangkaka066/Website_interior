@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from '@/lib/router'
 import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
@@ -9,6 +9,38 @@ import { trackEvent } from '../analytics'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
+}
+
+// Ảnh hướng dẫn chọn kích thước rèm (hiện khi sản phẩm có nhóm phân loại "Kích thước"/"Size").
+const SIZE_GUIDE_IMAGES = [
+  { src: '/images/size-guide/cach-chon-kich-thuoc.jpg', alt: 'Cách chọn kích thước rèm theo độ nhún' },
+  { src: '/images/size-guide/cach-do-kich-thuoc.jpg', alt: 'Cách đo rộng cửa, cao cửa và cao rèm' },
+]
+const isSizeOption = (name) => /kích thước|kich thuoc|size/i.test(name)
+
+function SizeGuideModal({ onClose }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [onClose])
+  return (
+    <div className="size-guide-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Hướng dẫn chọn kích thước rèm">
+      <div className="size-guide-box" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="size-guide-close" onClick={onClose} aria-label="Đóng">
+          ×
+        </button>
+        {SIZE_GUIDE_IMAGES.map((img) => (
+          <img key={img.src} src={img.src} alt={img.alt} loading="lazy" decoding="async" />
+        ))}
+      </div>
+    </div>
+  )
 }
 
 const ACCORDION_SECTIONS = [
@@ -35,6 +67,7 @@ export default function ProductDetail({ initialProduct } = {}) {
   const [quantity, setQuantity] = useState(1)
   const [openSection, setOpenSection] = useState('info')
   const [added, setAdded] = useState(false)
+  const [showSizeGuide, setShowSizeGuide] = useState(false)
 
   if (!product) {
     return (
@@ -119,6 +152,11 @@ export default function ProductDetail({ initialProduct } = {}) {
               {options.map((opt, i) => (
                 <div className="pdp-size-block" key={opt.name}>
                   <span className="pdp-block-label">{opt.name}</span>
+                  {isSizeOption(opt.name) && (
+                    <button type="button" className="pdp-size-guide-link" onClick={() => setShowSizeGuide(true)}>
+                      Hướng dẫn chọn kích thước
+                    </button>
+                  )}
                   <div className="pdp-size-options">
                     {opt.values.map((val) => (
                       <button
@@ -205,6 +243,7 @@ export default function ProductDetail({ initialProduct } = {}) {
           </div>
         </div>
       </main>
+      {showSizeGuide && <SizeGuideModal onClose={() => setShowSizeGuide(false)} />}
     </>
   )
 }

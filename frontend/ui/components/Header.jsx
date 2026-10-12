@@ -127,10 +127,10 @@ export default function Header() {
 
       <div className="header-bottom">
         <div className="container header-bottom-inner">
-          {/* Thứ tự theo hành trình mua hàng: xem sản phẩm -> trang chủ (ưu đãi, nổi bật) -> cảm hứng/mẹo chọn -> độ tin cậy -> hỗ trợ tự phục vụ (hỏi đáp, tra cứu đơn) -> liên hệ trực tiếp */}
+          {/* Thứ tự: trang chủ -> xem sản phẩm -> cảm hứng/mẹo chọn -> độ tin cậy -> hỗ trợ tự phục vụ (hỏi đáp, tra cứu đơn) -> liên hệ trực tiếp */}
           <nav className="main-nav">
-            <ProductsMenu />
             <Link to="/">Trang chủ</Link>
+            <ProductsMenu />
             <Link to="/news">Tin tức</Link>
             <Link to="/about">Giới thiệu</Link>
             <Link to="/faq">Hỏi đáp</Link>
