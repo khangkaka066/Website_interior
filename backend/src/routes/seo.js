@@ -48,7 +48,7 @@ router.get('/sitemap.xml', async (req, res) => {
   // Mỗi danh mục có sản phẩm là một trang đích riêng (?category=), xem products/page.js ở frontend.
   const categories = [...new Set(products.map((p) => p.categoryId).filter(Boolean))].sort()
   const entries = [
-    ...['/', '/products', '/about', '/contact', '/faq', '/news'].map((u) => tag(base + u)),
+    ...['/', '/products', '/about', '/contact', '/faq', '/privacy', '/terms', '/news'].map((u) => tag(base + u)),
     ...categories.map((c) => tag(`${base}/products?category=${encodeURIComponent(c)}`)),
     ...products.map((p) =>
       // Ảnh sản phẩm giúp lên Google Hình ảnh; ảnh phải là địa chỉ đầy đủ (ảnh trong thư mục public của website thì ghép tên miền vào).

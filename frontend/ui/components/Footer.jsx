@@ -33,6 +33,8 @@ export default function Footer() {
           <a href="/about">Về chúng tôi</a>
           <a href="/contact">Liên hệ</a>
           <a href="/faq">FAQ</a>
+          <a href="/privacy">Chính sách bảo mật</a>
+          <a href="/terms">Điều khoản sử dụng</a>
           <Link to="/cart">Giỏ hàng</Link>
           <Link to="/track-order">Tra cứu đơn hàng</Link>
         </div>
