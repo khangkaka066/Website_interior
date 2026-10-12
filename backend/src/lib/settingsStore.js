@@ -1,12 +1,14 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { prisma } from './prisma.js'
 import { payosConfigured, PAYOS_PUBLIC_METHOD } from './payos.js'
 
 // Cài đặt cửa hàng (thông tin shop, phương thức thanh toán, phí vận chuyển).
-// Hiện lưu ra file backend/storage/settings.json (không đụng database). Mọi nơi chỉ gọi getSettings/saveSettings
-// nên sau này chuyển sang bảng trong database chỉ cần sửa file này.
-const FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../storage/settings.json')
+// Lưu trong bảng Setting (một dòng key = "shop") để không mất khi deploy lên nơi có ổ đĩa tạm như Render. Mọi nơi chỉ gọi getSettings/saveSettings.
+// File backend/storage/settings.json (cách lưu cũ) chỉ còn được đọc MỘT LẦN để chuyển cài đặt hiện có vào database.
+const KEY = 'shop'
+const LEGACY_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../storage/settings.json')
 
 export const BANK_METHOD_ID = 'Chuyển khoản'
 export const COD_METHOD_ID = 'COD'
@@ -87,20 +89,27 @@ function merge(saved) {
   }
 }
 
+async function readLegacyFile() {
+  try {
+    return JSON.parse(await fs.readFile(LEGACY_FILE, 'utf8'))
+  } catch {
+    return null
+  }
+}
+
 export async function getSettings() {
   try {
-    return merge(JSON.parse(await fs.readFile(FILE, 'utf8')))
-  } catch {
-    return merge(null) // chưa có file hoặc file lỗi: dùng mặc định
+    const row = await prisma.setting.findUnique({ where: { key: KEY } })
+    return merge(row ? row.value : await readLegacyFile()) // chưa có dòng nào: lấy file cũ (nếu có), không thì mặc định
+  } catch (err) {
+    console.warn('Không đọc được cài đặt từ database (đã chạy migration chưa?), dùng mặc định:', err.message)
+    return merge(null)
   }
 }
 
 export async function saveSettings(patch) {
   const next = merge({ ...(await getSettings()), ...patch })
-  await fs.mkdir(path.dirname(FILE), { recursive: true })
-  const tmp = `${FILE}.tmp`
-  await fs.writeFile(tmp, JSON.stringify(next, null, 2))
-  await fs.rename(tmp, FILE) // ghi nguyên khối, không để lại file nửa chừng
+  await prisma.setting.upsert({ where: { key: KEY }, update: { value: next }, create: { key: KEY, value: next } })
   return next
 }
 

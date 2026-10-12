@@ -189,6 +189,28 @@ suite('luồng với database', () => {
     })
   })
 
+  describe('cài đặt cửa hàng lưu trong database', () => {
+    let original // dòng cài đặt thật trước khi thử, để khôi phục đúng như cũ
+    before(async () => {
+      original = await prisma.setting.findUnique({ where: { key: 'shop' } })
+    })
+    after(async () => {
+      if (original) await prisma.setting.update({ where: { key: 'shop' }, data: { value: original.value } })
+      else await prisma.setting.deleteMany({ where: { key: 'shop' } })
+    })
+    test('lưu rồi đọc lại đúng giá trị, phần chưa sửa giữ nguyên', async () => {
+      const { saveSettings, getSettings } = await import('../src/lib/settingsStore.js')
+      const before = await getSettings()
+      await saveSettings({ shipping: { fee: 12345, freeShippingOver: 999000 } })
+      const got = await getSettings()
+      assert.equal(got.shipping.fee, 12345)
+      assert.equal(got.shipping.freeShippingOver, 999000)
+      assert.deepEqual(got.store, before.store)
+      const row = await prisma.setting.findUnique({ where: { key: 'shop' } })
+      assert.equal(row.value.shipping.fee, 12345) // thật sự nằm trong database
+    })
+  })
+
   describe('quên mật khẩu', () => {
     const email = 'zz-db-test@example.com'
     let userId

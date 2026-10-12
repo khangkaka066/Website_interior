@@ -529,3 +529,11 @@ model Post {
 
   @@index([status, publishedAt])
 }
+
+// Cài đặt cửa hàng (thông tin shop, thanh toán, phí ship, nội dung trang...). Một dòng key = "shop" chứa toàn bộ cài đặt dạng JSON.
+// Lưu trong database (không lưu file) vì ổ đĩa của nơi host như Render bị xóa mỗi lần deploy.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
