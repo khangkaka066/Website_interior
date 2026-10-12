@@ -11,6 +11,8 @@ const suite = enabled ? describe : describe.skip
 suite('luồng với database', () => {
   let server, base, prisma, adminHeaders, signToken, hashPassword, loadProducts
   const PHONE = '0900000099'
+  const VICTIM = '0900000098'
+  const NEWPHONE = '0900000097'
   const PROD = { id: 'zz-test-db', shopeeId: '99999999099', sku: 'zz-db', name: 'ZZ Test DB', categoryId: 'thanh-treo', status: 'active', price: 100000, stock: 3, sold: 0, hasVariants: true,
     variantAttributes: [{ name: 'Loại', values: ['A'] }], variants: [{ id: 'v1', label: 'A', sku: 'zz-a', price: 100000, stock: 3 }], images: [], createdAt: new Date().toISOString() }
   const JSON_H = { 'content-type': 'application/json' }
@@ -42,7 +44,10 @@ suite('luồng với database', () => {
     await prisma.order.deleteMany({ where: { recipientPhone: PHONE } })
     await prisma.customer.deleteMany({ where: { phone: PHONE } })
     await prisma.product.deleteMany({ where: { id: PROD.id } })
-    await prisma.user.deleteMany({ where: { email: 'zz-db-test@example.com' } })
+    await prisma.user.deleteMany({ where: { email: { in: ['zz-db-test@example.com', 'zz-db-reg@example.com', 'zz-db-reg2@example.com'] } } })
+    await prisma.order.deleteMany({ where: { recipientPhone: VICTIM } })
+    await prisma.customer.deleteMany({ where: { phone: { in: [VICTIM, NEWPHONE] } } })
+    await prisma.customer.deleteMany({ where: { email: { in: ['zz-db-reg@example.com', 'zz-db-taken@example.com', 'zz-attacker@example.com'] } } })
     await prisma.conversation.deleteMany({ where: { guestName: { startsWith: 'ZZ DB' } } })
     await prisma.post.deleteMany({ where: { title: { startsWith: 'ZZ DB' } } })
     await loadProducts()
@@ -139,6 +144,48 @@ suite('luồng với database', () => {
     test('đơn đã trả tiền không tạo lại link thanh toán', async () => {
       const r = await req('POST', '/orders/payos-link', { orderNumber: ord.orderNumber, phone: PHONE })
       assert.equal(r.status, 400)
+    })
+  })
+
+  describe('đăng ký và đặt hàng không chiếm hồ sơ theo số điện thoại', () => {
+    let victim
+    before(async () => {
+      victim = await prisma.customer.create({ data: { name: 'ZZ Nạn nhân', phone: VICTIM, email: 'zz-db-taken@example.com' } })
+    })
+    before(async () => {
+      assert.equal((await req('POST', '/admin-products/sync', { upserts: [PROD], deletes: [] }, adminHeaders)).status, 200) // nạp lại tồn kho thử
+      await loadProducts()
+    })
+    test('đăng ký bằng số điện thoại đã có hồ sơ: không gắn hồ sơ, không ghi đè', async () => {
+      const r = await req('POST', '/auth/register', { name: 'Kẻ lạ', email: 'zz-db-reg@example.com', password: 'password123', phone: VICTIM })
+      assert.equal(r.status, 201)
+      assert.equal(r.body.user.customerId, null)
+      const after = await prisma.customer.findUnique({ where: { id: victim.id } })
+      assert.equal(after.name, 'ZZ Nạn nhân')
+      assert.equal(after.email, 'zz-db-taken@example.com')
+    })
+    test('đăng ký bằng số mới: tạo hồ sơ mới và gắn vào tài khoản', async () => {
+      const r = await req('POST', '/auth/register', { name: 'ZZ Mới', email: 'zz-db-reg2@example.com', password: 'password123', phone: NEWPHONE })
+      assert.equal(r.status, 201)
+      assert.ok(r.body.user.customerId)
+    })
+    test('email không phân biệt hoa/thường khi đăng ký và đăng nhập', async () => {
+      const dup = await req('POST', '/auth/register', { name: 'X', email: 'ZZ-DB-REG@example.com', password: 'password123' })
+      assert.equal(dup.status, 400)
+      assert.equal((await req('POST', '/auth/login', { email: 'ZZ-DB-REG@Example.com', password: 'password123' })).status, 200)
+    })
+    test('khách vãng lai đặt hàng bằng số đã có hồ sơ: giữ nguyên tên và email đã lưu', async () => {
+      const body = { ...order(1), customer: { name: 'Kẻ lạ', phone: VICTIM, email: 'zz-attacker@example.com' }, recipientPhone: VICTIM }
+      const r = await req('POST', '/orders', body)
+      assert.equal(r.status, 201)
+      const after = await prisma.customer.findUnique({ where: { id: victim.id } })
+      assert.equal(after.name, 'ZZ Nạn nhân')
+      assert.equal(after.email, 'zz-db-taken@example.com')
+    })
+    test('email khách vãng lai đã thuộc hồ sơ khác: đơn vẫn tạo được (không lỗi 500)', async () => {
+      const body = { ...order(1), customer: { name: 'ZZ Test', phone: PHONE, email: 'zz-db-taken@example.com' } }
+      const r = await req('POST', '/orders', body)
+      assert.equal(r.status, 201, JSON.stringify(r.body))
     })
   })
 

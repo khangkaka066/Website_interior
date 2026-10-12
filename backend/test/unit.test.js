@@ -562,6 +562,8 @@ describe('schema kiểm tra đầu vào', () => {
   test('đăng ký / đặt lại mật khẩu', () => {
     assert.equal(registerSchema.safeParse({ name: 'A', email: 'a@b.co', password: '1234567' }).success, false)
     assert.equal(registerSchema.safeParse({ name: 'A', email: 'a@b.co', password: '12345678' }).success, true)
+    // email được chuẩn hóa về chữ thường
+    assert.equal(registerSchema.parse({ name: 'A', email: ' A@B.Co ', password: '12345678' }).email, 'a@b.co')
     assert.equal(resetPasswordSchema.safeParse({ token: 'xyz', password: '12345678' }).success, false)
     assert.equal(resetPasswordSchema.safeParse({ token: 'a'.repeat(64), password: '12345678' }).success, true)
     assert.equal(forgotPasswordSchema.safeParse({}).success, false)

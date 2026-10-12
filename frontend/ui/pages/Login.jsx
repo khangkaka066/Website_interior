@@ -136,12 +136,12 @@ export default function Login() {
             </label>
           )}
           <label>
-            {mode === 'signin' ? 'Số điện thoại hoặc email' : 'Email'}
+            {mode === 'signin' ? 'Email hoặc tên đăng nhập' : 'Email'}
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={mode === 'signin' ? 'Email hoặc số điện thoại của bạn' : 'ban@email.com'}
+              placeholder={mode === 'signin' ? 'Email hoặc tên đăng nhập của bạn' : 'ban@email.com'}
               autoFocus
             />
           </label>

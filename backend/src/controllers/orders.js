@@ -263,12 +263,16 @@ export const normPhone = (p) => {
 // khác (mua tặng) nên không dùng nó để chọn hồ sơ. Chưa có hồ sơ thì tạo mới và gắn vào tài khoản, nhưng KHÔNG gắn vào hồ sơ có
 // sẵn của số điện thoại đó (chưa xác minh chủ số thì không được cho xem lịch sử đơn của người khác).
 async function resolveOrderCustomer(user, customer) {
-  const byPhone = () =>
-    prisma.customer.upsert({
-      where: { phone: customer.phone },
-      update: { name: customer.name, email: customer.email },
-      create: { name: customer.name, phone: customer.phone, email: customer.email },
-    })
+  // Hồ sơ đã có theo số điện thoại: giữ nguyên tên/email đã lưu (người đặt chưa chứng minh là chủ số, không được ghi đè).
+  // Chỉ điền email khi hồ sơ chưa có và email đó chưa thuộc hồ sơ khác (email là duy nhất).
+  const byPhone = async () => {
+    const existing = await prisma.customer.findUnique({ where: { phone: customer.phone } })
+    const emailTaken = customer.email && (await prisma.customer.findUnique({ where: { email: customer.email } }))
+    const email = emailTaken ? undefined : customer.email
+    if (!existing) return prisma.customer.create({ data: { name: customer.name, phone: customer.phone, email } })
+    if (!existing.email && email) return prisma.customer.update({ where: { id: existing.id }, data: { email } })
+    return existing
+  }
   if (user?.role !== 'CUSTOMER') return byPhone()
   if (user.customerId) {
     const own = await prisma.customer.findUnique({ where: { id: user.customerId } })

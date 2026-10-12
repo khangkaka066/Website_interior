@@ -98,7 +98,8 @@ export async function parseWorkbookFile(file) {
     const parentSku = col(row, 'et_title_parent_sku')
     if (!id && !name && !parentSku) return
     if (id && !isId(id)) return err(r, `Mã Sản phẩm "${id}" không hợp lệ.`)
-    if (!id && !parentSku) return err(r, 'Thiếu Mã Sản phẩm và SKU Sản phẩm, không xác định được sản phẩm.')
+    // Chỉ loại dòng hoàn toàn không nhận ra được là sản phẩm nào. Có tên thì vẫn nhận (ghép với các file khác theo tên).
+    if (!id && !parentSku && !name) return err(r, 'Dòng không có Mã Sản phẩm, SKU Sản phẩm lẫn Tên sản phẩm, không xác định được sản phẩm.')
 
     if (kind === 'basic') {
       rows.push({ row: r, id, parentSku, name, description: col(row, 'et_title_product_description') })
@@ -141,13 +142,18 @@ export async function parseWorkbookFile(file) {
       if (price !== '') {
         const n = toInt(price)
         if (!Number.isFinite(n) || n < MIN_PRICE || n > MAX_PRICE) {
-          return err(r, `Giá "${price}" không hợp lệ (phải từ ${MIN_PRICE.toLocaleString('vi-VN')} đến ${MAX_PRICE.toLocaleString('vi-VN')}).`)
+          // Sản phẩm vẫn được nhập (từ các file khác hoặc chỉ từ tên/mã ở dòng này); chỉ bỏ giá/phân loại sai của dòng này.
+          err(r, `Giá "${price}" không hợp lệ (phải từ ${MIN_PRICE.toLocaleString('vi-VN')} đến ${MAX_PRICE.toLocaleString('vi-VN')}); bỏ qua giá và phân loại ở dòng này, sản phẩm vẫn được nhập.`)
+          return rows.push({ ...item, variantName: '', variantId: '', variantSku: '' })
         }
         item.price = Math.round(n)
       }
       if (stock !== '') {
         const n = toInt(stock)
-        if (!Number.isInteger(n) || n < 0) return err(r, `Số lượng "${stock}" không hợp lệ (phải là số nguyên >= 0).`)
+        if (!Number.isInteger(n) || n < 0) {
+          err(r, `Số lượng "${stock}" không hợp lệ (phải là số nguyên >= 0); bỏ qua dòng phân loại này, sản phẩm vẫn được nhập.`)
+          return rows.push({ ...item, price: null, variantName: '', variantId: '', variantSku: '' })
+        }
         item.stock = n
       }
       for (const m of MARKETS) {
@@ -165,17 +171,44 @@ export async function parseWorkbookFile(file) {
 // Build patches + preview
 // ---------------------------------------------------------------------------
 
-const patchKey = (r) => (r.id ? r.id : `sku:${r.parentSku}`)
+const foldText = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/\s+/g, ' ').trim()
 
-// Gom dữ liệu của nhiều file (cùng một sản phẩm) thành một patch
+// Gom dữ liệu của nhiều file (cùng một sản phẩm) thành một patch. Một sản phẩm chỉ cần xuất hiện trong ÍT NHẤT MỘT file là được nhập; file nào
+// không có thì phần thông tin đó để trống. Mỗi file có thể nhận diện sản phẩm theo cách khác nhau (file này ghi Mã sản phẩm, file kia chỉ có SKU,
+// file khác chỉ có tên), nên ghép theo thứ tự: Mã sản phẩm -> SKU -> tên (tên chỉ dùng cho dòng không có cả Mã lẫn SKU).
 function mergeParsed(parsedFiles) {
-  const patches = new Map()
+  const patches = []
+  const index = new Map() // 'id:..' | 'sku:..' | 'name:..' -> patch
+  const idKey = (v) => `id:${v}`
+  const skuKey = (v) => `sku:${foldText(v)}`
+  const nameKey = (v) => `name:${foldText(v)}`
+
+  function find(r) {
+    if (r.id) {
+      const byId = index.get(idKey(r.id))
+      if (byId) return byId
+      // Dòng có Mã nhưng chưa thấy: có thể trước đó sản phẩm này chỉ xuất hiện bằng SKU (chưa gắn Mã). Chỉ ghép khi Mã không mâu thuẫn.
+      const bySku = r.parentSku && index.get(skuKey(r.parentSku))
+      if (bySku && (!bySku.id || bySku.id === r.id)) return bySku
+      return null
+    }
+    if (r.parentSku) return index.get(skuKey(r.parentSku)) || null
+    if (r.name) return index.get(nameKey(r.name)) || null
+    return null
+  }
+
   const get = (r) => {
-    const key = patchKey(r)
-    if (!patches.has(key)) patches.set(key, { key, id: r.id, parentSku: r.parentSku, name: '', description: null, media: null, sales: [] })
-    const p = patches.get(key)
+    let p = find(r)
+    if (!p) {
+      p = { key: r.id || (r.parentSku ? `sku:${r.parentSku}` : `name:${r.name}`), id: r.id, parentSku: r.parentSku, name: '', description: null, media: null, sales: [] }
+      patches.push(p)
+    }
+    if (!p.id && r.id) { p.id = r.id; p.key = r.id }
     if (!p.parentSku && r.parentSku) p.parentSku = r.parentSku
     if (!p.name && r.name) p.name = r.name
+    if (p.id) index.set(idKey(p.id), p)
+    if (p.parentSku) index.set(skuKey(p.parentSku), p)
+    if (p.name) index.set(nameKey(p.name), p)
     return p
   }
   for (const f of parsedFiles) {
@@ -186,7 +219,7 @@ function mergeParsed(parsedFiles) {
       else p.sales.push(r)
     }
   }
-  return [...patches.values()]
+  return patches
 }
 
 function guessCategoryId(name) {
@@ -445,7 +478,9 @@ export function buildPreview(parsedFiles, { createMissing = true } = {}) {
   const current = listProducts()
   const byShopeeId = new Map()
   const bySku = new Map()
+  const byName = new Map()
   current.forEach((p) => {
+    byName.set(foldText(p.name), p)
     if (p.shopeeId) byShopeeId.set(String(p.shopeeId), p)
     bySku.set(p.sku, p)
     if (p.shopeeParentSku) bySku.set(p.shopeeParentSku, p)
@@ -461,7 +496,7 @@ export function buildPreview(parsedFiles, { createMissing = true } = {}) {
       items.push({ key: patch.key, name: patch.name || patch.key, status: 'skipped', changes: [], warnings: ['Sản phẩm đặt riêng/may đo, không đưa vào danh mục.'] })
       continue
     }
-    const existing = (patch.id && byShopeeId.get(patch.id)) || (patch.parentSku && bySku.get(patch.parentSku)) || null
+    const existing = (patch.id && byShopeeId.get(patch.id)) || (patch.parentSku && bySku.get(patch.parentSku)) || (!patch.id && !patch.parentSku && patch.name && byName.get(foldText(patch.name))) || null
     if (!existing && !createMissing) {
       items.push({ key: patch.key, name: patch.name || patch.key, status: 'skipped', changes: [], warnings: ['Không có trong hệ thống.'] })
       continue
@@ -478,7 +513,10 @@ export function buildPreview(parsedFiles, { createMissing = true } = {}) {
       if (patch.description == null) missing.push('mô tả (file basic_info)')
       if (!patch.media) missing.push('ảnh (file media_info)')
       if (!patch.sales.length) missing.push('phân loại, giá, tồn kho (file sales_info)')
-      if (missing.length) warnings.push(`Sản phẩm mới còn thiếu: ${missing.join(', ')}. Chọn đủ cả 3 file hoặc nhập thêm sau.`)
+      if (missing.length) {
+        warnings.push(`Sản phẩm mới còn thiếu: ${missing.join(', ')}. Vẫn được nhập; bổ sung bằng cách nhập thêm file còn lại hoặc sửa trong Sản phẩm.`)
+        if (!patch.sales.length) warnings.push('Chưa có giá nên chưa hiện trên website cho tới khi bổ sung giá.')
+      }
       items.push({ key: patch.key, name: product.name, status: 'create', changes: ['Tạo mới'], warnings })
     }
   }

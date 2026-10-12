@@ -28,5 +28,6 @@ export const phone = (label = 'số điện thoại') =>
 export const email = z
   .string('Email không hợp lệ.')
   .trim()
+  .toLowerCase()
   .max(254, 'Email quá dài.')
   .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Email không hợp lệ.')

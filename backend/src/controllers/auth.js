@@ -6,8 +6,17 @@ import { sendMail } from '../lib/mailer.js'
 import { passwordResetEmail } from '../lib/emailTemplates.js'
 import { invalidateUser } from '../lib/authCache.js'
 
+// Email không phân biệt hoa/thường (Google đăng nhập luôn trả chữ thường). Tài khoản cũ lưu nguyên dạng thì vẫn tìm được
+// nhờ thử đúng chuỗi người dùng gõ trước, rồi mới thử bản chữ thường.
+const normEmail = (v) => String(v || '').trim().toLowerCase()
+async function findUserByEmail(raw) {
+  const typed = String(raw || '').trim()
+  return (await prisma.user.findUnique({ where: { email: typed } })) || (await prisma.user.findUnique({ where: { email: typed.toLowerCase() } }))
+}
+
 export async function register(req, res) {
-  const { name, email, password, phone } = req.body || {}
+  const { name, password, phone } = req.body || {}
+  const email = normEmail(req.body?.email)
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Vui lòng nhập đầy đủ họ tên, email và mật khẩu.' })
   }
@@ -18,16 +27,15 @@ export async function register(req, res) {
     return res.status(400).json({ error: 'Mật khẩu cần ít nhất 6 ký tự.' })
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } })
+  const existing = await findUserByEmail(email)
   if (existing) return res.status(400).json({ error: 'Email này đã được đăng ký.' })
 
+  // Chưa xác minh được chủ số điện thoại nên KHÔNG gắn vào hồ sơ có sẵn (sẽ xem được đơn và ghi đè thông tin của người khác).
+  // Số đã từng đặt hàng thì bỏ qua; khách nhận lại đơn cũ bằng "Liên kết đơn hàng" (mã đơn + số điện thoại).
   let customer = null
-  if (phone) {
-    customer = await prisma.customer.upsert({
-      where: { phone },
-      update: { name, email },
-      create: { name, phone, email },
-    })
+  if (phone && !(await prisma.customer.findUnique({ where: { phone } }))) {
+    const emailTaken = await prisma.customer.findUnique({ where: { email } })
+    customer = await prisma.customer.create({ data: { name, phone, email: emailTaken ? undefined : email } })
   }
 
   const user = await prisma.user.create({
@@ -49,7 +57,7 @@ export async function login(req, res) {
     return res.status(400).json({ error: 'Vui lòng nhập email/tên đăng nhập và mật khẩu.' })
   }
 
-  const user = await prisma.user.findUnique({ where: { email } })
+  const user = await findUserByEmail(email)
   if (!user || !(await comparePassword(password, user.passwordHash))) {
     return res.status(401).json({ error: 'Sai tài khoản hoặc mật khẩu.' })
   }
@@ -109,7 +117,7 @@ const sha256 = (v) => crypto.createHash('sha256').update(v).digest('hex')
 export async function forgotPassword(req, res) {
   const generic = { ok: true, message: 'Nếu email này có tài khoản, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu.' }
   const email = String(req.body.email || '').trim()
-  const user = await prisma.user.findUnique({ where: { email } })
+  const user = await findUserByEmail(email)
   if (!user || !email.includes('@')) return res.json(generic)
 
   const active = await prisma.passwordResetToken.count({
