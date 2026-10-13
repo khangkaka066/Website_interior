@@ -103,6 +103,11 @@ export default function ProductDetail({ initialProduct } = {}) {
   const salePrice = priceInfo.originalPrice || (product.discount ? Math.round(price / (1 - product.discount / 100)) : null)
   const salePercent = priceInfo.discountPercent || product.discount || 0
 
+  function addToCart() {
+    addItem(product, { size: variant?.label, quantity, price, image: optionImage || undefined })
+    trackEvent('ADD_TO_CART', { productId: product.id })
+  }
+
   return (
     <>
       <main>
@@ -193,13 +198,23 @@ export default function ProductDetail({ initialProduct } = {}) {
                   className="btn pdp-add-to-cart"
                   disabled={outOfStock}
                   onClick={() => {
-                    addItem(product, { size: variant?.label, quantity, price, image: optionImage || undefined })
-                    trackEvent('ADD_TO_CART', { productId: product.id })
+                    addToCart()
                     setAdded(true)
                     setTimeout(() => setAdded(false), 2000)
                   }}
                 >
                   Thêm vào giỏ hàng
+                </button>
+                {/* Mua ngay: thêm vào giỏ rồi sang thẳng trang thanh toán (giỏ có sản phẩm khác thì các món đó vẫn nằm trong đơn). */}
+                <button
+                  className="btn btn-accent pdp-buy-now"
+                  disabled={outOfStock}
+                  onClick={() => {
+                    addToCart()
+                    navigate('/checkout')
+                  }}
+                >
+                  Mua ngay
                 </button>
               </div>
               {added && <p className="pdp-added-note">Đã thêm vào giỏ hàng — <Link to="/cart">xem giỏ hàng →</Link></p>}

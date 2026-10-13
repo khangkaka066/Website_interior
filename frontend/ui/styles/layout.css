@@ -1473,6 +1473,28 @@
   border-radius: 0;
 }
 
+.pdp-buy-now {
+  flex: 1;
+  height: 48px;
+  justify-content: center;
+  border-radius: 0;
+}
+
+.pdp-buy-now:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Điện thoại hẹp: số lượng + Thêm vào giỏ trên một dòng, Mua ngay xuống dòng dưới cho đủ rộng để bấm. */
+@media (max-width: 520px) {
+  .pdp-purchase-row {
+    flex-wrap: wrap;
+  }
+  .pdp-buy-now {
+    flex-basis: 100%;
+  }
+}
+
 .pdp-shipping-link {
   display: inline-block;
   font-size: 12px;
