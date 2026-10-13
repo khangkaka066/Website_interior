@@ -30,7 +30,7 @@ const FALLBACK_OPTIONS = {
     { id: 'COD', label: 'Thanh toán khi nhận hàng (COD)' },
     { id: 'Chuyển khoản', label: 'Chuyển khoản ngân hàng' },
   ],
-  shipping: { fee: 25000, freeShippingOver: 0 },
+  shipping: { fee: 0, freeShippingOver: 0 },
 }
 
 export default function Checkout() {
@@ -87,6 +87,9 @@ export default function Checkout() {
   const picked = quote.status === 'ok' ? quote.options.find((o) => o.id === rateId) || quote.options[0] : null // chưa chọn thì lấy lựa chọn rẻ nhất
   const shippingFee = picked ? picked.fee : fixedFee
   const total = totalPrice + shippingFee
+  // 0đ có hai nghĩa: miễn phí thật (Goship báo 0 hoặc đơn đủ mức miễn phí) hoặc chưa có cước nào để tính (không có phí cố định, Goship chưa báo).
+  const freeByRule = freeShippingOver > 0 && totalPrice >= freeShippingOver
+  const shippingLabel = shippingFee > 0 ? formatPrice(shippingFee) : picked || freeByRule ? 'Miễn phí' : quote.status === 'loading' ? 'Đang tính…' : 'Chưa tính'
   const selectedMethod = methods.find((m) => m.id === form.paymentMethod)
 
   async function handleSubmit() {
@@ -243,7 +246,7 @@ export default function Checkout() {
               </div>
               <div className="cart-summary-row">
                 <span>Phí vận chuyển</span>
-                <strong>{shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</strong>
+                <strong>{shippingLabel}</strong>
               </div>
               <div className="cart-summary-row cart-summary-total">
                 <span>Tổng cộng</span>

@@ -14,7 +14,7 @@ export default function CreateShipmentModal({ order, onClose, onCreated }) {
     widthCm: '',
     heightCm: '',
     goodsType: 'Hàng tiêu dùng',
-    shippingFee: order.shippingFee || 25000,
+    shippingFee: order.shippingFee ?? 0, // lấy đúng phí khách đã trả (có thể là 0), không đặt số mặc định
     codAmount: order.paymentMethod === 'COD' ? order.total : 0,
     note: '',
   })
@@ -34,7 +34,7 @@ export default function CreateShipmentModal({ order, onClose, onCreated }) {
   }
 
   async function handleSubmit() {
-    if (!form.carrierId || !form.senderName || !form.weightGrams || !form.shippingFee) {
+    if (!form.carrierId || !form.senderName || !form.weightGrams || form.shippingFee === '' || form.shippingFee == null) {
       setError('Vui lòng nhập đầy đủ thông tin bắt buộc.')
       return
     }

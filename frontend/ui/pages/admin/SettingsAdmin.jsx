@@ -195,7 +195,7 @@ function ShippingTab({ data, onSaved }) {
       >
         <h3 className="form-card-title">Phí vận chuyển</h3>
         <div className="set-grid">
-          <Field label="Phí vận chuyển mặc định (đ)" hint={Number.isFinite(num(form.fee)) ? formatCurrency(num(form.fee)) : 'Nhập số'}>
+          <Field label="Phí vận chuyển cố định (đ)" hint={num(form.fee) > 0 ? `${formatCurrency(num(form.fee))}, chỉ thu khi không tính được cước Goship` : Number.isFinite(num(form.fee)) ? '0: không thu phí cố định' : 'Nhập số'}>
             <input className="dash-input" inputMode="numeric" value={form.fee} onChange={digits('fee')} />
           </Field>
           <Field
@@ -208,7 +208,7 @@ function ShippingTab({ data, onSaved }) {
 
         <h3 className="form-card-title" style={{ marginTop: '24px' }}>Tính cước theo Goship</h3>
         <p className="set-hint">
-          Bật thì ở trang thanh toán khách chọn đơn vị vận chuyển và trả đúng cước Goship báo. Goship lỗi hoặc địa chỉ không khớp thì dùng phí vận chuyển mặc định ở trên.
+          Bật thì ở trang thanh toán khách chọn đơn vị vận chuyển và trả đúng cước Goship báo. Goship lỗi hoặc địa chỉ không khớp thì dùng phí vận chuyển cố định ở trên (0 nghĩa là không thu).
           Cần có <code>GOSHIP_TOKEN</code> trong <code>backend/.env</code>.
         </p>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0', cursor: 'pointer' }}>
