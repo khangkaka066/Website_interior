@@ -2238,3 +2238,55 @@ main { animation: page-in 0.22s ease-out; }
 
 .btn-link { padding: 0; border: 0; background: none; color: var(--accent); font-weight: 600; text-decoration: underline; cursor: pointer; }
 .track-items li small { display: block; color: var(--text-muted); }
+
+/* Ô chọn địa chỉ có gõ để lọc (tỉnh/thành, phường/xã) ở trang thanh toán */
+.addr-combobox {
+  position: relative;
+}
+
+.addr-combobox input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.addr-combobox input:disabled {
+  background: var(--surface-gray);
+  cursor: not-allowed;
+}
+
+.addr-combobox-list {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 2px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 6px 18px rgba(43, 33, 28, 0.12);
+}
+
+.addr-combobox-list li {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+.addr-combobox-list li.active {
+  background: var(--bg-cream);
+}
+
+.addr-combobox-list li[aria-selected='true'] {
+  font-weight: 600;
+  color: var(--accent-dark);
+}
+
+.addr-combobox-list .addr-combobox-empty {
+  color: var(--text-muted);
+  cursor: default;
+}

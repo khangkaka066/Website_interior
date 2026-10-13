@@ -7,6 +7,8 @@ import { api } from '../api'
 import { trackEvent, getAttribution } from '../analytics'
 import TransferQr from '../components/TransferQr'
 import { fillTransferNote } from '../utils/vietqr'
+import { useVnProvinces } from '../utils/vnProvinces'
+import AddressCombobox from '../components/AddressCombobox'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -31,10 +33,11 @@ export default function Checkout() {
     email: '',
     addressLine: '',
     ward: '',
-    district: '',
     province: '',
+    provinceCode: '',
     paymentMethod: 'COD',
   })
+  const address = useVnProvinces()
   const [options, setOptions] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -67,6 +70,7 @@ export default function Checkout() {
     setForm((f) => ({ ...f, [field]: value }))
   }
 
+  const wards = address.provinces.find((p) => p.code === form.provinceCode)?.wards || []
   const methods = (options || FALLBACK_OPTIONS).methods
   const { fee, freeShippingOver } = (options || FALLBACK_OPTIONS).shipping
   const shippingFee = freeShippingOver > 0 && totalPrice >= freeShippingOver ? 0 : fee
@@ -97,7 +101,6 @@ export default function Checkout() {
         recipientPhone: form.phone,
         addressLine: form.addressLine,
         ward: form.ward,
-        district: form.district,
         province: form.province,
         ...attribution,
       })
@@ -140,32 +143,57 @@ export default function Checkout() {
               <div className="checkout-form-grid">
                 <div className="checkout-field">
                   <label>Họ tên *</label>
-                  <input value={form.name} onChange={(e) => update('name', e.target.value)} />
+                  <input value={form.name} onChange={(e) => update('name', e.target.value)} autoComplete="name" />
                 </div>
                 <div className="checkout-field">
                   <label>Số điện thoại *</label>
-                  <input value={form.phone} onChange={(e) => update('phone', e.target.value)} />
+                  <input value={form.phone} onChange={(e) => update('phone', e.target.value)} autoComplete="tel" inputMode="tel" />
                 </div>
                 <div className="checkout-field full">
                   <label>Email</label>
-                  <input value={form.email} onChange={(e) => update('email', e.target.value)} />
+                  <input value={form.email} onChange={(e) => update('email', e.target.value)} autoComplete="email" inputMode="email" />
                 </div>
                 <div className="checkout-field full">
                   <label>Địa chỉ *</label>
-                  <input value={form.addressLine} onChange={(e) => update('addressLine', e.target.value)} />
+                  <input value={form.addressLine} onChange={(e) => update('addressLine', e.target.value)} autoComplete="street-address" placeholder="Số nhà, tên đường" />
                 </div>
-                <div className="checkout-field">
-                  <label>Phường/Xã</label>
-                  <input value={form.ward} onChange={(e) => update('ward', e.target.value)} />
-                </div>
-                <div className="checkout-field">
-                  <label>Quận/Huyện</label>
-                  <input value={form.district} onChange={(e) => update('district', e.target.value)} />
-                </div>
-                <div className="checkout-field">
-                  <label>Tỉnh/Thành phố *</label>
-                  <input value={form.province} onChange={(e) => update('province', e.target.value)} />
-                </div>
+                {address.status === 'ready' ? (
+                  <>
+                    <div className="checkout-field">
+                      <label>Tỉnh/Thành phố *</label>
+                      <AddressCombobox
+                        ariaLabel="Tỉnh/Thành phố"
+                        placeholder="Chọn hoặc gõ tên tỉnh/thành"
+                        value={form.province}
+                        options={address.provinces}
+                        onSelect={(p) => setForm((f) => (f.provinceCode === p.code ? f : { ...f, province: p.name, provinceCode: p.code, ward: '' }))}
+                      />
+                    </div>
+                    <div className="checkout-field">
+                      <label>Phường/Xã</label>
+                      <AddressCombobox
+                        ariaLabel="Phường/Xã"
+                        placeholder={form.provinceCode ? 'Chọn hoặc gõ tên phường/xã' : 'Chọn tỉnh/thành trước'}
+                        disabled={!form.provinceCode}
+                        value={form.ward}
+                        options={wards}
+                        onSelect={(w) => update('ward', w.name)}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  // Đang tải hoặc không tải được danh sách: cho gõ tay để khách vẫn đặt được hàng.
+                  <>
+                    <div className="checkout-field">
+                      <label>Tỉnh/Thành phố *</label>
+                      <input value={form.province} onChange={(e) => update('province', e.target.value)} autoComplete="address-level1" />
+                    </div>
+                    <div className="checkout-field">
+                      <label>Phường/Xã</label>
+                      <input value={form.ward} onChange={(e) => update('ward', e.target.value)} autoComplete="address-level3" />
+                    </div>
+                  </>
+                )}
               </div>
 
               <h3 className="checkout-section-title" style={{ marginTop: '24px' }}>Phương thức thanh toán</h3>
