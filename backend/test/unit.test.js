@@ -14,6 +14,8 @@ import { extractOrderNumber } from '../src/lib/paymentWebhook.js'
 import { orderCreatedEmail, orderStatusEmail, passwordResetEmail } from '../src/lib/emailTemplates.js'
 import { canTransitionOrder } from '../src/constants/workflow.js'
 import { publishChat, openStream, customerChannel, ADMIN_CHANNEL, _stats } from '../src/lib/chatEvents.js'
+import { chatTokenFor, isValidChatToken, isLegacyConversation, canAccessConversation } from '../src/lib/chatToken.js'
+import { startConversationSchema } from '../src/schemas/chat.js'
 import { createOrderSchema } from '../src/schemas/orders.js'
 import { registerSchema, resetPasswordSchema, forgotPasswordSchema } from '../src/schemas/auth.js'
 import {
@@ -610,5 +612,51 @@ describe('bài viết Tin tức', () => {
     assert.equal(r.data.coverUrl, null)
     assert.equal(updatePostSchema.safeParse({ status: 'published' }).success, true)
     assert.equal(updatePostSchema.safeParse({ status: 'x' }).success, false)
+  })
+})
+
+describe('token bí mật của khách trong chat', () => {
+  const fresh = (id = 'c1') => ({ id, createdAt: new Date(Date.now() + 60_000) }) // tạo sau thời điểm có token
+  const legacy = (id = 'c1') => ({ id, createdAt: new Date('2020-01-01T00:00:00Z') })
+
+  test('token ổn định theo từng cuộc trò chuyện, khác nhau giữa các cuộc và đủ dài để không đoán được', () => {
+    assert.equal(chatTokenFor('c1'), chatTokenFor('c1'))
+    assert.notEqual(chatTokenFor('c1'), chatTokenFor('c2'))
+    assert.ok(chatTokenFor('c1').length >= 40)
+  })
+
+  test('chỉ token đúng của đúng cuộc trò chuyện mới hợp lệ', () => {
+    assert.equal(isValidChatToken('c1', chatTokenFor('c1')), true)
+    assert.equal(isValidChatToken('c1', chatTokenFor('c2')), false) // token của cuộc khác
+    assert.equal(isValidChatToken('c1', chatTokenFor('c1').slice(0, -1) + 'x'), false) // sửa một ký tự
+    for (const bad of [undefined, null, '', 'abc', 123, {}]) assert.equal(isValidChatToken('c1', bad), false)
+  })
+
+  test('cuộc trò chuyện mới: biết mã mà thiếu hoặc sai token thì không vào được', () => {
+    assert.equal(canAccessConversation(fresh(), undefined), false)
+    assert.equal(canAccessConversation(fresh(), 'sai'), false)
+    assert.equal(canAccessConversation(fresh('c1'), chatTokenFor('c2')), false)
+    assert.equal(canAccessConversation(fresh(), chatTokenFor('c1')), true)
+  })
+
+  test('cuộc trò chuyện cũ (trước khi có token) vẫn vào được bằng mã, trừ khi tắt CHAT_LEGACY_ACCESS', () => {
+    assert.equal(isLegacyConversation(legacy()), true)
+    assert.equal(isLegacyConversation(fresh()), false)
+    assert.equal(canAccessConversation(legacy(), undefined), true)
+    process.env.CHAT_LEGACY_ACCESS = 'off'
+    try {
+      assert.equal(canAccessConversation(legacy(), undefined), false)
+      assert.equal(canAccessConversation(legacy(), chatTokenFor('c1')), true) // có token thì vẫn vào
+    } finally {
+      delete process.env.CHAT_LEGACY_ACCESS
+    }
+  })
+
+  test('không còn đường "tiếp tục cuộc trò chuyện bằng mã" khi tạo mới (tránh lộ tên và số điện thoại)', () => {
+    const r = startConversationSchema.safeParse({ conversationId: 'abc' })
+    assert.equal(r.success, false) // thiếu tên
+    const ok = startConversationSchema.safeParse({ name: 'An', conversationId: 'abc' })
+    assert.equal(ok.success, true)
+    assert.equal('conversationId' in ok.data, false) // trường lạ bị bỏ
   })
 })

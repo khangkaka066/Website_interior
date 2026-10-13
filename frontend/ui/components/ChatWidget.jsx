@@ -7,11 +7,13 @@ import { openEventStream } from '../utils/eventStream'
 
 const STORAGE_KEY = 'clevinum_chat_conversation_id'
 const SEEN_KEY = 'clevinum_chat_last_seen'
+const TOKEN_KEY = 'clevinum_chat_token' // token bí mật của cuộc trò chuyện: có mã mà thiếu token thì máy chủ không cho đọc
 const FALLBACK_POLL_MS = 30000 // tin nhắn tới tức thì qua luồng thời gian thực; vòng tải lại này chỉ để dự phòng
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false)
   const [conversationId, setConversationId] = useState(() => localStorage.getItem(STORAGE_KEY))
+  const [chatToken, setChatToken] = useState(() => localStorage.getItem(TOKEN_KEY))
   const [messages, setMessages] = useState([])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -23,10 +25,17 @@ export default function ChatWidget() {
   const scrollRef = useRef(null)
   const { shopInfo, contact } = useShopInfo()
 
+  const authOptions = useCallback(() => (chatToken ? { headers: { 'X-Chat-Token': chatToken } } : undefined), [chatToken])
+
   const load = useCallback(async () => {
     if (!conversationId) return
     try {
-      const data = await api.get(`/chat/conversations/${conversationId}/messages`)
+      const data = await api.get(`/chat/conversations/${conversationId}/messages`, authOptions())
+      // Cuộc trò chuyện tạo trước khi có token: máy chủ cấp token ở lần vào này, lưu lại để dùng từ giờ.
+      if (data.token) {
+        localStorage.setItem(TOKEN_KEY, data.token)
+        setChatToken(data.token)
+      }
       setMessages(data.messages)
 
       const lastAdminMsg = [...data.messages].reverse().find((m) => m.sender === 'ADMIN')
@@ -34,10 +43,18 @@ export default function ChatWidget() {
       if (lastAdminMsg && lastAdminMsg.id !== lastSeen) {
         setHasUnread(!open)
       }
-    } catch {
-      // Backend offline — fail silently, widget just stays quiet.
+    } catch (err) {
+      // Mã/token không còn hợp lệ (404): bỏ cuộc trò chuyện đã nhớ để khách bắt đầu cuộc mới thay vì kẹt ở khung trống.
+      if (err.status === 404) {
+        localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem(TOKEN_KEY)
+        setConversationId(null)
+        setChatToken(null)
+        setMessages([])
+      }
+      // Lỗi khác (backend offline...): im lặng, khung chat chỉ đứng yên.
     }
-  }, [conversationId, open])
+  }, [conversationId, open, authOptions])
 
   const loadRef = useRef(load)
   loadRef.current = load
@@ -51,8 +68,8 @@ export default function ChatWidget() {
   // Thời gian thực: admin trả lời là tin nhắn hiện ngay, không phải chờ lần tải lại.
   useEffect(() => {
     if (!conversationId) return undefined
-    return openEventStream(`/chat/conversations/${conversationId}/stream`, () => loadRef.current())
-  }, [conversationId])
+    return openEventStream(`/chat/conversations/${conversationId}/stream`, () => loadRef.current(), chatToken ? { 'X-Chat-Token': chatToken } : undefined)
+  }, [conversationId, chatToken])
 
   useEffect(() => {
     if (open && scrollRef.current) {
@@ -78,6 +95,8 @@ export default function ChatWidget() {
     try {
       const conv = await api.post('/chat/conversations', { name: name.trim(), phone: phone.trim() })
       localStorage.setItem(STORAGE_KEY, conv.id)
+      localStorage.setItem(TOKEN_KEY, conv.token)
+      setChatToken(conv.token)
       setConversationId(conv.id)
     } catch (err) {
       setError(err.message)
@@ -92,7 +111,7 @@ export default function ChatWidget() {
     const content = draft.trim()
     setDraft('')
     try {
-      await api.post(`/chat/conversations/${conversationId}/messages`, { content, sender: 'CUSTOMER' })
+      await api.post(`/chat/conversations/${conversationId}/messages`, { content, sender: 'CUSTOMER' }, authOptions())
       await load()
     } catch (err) {
       setError(err.message)

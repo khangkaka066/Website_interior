@@ -28,7 +28,7 @@ export default function ContactForm() {
       ]
         .filter((l) => l !== false)
         .join('\n')
-      await api.post(`/chat/conversations/${conv.id}/messages`, { content })
+      await api.post(`/chat/conversations/${conv.id}/messages`, { content }, { headers: { 'X-Chat-Token': conv.token } })
       setForm((f) => ({ ...f, message: '' }))
       setState({ sending: false, error: '', done: true })
     } catch (err) {

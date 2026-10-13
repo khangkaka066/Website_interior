@@ -3,8 +3,8 @@ import { API_BASE, getToken } from '../api'
 // Nhận sự kiện thời gian thực (Server-Sent Events) từ backend. Dùng fetch thay vì EventSource để gửi được header Authorization
 // (luồng của admin cần đăng nhập). Tự nối lại khi mất kết nối (chờ 1s, tăng dần tới 15s). Mỗi lần (nối lại) kết nối xong
 // sẽ gọi onEvent({ type: 'open' }) để nơi dùng tải lại dữ liệu, bù cho những sự kiện đã bỏ lỡ.
-// Trả về hàm đóng luồng.
-export function openEventStream(path, onEvent) {
+// `extraHeaders`: header thêm (ví dụ X-Chat-Token của khách). Trả về hàm đóng luồng.
+export function openEventStream(path, onEvent, extraHeaders) {
   let stopped = false
   let ctl = null
   let delay = 1000
@@ -15,7 +15,7 @@ export function openEventStream(path, onEvent) {
       try {
         const token = getToken()
         const res = await fetch(`${API_BASE}/api${path}`, {
-          headers: { Accept: 'text/event-stream', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          headers: { Accept: 'text/event-stream', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extraHeaders },
           signal: ctl.signal,
         })
         // Không có quyền / không tồn tại thì nối lại cũng vô ích.

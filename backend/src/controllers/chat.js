@@ -1,40 +1,52 @@
 import { prisma } from '../lib/prisma.js'
 import { toPlain } from '../utils/serialize.js'
 import { publishChat, openStream, ADMIN_CHANNEL, customerChannel } from '../lib/chatEvents.js'
+import { CHAT_TOKEN_HEADER, chatTokenFor, isValidChatToken, canAccessConversation } from '../lib/chatToken.js'
 
 // --- Customer-facing -------------------------------------------------------
 
 export async function startConversation(req, res) {
-  const { name, phone, conversationId } = req.body || {}
-
-  if (conversationId) {
-    const existing = await prisma.conversation.findUnique({ where: { id: conversationId } })
-    if (existing) return res.json(toPlain(existing))
-  }
-
+  const { name, phone } = req.body || {}
   if (!name) return res.status(400).json({ error: 'Vui lòng nhập tên của bạn.' })
 
   const conversation = await prisma.conversation.create({
     data: { guestName: name, guestPhone: phone || null },
   })
   publishChat(conversation.id, { type: 'conversation' }) // admin thấy cuộc trò chuyện mới ngay
-  res.status(201).json(toPlain(conversation))
+  // `token` chỉ được trả đúng lúc này: trình duyệt giữ nó và gửi kèm (header X-Chat-Token) mỗi lần đọc / gửi tin.
+  res.status(201).json({ ...toPlain(conversation), token: chatTokenFor(conversation.id) })
+}
+
+// Lấy cuộc trò chuyện cho khách nếu mã và token khớp. Sai token và không tìm thấy trả cùng một lỗi 404
+// để người ngoài không dò được mã nào có thật.
+async function loadCustomerConversation(req, res) {
+  const conversation = await prisma.conversation.findUnique({ where: { id: req.params.id } })
+  if (!conversation || !canAccessConversation(conversation, req.get(CHAT_TOKEN_HEADER))) {
+    res.status(404).json({ error: 'Không tìm thấy cuộc trò chuyện.' })
+    return null
+  }
+  return conversation
 }
 
 export async function listMessages(req, res) {
-  const conversation = await prisma.conversation.findUnique({ where: { id: req.params.id } })
-  if (!conversation) return res.status(404).json({ error: 'Không tìm thấy cuộc trò chuyện.' })
+  const conversation = await loadCustomerConversation(req, res)
+  if (!conversation) return
 
   const messages = await prisma.message.findMany({
     where: { conversationId: conversation.id },
     orderBy: { createdAt: 'asc' },
   })
-  res.json({ conversation: toPlain(conversation), messages: toPlain(messages) })
+  const body = { conversation: toPlain(conversation), messages: toPlain(messages) }
+  // Cuộc trò chuyện cũ (tạo trước khi có token) vào bằng mã: cấp token để trình duyệt chuyển sang dùng token.
+  if (!isValidChatToken(conversation.id, req.get(CHAT_TOKEN_HEADER))) body.token = chatTokenFor(conversation.id)
+  res.json(body)
 }
 
 // Route công khai: người gửi luôn là CUSTOMER, bỏ qua `sender` client gửi lên.
-export function postCustomerMessage(req, res) {
-  return createMessage(req, res, 'CUSTOMER')
+export async function postCustomerMessage(req, res) {
+  const conversation = await loadCustomerConversation(req, res)
+  if (!conversation) return
+  return createMessage(req, res, 'CUSTOMER', conversation)
 }
 
 // Route có quyền "messages": người gửi luôn là ADMIN.
@@ -42,12 +54,12 @@ export function postAdminMessage(req, res) {
   return createMessage(req, res, 'ADMIN')
 }
 
-async function createMessage(req, res, sender) {
+async function createMessage(req, res, sender, preloaded) {
   const { content } = req.body || {}
   if (!content || !content.trim()) return res.status(400).json({ error: 'Tin nhắn không được để trống.' })
   if (content.length > 2000) return res.status(400).json({ error: 'Tin nhắn quá dài.' })
 
-  const conversation = await prisma.conversation.findUnique({ where: { id: req.params.id } })
+  const conversation = preloaded || (await prisma.conversation.findUnique({ where: { id: req.params.id } }))
   if (!conversation) return res.status(404).json({ error: 'Không tìm thấy cuộc trò chuyện.' })
 
   const message = await prisma.$transaction(async (tx) => {
@@ -127,10 +139,10 @@ export async function closeConversation(req, res) {
 
 // --- Thời gian thực (SSE) -----------------------------------------------------------------------
 
-// Khách theo dõi cuộc trò chuyện của mình (biết mã cuộc trò chuyện, giống như API lấy tin nhắn).
+// Khách theo dõi cuộc trò chuyện của mình (cần mã + token, giống như API lấy tin nhắn).
 export async function customerStream(req, res) {
-  const conversation = await prisma.conversation.findUnique({ where: { id: req.params.id }, select: { id: true } })
-  if (!conversation) return res.status(404).json({ error: 'Không tìm thấy cuộc trò chuyện.' })
+  const conversation = await loadCustomerConversation(req, res)
+  if (!conversation) return
   if (!openStream(req, res, customerChannel(conversation.id))) {
     return res.status(429).json({ error: 'Quá nhiều kết nối, vui lòng thử lại sau.' })
   }

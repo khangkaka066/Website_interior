@@ -291,18 +291,30 @@ suite('luồng với database', () => {
       const other = (await req('POST', '/chat/conversations', { name: 'ZZ DB other' })).body
       const sinks = { cust: { events: [] }, adm: { events: [] }, oth: { events: [] } }
       const ctl = new AbortController()
-      listen(`/chat/conversations/${conv.id}/stream`, {}, sinks.cust, ctl)
+      listen(`/chat/conversations/${conv.id}/stream`, { 'x-chat-token': conv.token }, sinks.cust, ctl)
       listen('/chat/stream', { authorization: adminHeaders.authorization }, sinks.adm, ctl)
-      listen(`/chat/conversations/${other.id}/stream`, {}, sinks.oth, ctl)
+      listen(`/chat/conversations/${other.id}/stream`, { 'x-chat-token': other.token }, sinks.oth, ctl)
       await wait(700)
       assert.equal(sinks.cust.status, 200)
-      await req('POST', `/chat/conversations/${conv.id}/messages`, { content: 'xin chào' })
+      await req('POST', `/chat/conversations/${conv.id}/messages`, { content: 'xin chào' }, { ...JSON_H, 'x-chat-token': conv.token })
       await req('POST', `/chat/conversations/${conv.id}/admin-messages`, { content: 'chào bạn' }, adminHeaders)
       await wait(500)
       ctl.abort()
       assert.deepEqual(sinks.cust.events.map((e) => `${e.type}:${e.sender}`), ['message:CUSTOMER', 'message:ADMIN'])
       assert.equal(sinks.adm.events.filter((e) => e.conversationId === conv.id).length, 2)
       assert.equal(sinks.oth.events.length, 0)
+    })
+    test('khách cần token của đúng cuộc trò chuyện để đọc, gửi tin và theo dõi', async () => {
+      const a = (await req('POST', '/chat/conversations', { name: 'ZZ DB token A' })).body
+      const b = (await req('POST', '/chat/conversations', { name: 'ZZ DB token B' })).body
+      assert.ok(a.token && a.token !== b.token)
+      const url = `/chat/conversations/${a.id}/messages`
+      assert.equal((await req('GET', url)).status, 404) // thiếu token
+      assert.equal((await req('GET', url, undefined, { ...JSON_H, 'x-chat-token': b.token })).status, 404) // token của cuộc khác
+      assert.equal((await req('POST', url, { content: 'x' })).status, 404)
+      assert.equal((await fetch(base + `/chat/conversations/${a.id}/stream`)).status, 404)
+      assert.equal((await req('GET', url, undefined, { ...JSON_H, 'x-chat-token': a.token })).status, 200)
+      assert.equal((await req('POST', url, { content: 'ổn' }, { ...JSON_H, 'x-chat-token': a.token })).status, 201)
     })
     test('luồng admin cần đăng nhập', async () => {
       assert.equal((await fetch(base + '/chat/stream')).status, 401)
