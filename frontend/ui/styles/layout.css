@@ -2290,3 +2290,105 @@ main { animation: page-in 0.22s ease-out; }
   color: var(--text-muted);
   cursor: default;
 }
+
+/* Thẻ sản phẩm ở trang chủ có nhiều màu: rê chuột thì thẻ nở ra một chút và hiện ô màu (bấm để đổi ảnh tại chỗ). Chỉ trên máy có chuột (laptop/PC); điện thoại và máy tính bảng cảm ứng giữ thẻ như cũ. */
+.product-card-more {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .product-card.has-colors:hover,
+  .product-card.has-colors:focus-within {
+    z-index: 4;
+    transform: translateY(-4px) scale(1.025);
+    box-shadow: 0 16px 28px rgba(43, 33, 26, 0.14);
+  }
+
+  .product-card-more {
+    display: block;
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 0;
+    right: 0;
+    padding: 4px 16px 14px;
+    background: var(--surface-gray);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    box-shadow: 0 16px 24px rgba(43, 33, 26, 0.12);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+    cursor: default;
+  }
+
+  .product-card:hover .product-card-more,
+  .product-card:focus-within .product-card-more {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+
+  .swatch-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .swatch-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .swatch {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 1px var(--border-soft);
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .swatch img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    padding: 0;
+  }
+
+  .swatch:hover {
+    box-shadow: 0 0 0 1px var(--text-muted);
+  }
+
+  .swatch[aria-pressed='true'] {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  .swatch:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .swatch-more {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Đổi màu: ảnh mới hiện dần thay vì nhảy cái. */
+  .product-thumb img.swatch-swap {
+    animation: swatch-fade 0.2s ease;
+  }
+  @keyframes swatch-fade {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+  }
+}

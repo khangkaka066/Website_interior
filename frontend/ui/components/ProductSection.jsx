@@ -4,15 +4,10 @@ import { useState } from 'react'
 import { Link } from '@/lib/router'
 import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
-import WishlistButton from './WishlistButton'
-import PriceOld from './PriceOld'
+import ProductColorCard from './ProductColorCard'
 
 // Chỉ danh mục có ảnh (nhóm rèm) làm tab ở trang chủ; các nhóm khác xem ở menu Sản phẩm.
 const TABS = categories.filter((c) => c.image).map((c) => ({ id: c.id, label: c.name.toUpperCase() }))
-
-function formatPrice(n) {
-  return n.toLocaleString('vi-VN') + 'đ'
-}
 
 export default function ProductSection() {
   const products = useProducts()
@@ -38,20 +33,7 @@ export default function ProductSection() {
 
       <div className="product-grid">
         {shown.slice(0, 4).map((p) => (
-          <Link className="product-card" key={p.id} to={`/products/${p.id}`}>
-            <div className="product-thumb">
-              <img src={p.image} alt={p.name} loading="lazy" />
-              <WishlistButton productId={p.id} />
-            </div>
-            <h4>{p.name}</h4>
-            <div className="product-meta">
-              <span className="price">
-                {p.priceMax ? 'Từ ' : ''}
-                {formatPrice(p.price)}
-                <PriceOld product={p} />
-              </span>
-            </div>
-          </Link>
+          <ProductColorCard key={p.id} product={p} />
         ))}
       </div>
 
