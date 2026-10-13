@@ -93,7 +93,11 @@ export async function checkGoship() {
   if (!goshipConfigured()) return { configured: false, connected: false, message: 'Chưa có GOSHIP_TOKEN trong backend/.env.', carriers: [] }
   try {
     const cities = await goshipGet('/cities')
-    const codes = new Set(cities.flatMap((c) => (Array.isArray(c.support_carriers) ? c.support_carriers : [])))
+    // Goship khai báo hãng theo từng cấp địa danh (ví dụ GHN chỉ hiện ở cấp quận/huyện), nên ngoài cấp tỉnh/thành còn lấy
+    // quận/huyện của hai thành phố lớn. Danh sách vẫn là "ít nhất": hãng thực tế còn tùy khu vực giao, nhận.
+    const big = cities.filter((c) => ['Hà Nội', 'Hồ Chí Minh'].includes(c.name) && isGoshipId(c.id))
+    const districts = (await Promise.all(big.map((c) => goshipGet(`/cities/${c.id}/districts`).catch(() => [])))).flat()
+    const codes = new Set([...cities, ...districts].flatMap((c) => (Array.isArray(c.support_carriers) ? c.support_carriers : [])))
     const byName = new Map()
     for (const code of [...codes].sort()) {
       const name = CARRIER_NAMES[code] || code

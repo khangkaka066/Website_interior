@@ -92,8 +92,8 @@ export default function CarrierSettings() {
         {goship.data?.connected && (
           <>
             <p style={{ fontSize: '13px', color: 'var(--dash-muted)', marginTop: '10px' }}>
-              Kết nối bằng một token duy nhất của Goship, <strong>không cần nhập API riêng cho từng hãng</strong>. Goship đang hỗ trợ {goship.data.carriers.length} hãng
-              ({goship.data.cities} tỉnh/thành):
+              Kết nối bằng một token duy nhất của Goship, <strong>không cần nhập API riêng cho từng hãng</strong>. Goship hỗ trợ ít nhất {goship.data.carriers.length} hãng
+              ({goship.data.cities} tỉnh/thành; hãng thực tế còn tùy khu vực giao, nhận):
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
               {goship.data.carriers.map((c) => (
