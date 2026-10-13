@@ -26,7 +26,8 @@ video {
     min-width: 0;
   }
   .container {
-    padding: 0 40px;
+    padding-left: 40px; /* riêng trái/phải: viết gộp "padding: 0 40px" xóa lề trên/dưới của .cart-page, .checkout-page, .header-top... */
+    padding-right: 40px;
   }
   .header-top,
   .header-bottom-inner,
@@ -113,7 +114,8 @@ video {
 
 @media (max-width: 768px) {
   .container {
-    padding: 0 20px;
+    padding-left: 20px;
+    padding-right: 20px;
   }
   .header-top,
   .header-bottom-inner,
@@ -311,7 +313,8 @@ video {
 
 @media (max-width: 480px) {
   .container {
-    padding: 0 14px;
+    padding-left: 14px; /* viết riêng trái/phải: viết gộp "padding: 0 14px" xóa luôn lề trên/dưới của các phần tử vừa là .container vừa có padding riêng (header, trang sản phẩm...) */
+    padding-right: 14px;
   }
   .header-top,
   .header-bottom-inner,
@@ -538,8 +541,8 @@ video {
   }
   .main-nav a,
   .nav-products-link {
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding-top: 9px;
+    padding-bottom: 9px;
   }
   .tab {
     min-height: 40px;
@@ -607,5 +610,41 @@ video {
 @media (max-width: 1024px) {
   .footer-columns {
     padding-bottom: 28px;
+  }
+}
+
+/* Header thoáng hơn trên điện thoại / tablet: nới khoảng cách giữa các hàng (logo + nút, ô tìm kiếm, menu) và lề hai bên. */
+@media (max-width: 1024px) {
+  .header-top {
+    padding-top: 16px;
+    padding-bottom: 12px;
+  }
+  .header-bottom-inner {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-top {
+    row-gap: 12px;
+  }
+}
+
+/* Lề hai bên 18px (trước 14px, sát mép màn hình); nội dung trang dùng cùng lề để thẳng hàng với header. */
+@media (max-width: 480px) {
+  .container {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .header-top,
+  .header-bottom-inner,
+  .hero-inner,
+  .deal-inner,
+  .newsletter,
+  .footer-columns,
+  .footer-bottom {
+    padding-left: 18px;
+    padding-right: 18px;
   }
 }
