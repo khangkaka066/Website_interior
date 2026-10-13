@@ -2,9 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/ui/api'
-import AddressCombobox from '@/ui/components/AddressCombobox'
-import { useVnProvinces, findProvince } from '@/ui/utils/vnProvinces'
+import AddressFields from '@/ui/components/AddressFields'
 import { Notice, Field, input, btnPrimary, btnGhost, fullAddress } from './ui'
+
+// Ô nhập có nhãn của trang tài khoản. Không dùng <label> bọc ngoài: bấm vào một mục trong danh sách sẽ kích hoạt lại ô nhập và mở lại danh sách.
+function AddressField({ label, children }) {
+  return (
+    <div className="block text-sm font-medium">
+      <span>{label}</span>
+      {children}
+    </div>
+  )
+}
 
 const EMPTY = { recipientName: '', phone: '', addressLine: '', ward: '', district: '', province: '', isDefault: false }
 
@@ -13,7 +22,6 @@ export function Addresses() {
   const [error, setError] = useState('')
   const [edit, setEdit] = useState(null) // null = đóng form, { id?, ...fields }
   const [busy, setBusy] = useState(false)
-  const address = useVnProvinces()
 
   const load = useCallback(() => {
     api.get('/account/addresses').then(setList).catch((e) => setError(e.message))
@@ -21,11 +29,6 @@ export function Addresses() {
   useEffect(load, [load])
 
   const set = (k) => (e) => setEdit((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
-
-  // Tỉnh đang chọn (kể cả địa chỉ cũ do khách gõ tay) để lấy danh sách phường/xã tương ứng.
-  const province = edit && address.status === 'ready' ? findProvince(address.provinces, edit.province) : undefined
-  const pickProvince = (p) =>
-    setEdit((f) => (province?.code === p.code ? { ...f, province: p.name } : { ...f, province: p.name, ward: '', district: '' })) // đổi sang tỉnh khác thì bỏ phường/quận cũ
 
   async function save(e) {
     e.preventDefault()
@@ -70,34 +73,7 @@ export function Addresses() {
             <Field label="Người nhận *"><input className={input} value={edit.recipientName} onChange={set('recipientName')} maxLength={100} autoComplete="name" /></Field>
             <Field label="Số điện thoại *"><input className={input} value={edit.phone} onChange={set('phone')} maxLength={20} inputMode="tel" autoComplete="tel" /></Field>
             <div className="sm:col-span-2"><Field label="Địa chỉ (số nhà, đường) *"><input className={input} value={edit.addressLine} onChange={set('addressLine')} maxLength={300} autoComplete="street-address" placeholder="Số nhà, tên đường" /></Field></div>
-            {address.status === 'ready' ? (
-              <>
-                {/* Không bọc trong <label> (Field): bấm vào một mục trong danh sách sẽ kích hoạt lại ô nhập và mở lại danh sách. */}
-                <div className="block text-sm font-medium">
-                  <span>Tỉnh/thành phố *</span>
-                  <AddressCombobox ariaLabel="Tỉnh/thành phố" inputClassName={input} placeholder="Chọn hoặc gõ tên tỉnh/thành" value={edit.province} options={address.provinces} onSelect={pickProvince} />
-                </div>
-                <div className="block text-sm font-medium">
-                  <span>Phường/xã</span>
-                  <AddressCombobox
-                    ariaLabel="Phường/xã"
-                    inputClassName={input}
-                    placeholder={province ? 'Chọn hoặc gõ tên phường/xã' : 'Chọn tỉnh/thành trước'}
-                    disabled={!province}
-                    value={edit.ward || ''}
-                    options={province?.wards || []}
-                    // phường/xã mới thuộc hành chính 2 cấp nên bỏ quận/huyện cũ (nếu có) và chuẩn hóa tên tỉnh
-                    onSelect={(w) => setEdit((f) => ({ ...f, ward: w.name, district: '', province: province.name }))}
-                  />
-                </div>
-              </>
-            ) : (
-              // Đang tải hoặc không tải được danh sách: cho gõ tay để vẫn lưu được địa chỉ.
-              <>
-                <Field label="Tỉnh/thành phố *"><input className={input} value={edit.province} onChange={set('province')} maxLength={100} /></Field>
-                <Field label="Phường/xã"><input className={input} value={edit.ward || ''} onChange={set('ward')} maxLength={100} /></Field>
-              </>
-            )}
+            <AddressFields value={edit} onChange={(patch) => setEdit((f) => ({ ...f, ...patch }))} Field={AddressField} inputClassName={input} />
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={!!edit.isDefault} onChange={set('isDefault')} /> Đặt làm địa chỉ mặc định

@@ -16,6 +16,7 @@ import { canTransitionOrder } from '../src/constants/workflow.js'
 import { publishChat, openStream, customerChannel, ADMIN_CHANNEL, _stats } from '../src/lib/chatEvents.js'
 import { chatTokenFor, isValidChatToken, isLegacyConversation, canAccessConversation } from '../src/lib/chatToken.js'
 import { startConversationSchema } from '../src/schemas/chat.js'
+import { listCities, listDistricts, isGoshipId, goshipConfigured, GoshipError, _resetGoshipCache } from '../src/lib/goship.js'
 import { createOrderSchema } from '../src/schemas/orders.js'
 import { registerSchema, resetPasswordSchema, forgotPasswordSchema } from '../src/schemas/auth.js'
 import {
@@ -658,5 +659,81 @@ describe('token bí mật của khách trong chat', () => {
     const ok = startConversationSchema.safeParse({ name: 'An', conversationId: 'abc' })
     assert.equal(ok.success, true)
     assert.equal('conversationId' in ok.data, false) // trường lạ bị bỏ
+  })
+})
+
+describe('Goship: danh sách địa danh', () => {
+  const realFetch = globalThis.fetch
+  let calls
+  const mock = (impl) => {
+    calls = []
+    globalThis.fetch = async (url, opts) => {
+      calls.push({ url, headers: opts.headers })
+      return impl(url)
+    }
+  }
+  const ok = (data) => ({ ok: true, status: 200, json: async () => ({ code: 200, status: 'success', data }) })
+  const reset = () => {
+    globalThis.fetch = realFetch
+    delete process.env.GOSHIP_TOKEN
+    delete process.env.GOSHIP_BASE_URL
+    _resetGoshipCache()
+  }
+
+  test('gửi token và User-Agent riêng, chỉ trả id + tên (bỏ trường thừa), sắp theo tên có số tự nhiên', async () => {
+    process.env.GOSHIP_TOKEN = 'tok'
+    process.env.GOSHIP_BASE_URL = 'https://goship.test/api/v2/'
+    mock(() => ok([{ id: 2, name: 'Quận 10', support_carriers: ['x'] }, { id: '1', name: 'Quận 2', support_carriers: [] }, { id: 3, name: 'Quận 1' }]))
+    try {
+      const rows = await listDistricts('700000')
+      assert.deepEqual(rows, [{ id: '3', name: 'Quận 1' }, { id: '1', name: 'Quận 2' }, { id: '2', name: 'Quận 10' }])
+      assert.equal(calls[0].url, 'https://goship.test/api/v2/cities/700000/districts') // bỏ dấu / cuối của URL gốc
+      assert.equal(calls[0].headers.Authorization, 'Bearer tok')
+      assert.match(calls[0].headers['User-Agent'], /Clevinum/)
+    } finally {
+      reset()
+    }
+  })
+
+  test('giữ cache: gọi lại và nhiều khách cùng lúc chỉ tốn một lần gọi Goship', async () => {
+    process.env.GOSHIP_TOKEN = 'tok'
+    mock(async () => {
+      await new Promise((r) => setTimeout(r, 20))
+      return ok([{ id: 1, name: 'Hà Nội' }])
+    })
+    try {
+      await Promise.all([listCities(), listCities(), listCities()])
+      await listCities()
+      assert.equal(calls.length, 1)
+    } finally {
+      reset()
+    }
+  })
+
+  test('Goship lỗi thì báo GoshipError 502 và không lưu lỗi vào cache', async () => {
+    process.env.GOSHIP_TOKEN = 'tok'
+    mock(() => ({ ok: false, status: 401, json: async () => ({ code: 401, status: 'error', data: { error: 'Unauthenticated.' } }) }))
+    try {
+      await assert.rejects(listCities(), (e) => e instanceof GoshipError && e.status === 502)
+      mock(() => ok([{ id: 1, name: 'Hà Nội' }])) // lần sau Goship hồi lại: phải gọi lại được
+      assert.equal((await listCities()).length, 1)
+    } finally {
+      reset()
+    }
+  })
+
+  test('mất kết nối cũng thành GoshipError; mã địa danh chỉ nhận số; chưa có token thì goshipConfigured = false', async () => {
+    process.env.GOSHIP_TOKEN = 'tok'
+    mock(() => {
+      throw new Error('ECONNRESET')
+    })
+    try {
+      await assert.rejects(listCities(), (e) => e instanceof GoshipError)
+    } finally {
+      reset()
+    }
+    assert.equal(goshipConfigured(), false)
+    assert.equal(isGoshipId('100000'), true)
+    for (const bad of ['', 'abc', '1/../x', '1?x=1', '12345678901', undefined]) assert.equal(isGoshipId(bad), false)
   })
 })

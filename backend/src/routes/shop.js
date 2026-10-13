@@ -5,6 +5,7 @@ import { listPublicPosts, getPublicPost } from '../controllers/posts.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { validate } from '../middleware/validate.js'
 import { getSettings, getPublicPaymentOptions, getPublicContent } from '../lib/settingsStore.js'
+import { goshipConfigured, isGoshipId, listCities, listDistricts, listWards, GoshipError } from '../lib/goship.js'
 
 const router = Router()
 
@@ -34,6 +35,25 @@ router.get('/payment-options', async (req, res) => {
   res.set('Cache-Control', 'public, max-age=30')
   res.json(await getPublicPaymentOptions())
 })
+
+// Danh sách tỉnh / quận-huyện / phường-xã theo Goship (mã khớp với mã Goship cần khi tính cước, tạo vận đơn).
+// Chưa cấu hình GOSHIP_TOKEN hoặc Goship lỗi thì trả 503/502: form địa chỉ tự chuyển sang ô gõ tay.
+const location = (load) => async (req, res) => {
+  if (!goshipConfigured()) return res.status(503).json({ error: 'Chưa cấu hình danh sách địa chỉ.' })
+  const id = req.params.cityId ?? req.params.districtId
+  if (id !== undefined && !isGoshipId(id)) return res.status(400).json({ error: 'Mã địa danh không hợp lệ.' })
+  try {
+    res.set('Cache-Control', 'public, max-age=3600')
+    res.json(await load(id))
+  } catch (err) {
+    if (!(err instanceof GoshipError)) throw err
+    res.set('Cache-Control', 'no-store')
+    res.status(err.status).json({ error: 'Không tải được danh sách địa chỉ, vui lòng thử lại.' })
+  }
+}
+router.get('/locations/cities', asyncHandler(location(() => listCities())))
+router.get('/locations/cities/:cityId/districts', asyncHandler(location(listDistricts)))
+router.get('/locations/districts/:districtId/wards', asyncHandler(location(listWards)))
 
 router.get('/categories', LONG, (req, res) => {
   res.json(categories)

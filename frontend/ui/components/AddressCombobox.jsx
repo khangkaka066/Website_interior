@@ -1,7 +1,7 @@
 'use client'
 
 import { useId, useMemo, useRef, useState } from 'react'
-import { normalizeVi } from '../utils/vnProvinces'
+import { normalizeVi } from '../utils/goshipLocations'
 
 // Ô chọn có gõ để lọc (không phân biệt dấu). options: [{ code, name }]. onSelect nhận option đã chọn.
 export default function AddressCombobox({ value, options, onSelect, placeholder, disabled, ariaLabel, inputClassName }) {
