@@ -32,7 +32,8 @@ export async function generateMetadata({ searchParams }) {
       alternates: { canonical: `/products?category=${category}` },
       openGraph: { type: 'website', title, description, url: `/products?category=${category}`, images: [{ url: '/images/curtains/room-blue.webp', alt: title }] },
       // Có thêm bộ lọc/sắp xếp khác trên cùng danh mục thì không lập chỉ mục (canonical đã trỏ về trang danh mục sạch).
-      ...(Object.keys(sp).some((k) => k !== 'category') && { robots: { index: false, follow: true } }),
+      // Chọn nhiều danh mục cùng lúc (?category=a&category=b) cũng là một bộ lọc.
+      ...((Array.isArray(sp.category) || Object.keys(sp).some((k) => k !== 'category')) && { robots: { index: false, follow: true } }),
     }
   }
   return {

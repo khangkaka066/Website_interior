@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from '@/lib/router'
 import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
@@ -38,30 +38,66 @@ export default function AllProducts() {
   const products = useProducts()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const initialCategory = searchParams.get('category')
   const searchQuery = (searchParams.get('q') || '').trim()
-  // Trang kết quả tìm kiếm không cho Google lập chỉ mục (vô số biến thể trùng nội dung).
-  const [categoryFilters, setCategoryFilters] = useState(
-    initialCategory ? new Set([initialCategory]) : new Set(),
-  )
+
+  // Bộ lọc nằm trên địa chỉ (?category=&type=&color=&width=&price=&stock=1&sort=) chứ không chỉ trong state:
+  // mở một sản phẩm rồi bấm Quay lại, hoặc gửi link cho người khác, vẫn ra đúng danh sách đã lọc.
+  const paramsKey = searchParams.toString()
+  const { categoryFilters, typeFilters, colorFilters, widthFilters, priceFilter, inStockOnly, sortBy } = useMemo(() => {
+    const sp = new URLSearchParams(paramsKey)
+    const price = sp.get('price') || ''
+    const sort = sp.get('sort') || 'relevance'
+    return {
+      categoryFilters: new Set(sp.getAll('category')),
+      typeFilters: new Set(sp.getAll('type')),
+      colorFilters: new Set(sp.getAll('color')),
+      widthFilters: new Set(sp.getAll('width')),
+      priceFilter: PRICE_RANGES.some((r) => r.id === price) ? price : '',
+      inStockOnly: sp.get('stock') === '1',
+      sortBy: SORT_OPTIONS.some((o) => o.id === sort) ? sort : 'relevance',
+    }
+  }, [paramsKey])
+
+  // Đổi bộ lọc chỉ thay địa chỉ (replaceState, không thêm mục lịch sử, không tải lại trang) nên Quay lại không phải bấm nhiều lần.
+  const ownUpdate = useRef(false)
+  function updateUrl(mutate) {
+    const next = new URLSearchParams(window.location.search)
+    mutate(next)
+    const qs = next.toString()
+    if (qs === window.location.search.replace(/^\?/, '')) return
+    ownUpdate.current = true
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
+  }
+
+  // Vào danh mục từ menu khi đang ở trang này: cuộn lên đầu. Không cuộn khi khách tự tick bộ lọc, và không cuộn lúc mở trang
+  // (để Quay lại từ trang sản phẩm giữ đúng vị trí đang xem).
+  const firstRun = useRef(true)
   useEffect(() => {
-    setCategoryFilters(initialCategory ? new Set([initialCategory]) : new Set())
+    if (firstRun.current) {
+      firstRun.current = false
+      return
+    }
+    if (ownUpdate.current) {
+      ownUpdate.current = false
+      return
+    }
     window.scrollTo(0, 0)
-  }, [initialCategory])
-  const [typeFilters, setTypeFilters] = useState(new Set())
-  const [priceFilter, setPriceFilter] = useState('')
-  const [colorFilters, setColorFilters] = useState(new Set())
-  const [widthFilters, setWidthFilters] = useState(new Set())
-  const [inStockOnly, setInStockOnly] = useState(false)
-  const [sortBy, setSortBy] = useState('relevance')
+  }, [paramsKey])
+
+  const initialCategory = categoryFilters.size === 1 ? [...categoryFilters][0] : null
 
   const types = useMemo(() => [...new Set(products.map((p) => p.type))], [products])
 
-  function toggleFilter(setFn, current, value) {
-    const next = new Set(current)
-    if (next.has(value)) next.delete(value)
-    else next.add(value)
-    setFn(next)
+  function toggleFilter(key, value) {
+    updateUrl((sp) => {
+      const values = sp.getAll(key)
+      sp.delete(key)
+      for (const v of values.includes(value) ? values.filter((x) => x !== value) : [...values, value]) sp.append(key, v)
+    })
+  }
+
+  function setSingle(key, value) {
+    updateUrl((sp) => (value ? sp.set(key, value) : sp.delete(key)))
   }
 
   const { shopInfo } = useShopInfo()
@@ -73,12 +109,7 @@ export default function AllProducts() {
     categoryFilters.size + typeFilters.size + colorFilters.size + widthFilters.size + (priceFilter ? 1 : 0) + (inStockOnly ? 1 : 0)
 
   function clearFilters() {
-    setCategoryFilters(new Set())
-    setTypeFilters(new Set())
-    setPriceFilter('')
-    setColorFilters(new Set())
-    setWidthFilters(new Set())
-    setInStockOnly(false)
+    updateUrl((sp) => ['category', 'type', 'price', 'color', 'width', 'stock', 'sort'].forEach((k) => sp.delete(k)))
   }
 
   const index = useMemo(() => buildIndex(products), [products])
@@ -154,7 +185,7 @@ export default function AllProducts() {
                     key={c.id}
                     label={c.name}
                     checked={categoryFilters.has(c.id)}
-                    onChange={() => toggleFilter(setCategoryFilters, categoryFilters, c.id)}
+                    onChange={() => toggleFilter('category', c.id)}
                   />
                 ))}
               </FilterGroup>
@@ -165,7 +196,7 @@ export default function AllProducts() {
                     key={t}
                     label={t}
                     checked={typeFilters.has(t)}
-                    onChange={() => toggleFilter(setTypeFilters, typeFilters, t)}
+                    onChange={() => toggleFilter('type', t)}
                   />
                 ))}
               </FilterGroup>
@@ -177,7 +208,7 @@ export default function AllProducts() {
                       type="radio"
                       name="price"
                       checked={priceFilter === r.id}
-                      onChange={() => setPriceFilter(priceFilter === r.id ? '' : r.id)}
+                      onChange={() => setSingle('price', priceFilter === r.id ? '' : r.id)}
                     />
                     <span>{r.label}</span>
                   </label>
@@ -190,7 +221,7 @@ export default function AllProducts() {
                     key={c.id}
                     label={c.label}
                     checked={colorFilters.has(c.id)}
-                    onChange={() => toggleFilter(setColorFilters, colorFilters, c.id)}
+                    onChange={() => toggleFilter('color', c.id)}
                   />
                 ))}
               </FilterGroup>
@@ -201,13 +232,13 @@ export default function AllProducts() {
                     key={w.id}
                     label={w.label}
                     checked={widthFilters.has(w.id)}
-                    onChange={() => toggleFilter(setWidthFilters, widthFilters, w.id)}
+                    onChange={() => toggleFilter('width', w.id)}
                   />
                 ))}
               </FilterGroup>
 
               <FilterGroup title="Tình trạng">
-                <FilterCheckbox label="Chỉ hiện còn hàng" checked={inStockOnly} onChange={() => setInStockOnly(!inStockOnly)} />
+                <FilterCheckbox label="Chỉ hiện còn hàng" checked={inStockOnly} onChange={() => setSingle('stock', inStockOnly ? '' : '1')} />
               </FilterGroup>
             </aside>
 
@@ -224,7 +255,7 @@ export default function AllProducts() {
                     </>
                   )}
                 </span>
-                <select className="shop-all-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                <select className="shop-all-sort" value={sortBy} onChange={(e) => setSingle('sort', e.target.value === 'relevance' ? '' : e.target.value)}>
                   {SORT_OPTIONS.map((o) => (
                     <option key={o.id} value={o.id}>
                       Sắp xếp: {o.label}
