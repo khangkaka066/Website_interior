@@ -87,9 +87,11 @@ export default function Checkout() {
   const picked = quote.status === 'ok' ? quote.options.find((o) => o.id === rateId) || quote.options[0] : null // chưa chọn thì lấy lựa chọn rẻ nhất
   const shippingFee = picked ? picked.fee : fixedFee
   const total = totalPrice + shippingFee
-  // 0đ có hai nghĩa: miễn phí thật (Goship báo 0 hoặc đơn đủ mức miễn phí) hoặc chưa có cước nào để tính (không có phí cố định, Goship chưa báo).
+  // 0đ có hai nghĩa: miễn phí thật hoặc chưa có cước nào để tính. "Miễn phí" chỉ hiện khi đã có kết quả cụ thể (Goship báo 0đ, hoặc đã
+  // xét xong địa chỉ mà đơn đủ mức miễn phí); trước khi khách chọn đủ địa chỉ thì luôn là "Chưa tính".
   const freeByRule = freeShippingOver > 0 && totalPrice >= freeShippingOver
-  const shippingLabel = shippingFee > 0 ? formatPrice(shippingFee) : picked || freeByRule ? 'Miễn phí' : quote.status === 'loading' ? 'Đang tính…' : 'Chưa tính'
+  const isFree = (quote.status === 'ok' && picked) || (quote.status === 'fixed' && freeByRule)
+  const shippingLabel = shippingFee > 0 ? formatPrice(shippingFee) : isFree ? 'Miễn phí' : quote.status === 'loading' ? 'Đang tính…' : 'Chưa tính'
   const selectedMethod = methods.find((m) => m.id === form.paymentMethod)
 
   async function handleSubmit() {
