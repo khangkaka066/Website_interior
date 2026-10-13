@@ -648,3 +648,37 @@ video {
     padding-right: 18px;
   }
 }
+
+/* Bộ lọc sản phẩm trên điện thoại / tablet dọc (khi bộ lọc xếp trên danh sách, ≤960px): mặc định đóng, bấm "Bộ lọc" để mở. */
+@media (max-width: 960px) {
+  .shop-all-filters-head {
+    min-height: 48px;
+    margin-bottom: 0;
+    padding: 0 14px;
+    background: #fff;
+    border: 1px solid var(--border-soft);
+  }
+  .shop-all-filters-toggle {
+    flex: 1;
+    align-self: stretch;
+    cursor: pointer;
+    pointer-events: auto;
+    font-size: 14px;
+  }
+  .shop-all-filters-chevron {
+    display: block;
+  }
+  .shop-all-filters.is-open .shop-all-filters-chevron {
+    transform: rotate(180deg);
+  }
+  .shop-all-filters-panel {
+    display: none;
+  }
+  .shop-all-filters.is-open .shop-all-filters-panel {
+    display: block;
+    padding: 4px 14px 10px;
+    background: #fff;
+    border: 1px solid var(--border-soft);
+    border-top: none;
+  }
+}

@@ -1150,6 +1150,24 @@
   text-decoration: underline;
 }
 
+/* Nút "Bộ lọc (n)": trên laptop chỉ là nhãn (không bấm được, không mũi tên); trên điện thoại / tablet dọc là nút đóng/mở (xem responsive.css). */
+.shop-all-filters-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+  pointer-events: none;
+}
+
+.shop-all-filters-chevron {
+  display: none;
+  transition: transform 0.3s ease;
+}
+
 .filter-group {
   border-bottom: 1px solid var(--border-soft);
   padding: 16px 0;

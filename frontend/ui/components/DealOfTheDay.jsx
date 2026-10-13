@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from '@/lib/router'
 import { useProducts } from '../data/liveProducts'
 import PriceOld from './PriceOld'
 import { sized } from '../utils/image'
@@ -60,9 +61,10 @@ export default function DealOfTheDay() {
             <Tile value={min} label="Phút" />
             <Tile value={sec} label="Giây" />
           </div>
-          <a className="btn btn-accent" href="#products">
+          {/* Mở đúng sản phẩm đang khuyến mãi: khách chọn phân loại rồi bấm "Mua ngay" ở trang sản phẩm. */}
+          <Link className="btn btn-accent" to={`/products/${deal.id}`}>
             MUA NGAY
-          </a>
+          </Link>
         </div>
       </div>
     </section>

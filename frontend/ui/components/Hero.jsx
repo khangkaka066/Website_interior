@@ -1,5 +1,7 @@
 'use client'
 
+import { Link } from '@/lib/router'
+
 export default function Hero() {
   return (
     <section className="hero" id="home">
@@ -19,9 +21,9 @@ export default function Hero() {
             lên màu sang trọng dưới mọi ánh đèn.
           </p>
           <div className="hero-cta">
-            <a className="btn btn-hero" href="#products">
+            <Link className="btn btn-hero" to="/products">
               MUA NGAY
-            </a>
+            </Link>
           </div>
         </div>
 

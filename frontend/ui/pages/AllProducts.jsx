@@ -60,6 +60,8 @@ export default function AllProducts() {
   }, [paramsKey])
 
   // Đổi bộ lọc chỉ thay địa chỉ (replaceState, không thêm mục lịch sử, không tải lại trang) nên Quay lại không phải bấm nhiều lần.
+  // Điện thoại / tablet dọc: bộ lọc xếp trên danh sách nên mặc định đóng, khách cần mới mở (laptop luôn hiện, xem CSS).
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const ownUpdate = useRef(false)
   function updateUrl(mutate) {
     const next = new URLSearchParams(window.location.search)
@@ -170,9 +172,20 @@ export default function AllProducts() {
           </div>
 
           <div className="shop-all-body container">
-            <aside className="shop-all-filters">
+            <aside className={`shop-all-filters ${filtersOpen ? 'is-open' : ''}`}>
               <div className="shop-all-filters-head">
-                <span>Bộ lọc ({activeFilterCount})</span>
+                <button
+                  type="button"
+                  className="shop-all-filters-toggle"
+                  aria-expanded={filtersOpen}
+                  aria-controls="shop-filters-panel"
+                  onClick={() => setFiltersOpen((o) => !o)}
+                >
+                  <span>Bộ lọc ({activeFilterCount})</span>
+                  <svg className="shop-all-filters-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
                 {activeFilterCount > 0 && (
                   <button className="shop-all-clear" onClick={clearFilters}>
                     Xóa hết
@@ -180,6 +193,7 @@ export default function AllProducts() {
                 )}
               </div>
 
+              <div id="shop-filters-panel" className="shop-all-filters-panel">
               <FilterGroup title="Danh mục">
                 {categories.map((c) => (
                   <FilterCheckbox
@@ -241,6 +255,7 @@ export default function AllProducts() {
               <FilterGroup title="Tình trạng">
                 <FilterCheckbox label="Chỉ hiện còn hàng" checked={inStockOnly} onChange={() => setSingle('stock', inStockOnly ? '' : '1')} />
               </FilterGroup>
+              </div>
             </aside>
 
             <div className="shop-all-results">
