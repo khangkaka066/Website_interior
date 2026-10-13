@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import AllProducts from '@/ui/pages/AllProducts'
 import { categories } from '@/ui/data/shop'
 import { PRODUCT_GROUPS } from '@/ui/data/menu'
@@ -44,9 +43,7 @@ export async function generateMetadata({ searchParams }) {
 }
 
 export default function ProductsPage() {
-  return (
-    <Suspense>
-      <AllProducts />
-    </Suspense>
-  )
+  // Không bọc <Suspense>: trang này render động nên useSearchParams không cần nó, và một Suspense không có khung chờ khiến React
+  // trì hoãn ~300ms trước khi cho trang hiện ra (vùng trống sau khi bấm chuyển trang).
+  return <AllProducts />
 }

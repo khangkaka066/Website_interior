@@ -6,6 +6,7 @@ import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
 import { useCart } from '../context/CartContext'
 import { trackEvent } from '../analytics'
+import { sized, IMG } from '../utils/image'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -128,12 +129,12 @@ export default function ProductDetail({ initialProduct } = {}) {
                       setGalleryPinned(true)
                     }}
                   >
-                    <img src={img} alt={`${product.name} ${idx + 1}`} loading="lazy" decoding="async" />
+                    <img src={sized(img, IMG.thumb)} alt={`${product.name} ${idx + 1}`} loading="lazy" decoding="async" />
                   </button>
                 ))}
               </div>
               <div className="pdp-main-image">
-                <img src={mainImage} alt={product.name} />
+                <img src={sized(mainImage, IMG.large)} alt={product.name} decoding="async" />
               </div>
             </div>
 

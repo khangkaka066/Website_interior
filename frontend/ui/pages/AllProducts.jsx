@@ -9,6 +9,7 @@ import { buildIndex, searchProducts, COLOR_FILTERS, WIDTH_FILTERS, POPULAR_KEYWO
 import { CATEGORY_NOTES, PRODUCT_GROUPS } from '../data/menu'
 import { useShopInfo } from '../useShopInfo'
 import PriceOld from '../components/PriceOld'
+import { sized, IMG } from '../utils/image'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -316,7 +317,7 @@ export default function AllProducts() {
                     {popular.map((p) => (
                       <Link className="product-card" key={p.id} to={`/products/${p.id}`}>
                         <div className="product-thumb">
-                          <img src={p.image} alt={p.name} loading="lazy" />
+                          <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
                         </div>
                         <span className="product-type">{p.type}</span>
                         <h4>{p.name}</h4>
@@ -342,7 +343,7 @@ export default function AllProducts() {
                       tabIndex={0}
                     >
                       <div className="product-thumb">
-                        <img src={p.image} alt={p.name} loading="lazy" />
+                        <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
                         <WishlistButton productId={p.id} />
                       </div>
                       <span className="product-type">{p.type}</span>

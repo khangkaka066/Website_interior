@@ -5,6 +5,7 @@ import { Link, useSearchParams } from '@/lib/router'
 import { api } from '../api'
 import { ORDER_STATUS, PAYMENT_STATUS } from '../constants/orderStatus'
 import { SHIPPING_STATUS } from '../constants/shippingStatus'
+import { sized, IMG } from '../utils/image'
 
 const money = (n) => Number(n || 0).toLocaleString('vi-VN') + 'đ'
 // Đơn đã kết thúc (vào mục Lịch sử); còn lại là đơn đang xử lý.
@@ -195,7 +196,7 @@ export default function TrackOrder() {
               <ul className="track-items">
                 {order.items.map((i, k) => (
                   <li key={k}>
-                    {i.image && <img src={i.image} alt="" loading="lazy" />}
+                    {i.image && <img src={sized(i.image, IMG.thumb)} alt="" loading="lazy" />}
                     <div>
                       {i.productId ? <Link to={`/products/${i.productId}`}>{i.name}</Link> : i.name}
                       {i.variant && <small>{i.variant}</small>}

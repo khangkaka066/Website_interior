@@ -17,6 +17,16 @@ export default function Header() {
   // Phiên đăng nhập nằm trong trình duyệt: nạp sau khi mở trang để HTML từ server và lần vẽ đầu của trình duyệt giống nhau.
   const [session, setSession] = useState(null)
   useEffect(() => setSession(getSession()), [])
+  // Khi trình duyệt rảnh, tải sẵn các trang giỏ hàng / thanh toán / yêu thích / tra cứu đơn để chuyển sang là nhanh.
+  useEffect(() => {
+    const run = () => import('../clientViews').then((m) => m.preloadShoppingViews())
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(run, { timeout: 4000 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const t = setTimeout(run, 2000)
+    return () => clearTimeout(t)
+  }, [])
   const navigate = useNavigate()
   const { totalCount, totalPrice } = useCart()
   const { count: wishCount } = useWishlist()

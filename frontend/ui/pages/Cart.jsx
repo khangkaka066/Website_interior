@@ -2,6 +2,7 @@
 
 import { Link, useNavigate } from '@/lib/router'
 import { useCart } from '../context/CartContext'
+import { sized, IMG } from '../utils/image'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -31,7 +32,7 @@ export default function Cart() {
                   const key = lineKey(it)
                   return (
                     <div className="cart-row" key={key}>
-                      <img src={it.image} alt={it.name} className="cart-row-image" loading="lazy" decoding="async" />
+                      <img src={sized(it.image, IMG.small)} alt={it.name} className="cart-row-image" loading="lazy" decoding="async" />
                       <div className="cart-row-info">
                         <span className="cart-row-name">{it.name}</span>
                         {it.size && <span className="cart-row-size">Kích thước: {it.size}</span>}

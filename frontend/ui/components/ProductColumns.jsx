@@ -4,6 +4,7 @@ import { Link } from '@/lib/router'
 import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
 import PriceOld from './PriceOld'
+import { sized, IMG } from '../utils/image'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -23,7 +24,7 @@ export default function ProductColumns() {
           {col.items.map((p) => (
             <Link className="product-row" key={p.id} to={`/products/${p.id}`}>
               <div className="product-row-thumb">
-                <img src={p.image} alt={p.name} loading="lazy" />
+                <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
               </div>
               <div className="product-row-info">
                 <span className="product-row-name">{p.name}</span>

@@ -5,6 +5,7 @@ import WishlistButton from '../components/WishlistButton'
 import { useProducts } from '../data/liveProducts'
 import { useWishlist } from '../context/WishlistContext'
 import PriceOld from '../components/PriceOld'
+import { sized, IMG } from '../utils/image'
 
 const formatPrice = (n) => n.toLocaleString('vi-VN') + 'đ'
 
@@ -31,7 +32,7 @@ export default function Wishlist() {
               {items.map((p) => (
                 <Link className="product-card" key={p.id} to={`/products/${p.id}`}>
                   <div className="product-thumb">
-                    <img src={p.image} alt={p.name} loading="lazy" />
+                    <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
                     <WishlistButton productId={p.id} />
                   </div>
                   <span className="product-type">{p.type}</span>

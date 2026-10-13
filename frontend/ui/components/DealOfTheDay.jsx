@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useProducts } from '../data/liveProducts'
 import PriceOld from './PriceOld'
+import { sized } from '../utils/image'
 
 function getTargetDate() {
   const target = new Date()
@@ -43,7 +44,7 @@ export default function DealOfTheDay() {
     <section className="deal-banner" id="deal">
       <div className="container deal-inner">
         <div className="deal-visual">
-          <img src={deal.image} alt={deal.name} loading="lazy" decoding="async" />
+          <img src={sized(deal.image, 640)} alt={deal.name} loading="lazy" decoding="async" />
         </div>
         <div className="deal-content">
           <span className="eyebrow">ƯU ĐÃI TRONG NGÀY</span>

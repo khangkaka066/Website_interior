@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from '@/lib/router'
 import { useProducts } from '../data/liveProducts'
 import { buildIndex, suggest } from '../data/smartSearch'
 import PriceOld from './PriceOld'
+import { sized, IMG } from '../utils/image'
 
 const formatPrice = (n) => n.toLocaleString('vi-VN') + 'đ'
 
@@ -142,7 +143,7 @@ export default function SearchBox() {
                 const i = ++n
                 return (
                   <button type="button" key={p.id} className={`ss-row ss-product ${active === i ? 'ss-active' : ''}`} onClick={() => go(`/products/${p.id}`)}>
-                    <img src={p.image} alt="" loading="lazy" />
+                    <img src={sized(p.image, IMG.thumb)} alt="" loading="lazy" />
                     <span className="ss-name">{p.name}</span>
                     <span className="ss-price">
                       {p.priceMax ? 'Từ ' : ''}

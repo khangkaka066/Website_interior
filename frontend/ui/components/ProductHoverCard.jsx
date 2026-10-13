@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Link } from '@/lib/router'
 import WishlistButton from './WishlistButton'
 import PriceOld from './PriceOld'
+import { sized, IMG } from '../utils/image'
 
 const MAX_IMAGES = 4
 
@@ -41,10 +42,10 @@ export default function ProductHoverCard({ product: p }) {
         onPointerMove={onPointerMove}
         onPointerLeave={() => setActive(0)}
       >
-        <img src={gallery[0] || p.image} alt={p.name} loading="lazy" />
+        <img src={sized(gallery[0] || p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
         {gallery.slice(1).map((src, k) => {
           const i = k + 1
-          return seen.has(i) && <img key={src} className={`thumb-alt ${active === i ? 'thumb-alt-on' : ''}`} src={src} alt="" aria-hidden="true" />
+          return seen.has(i) && <img key={src} className={`thumb-alt ${active === i ? 'thumb-alt-on' : ''}`} src={sized(src, IMG.card)} alt="" aria-hidden="true" />
         })}
         {multi && (
           <span className="thumb-dots" aria-hidden="true">
