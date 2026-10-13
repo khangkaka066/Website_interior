@@ -2338,7 +2338,7 @@ main { animation: page-in 0.1s ease-out; }
     background: #f6efe8; /* cùng nền kem với ô ảnh để ảnh sau phủ kín ảnh trước */
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.45s ease;
+    transition: opacity 0.8s ease, transform 0.45s ease; /* ảnh chuyển chậm, mờ dần */
   }
 
   .product-thumb img.thumb-alt-on {
@@ -2368,6 +2368,7 @@ main { animation: page-in 0.1s ease-out; }
     height: 6px;
     border-radius: 50%;
     background: rgba(43, 33, 28, 0.25);
+    transition: background-color 0.5s ease;
   }
 
   .thumb-dots i.on {

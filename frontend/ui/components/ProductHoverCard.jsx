@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from '@/lib/router'
 import WishlistButton from './WishlistButton'
 import PriceOld from './PriceOld'
 import { sized, IMG } from '../utils/image'
 
 const MAX_IMAGES = 4
+const SWITCH_DELAY_MS = 220 // chuột phải dừng ở một vùng ảnh chừng này mới đổi ảnh: lướt nhanh qua không làm ảnh nháy liên tục
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -17,19 +18,22 @@ function formatPrice(n) {
 export default function ProductHoverCard({ product: p }) {
   const gallery = [...new Set([p.image, ...(p.images || [])].filter(Boolean))].slice(0, MAX_IMAGES)
   const [active, setActive] = useState(0)
-  const [seen, setSeen] = useState(() => new Set([0])) // chỉ dựng ảnh đã rê tới
+  const [armed, setArmed] = useState(false) // đã rê chuột vào thẻ: từ lúc này mới dựng các ảnh phụ
+  const timer = useRef(null)
   const multi = gallery.length > 1
 
-  function show(i) {
-    setActive(i)
-    setSeen((s) => (s.has(i) ? s : new Set(s).add(i)))
+  useEffect(() => () => clearTimeout(timer.current), [])
+
+  function goTo(i) {
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => setActive(i), SWITCH_DELAY_MS)
   }
 
   function onPointerMove(e) {
     if (!multi || e.pointerType !== 'mouse') return
     const box = e.currentTarget.getBoundingClientRect()
     const i = Math.min(gallery.length - 1, Math.max(0, Math.floor(((e.clientX - box.left) / box.width) * gallery.length)))
-    if (i !== active) show(i)
+    goTo(i)
   }
 
   return (
@@ -37,15 +41,18 @@ export default function ProductHoverCard({ product: p }) {
       <div
         className="product-thumb"
         onPointerEnter={(e) => {
-          if (multi && e.pointerType === 'mouse') setSeen((s) => (s.has(1) ? s : new Set(s).add(1))) // tải sẵn ảnh thứ hai ngay khi chuột vào
+          if (multi && e.pointerType === 'mouse') setArmed(true) // tải sẵn các ảnh phụ (bản nhỏ ~40KB) để chuyển ảnh mượt, không bị trống
         }}
         onPointerMove={onPointerMove}
-        onPointerLeave={() => setActive(0)}
+        onPointerLeave={() => {
+          clearTimeout(timer.current)
+          setActive(0)
+        }}
       >
         <img src={sized(gallery[0] || p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
         {gallery.slice(1).map((src, k) => {
           const i = k + 1
-          return seen.has(i) && <img key={src} className={`thumb-alt ${active === i ? 'thumb-alt-on' : ''}`} src={sized(src, IMG.card)} alt="" aria-hidden="true" />
+          return armed && <img key={src} className={`thumb-alt ${active === i ? 'thumb-alt-on' : ''}`} src={sized(src, IMG.card)} alt="" aria-hidden="true" />
         })}
         {multi && (
           <span className="thumb-dots" aria-hidden="true">
