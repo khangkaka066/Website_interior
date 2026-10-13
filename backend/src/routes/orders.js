@@ -7,15 +7,16 @@ import {
   payosRelink,
   getOrder,
   createOrder,
+  shippingQuote,
   updateOrderStatus,
   confirmOrder,
   cancelOrder,
   refundOrder,
 } from '../controllers/orders.js'
 import { requirePermission } from '../middleware/auth.js'
-import { orderLimiter, trackLimiter } from '../middleware/security.js'
+import { orderLimiter, trackLimiter, quoteLimiter } from '../middleware/security.js'
 import { validate } from '../middleware/validate.js'
-import { createOrderSchema, payosRelinkSchema } from '../schemas/orders.js'
+import { createOrderSchema, payosRelinkSchema, shippingQuoteSchema } from '../schemas/orders.js'
 
 import { orderStatusSchema, noteOnlySchema } from '../schemas/admin.js'
 
@@ -24,6 +25,7 @@ const guard = requirePermission('orders')
 
 // Checkout stays public — anyone shopping the storefront can place an order.
 router.post('/', orderLimiter, validate(createOrderSchema), asyncHandler(createOrder))
+router.post('/shipping-quote', quoteLimiter, validate(shippingQuoteSchema), asyncHandler(shippingQuote)) // trước '/:id'
 
 // Tra cứu công khai: phải đặt trước '/:id'.
 router.get('/track', trackLimiter, asyncHandler(trackOrder))

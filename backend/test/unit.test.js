@@ -16,7 +16,12 @@ import { canTransitionOrder } from '../src/constants/workflow.js'
 import { publishChat, openStream, customerChannel, ADMIN_CHANNEL, _stats } from '../src/lib/chatEvents.js'
 import { chatTokenFor, isValidChatToken, isLegacyConversation, canAccessConversation } from '../src/lib/chatToken.js'
 import { startConversationSchema } from '../src/schemas/chat.js'
-import { listCities, listDistricts, isGoshipId, goshipConfigured, GoshipError, _resetGoshipCache } from '../src/lib/goship.js'
+import { listCities, listDistricts, isGoshipId, goshipConfigured, GoshipError, checkGoship, _resetGoshipCache } from '../src/lib/goship.js'
+import { forceHttps } from '../src/middleware/security.js'
+import { findByName } from '../src/lib/vnNames.js'
+import { quoteShipping, chooseShipping } from '../src/lib/shippingRates.js'
+import { shippingSchema } from '../src/schemas/settings.js'
+import { shippingQuoteSchema } from '../src/schemas/orders.js'
 import { createOrderSchema } from '../src/schemas/orders.js'
 import { registerSchema, resetPasswordSchema, forgotPasswordSchema } from '../src/schemas/auth.js'
 import {
@@ -735,5 +740,228 @@ describe('Goship: danh sách địa danh', () => {
     assert.equal(goshipConfigured(), false)
     assert.equal(isGoshipId('100000'), true)
     for (const bad of ['', 'abc', '1/../x', '1?x=1', '12345678901', undefined]) assert.equal(isGoshipId(bad), false)
+  })
+  test('checkGoship: chưa có token thì báo chưa cấu hình, không gọi mạng', async () => {
+    mock(() => {
+      throw new Error('không được gọi')
+    })
+    try {
+      const r = await checkGoship()
+      assert.deepEqual([r.configured, r.connected, calls.length], [false, false, 0])
+    } finally {
+      reset()
+    }
+  })
+
+  test('checkGoship: token hợp lệ thì liệt kê hãng (gộp mã trùng tên, mã lạ giữ nguyên mã) và không lộ token', async () => {
+    process.env.GOSHIP_TOKEN = 'secret-token'
+    mock(() => ok([{ id: 1, name: 'Hà Nội', support_carriers: ['vtp', 'jnt', 'jnt2', 'xyz'] }, { id: 2, name: 'Đà Nẵng', support_carriers: ['vtp', 'ghnv3'] }]))
+    try {
+      const r = await checkGoship()
+      assert.equal(r.connected, true)
+      assert.equal(r.cities, 2)
+      assert.deepEqual(r.carriers, [{ name: 'Giao Hàng Nhanh', codes: ['ghnv3'] }, { name: 'J&T Express', codes: ['jnt', 'jnt2'] }, { name: 'Viettel Post', codes: ['vtp'] }, { name: 'xyz', codes: ['xyz'] }])
+      assert.ok(!JSON.stringify(r).includes('secret-token'))
+    } finally {
+      reset()
+    }
+  })
+
+  test('checkGoship: Goship từ chối token (401) hoặc mất mạng thì báo không kết nối bằng lời của mình', async () => {
+    process.env.GOSHIP_TOKEN = 'secret-token'
+    mock(() => ({ ok: false, status: 401, json: async () => ({ code: 401, status: 'error', data: { error: 'Unauthenticated.' } }) }))
+    try {
+      const rejected = await checkGoship()
+      assert.deepEqual([rejected.configured, rejected.connected], [true, false])
+      assert.match(rejected.message, /từ chối token/)
+      mock(() => {
+        throw new Error('ECONNRESET secret-token')
+      })
+      const down = await checkGoship()
+      assert.equal(down.connected, false)
+      assert.ok(!down.message.includes('secret-token') && !down.message.includes('ECONNRESET'))
+    } finally {
+      reset()
+    }
+  })
+})
+
+describe('FORCE_HTTPS: chuyển http sang https', () => {
+  const run = (req) => {
+    const out = { next: false, redirect: null }
+    forceHttps({ originalUrl: '/api/x?a=1', secure: false, ...req }, { redirect: (code, url) => (out.redirect = [code, url]) }, () => (out.next = true))
+    return out
+  }
+
+  test('truy cập qua tên miền thật bằng http thì chuyển sang https (giữ đường dẫn và query)', () => {
+    assert.deepEqual(run({ headers: { host: 'api.clevinium.com' } }).redirect, [308, 'https://api.clevinium.com/api/x?a=1'])
+  })
+
+  test('đã là https (qua proxy báo X-Forwarded-Proto) thì cho qua', () => {
+    assert.equal(run({ headers: { host: 'api.clevinium.com' }, secure: true }).next, true)
+  })
+
+  test('truy cập localhost / 127.0.0.1 / [::1] (có hoặc không cổng) thì không chuyển', () => {
+    for (const host of ['localhost:4000', 'localhost', '127.0.0.1:4000', '[::1]:4000', 'LocalHost:3000']) {
+      const r = run({ headers: { host } })
+      assert.equal(r.next, true, host)
+      assert.equal(r.redirect, null, host)
+    }
+  })
+
+  test('tên miền chỉ trông giống localhost thì vẫn bị chuyển (không lách được bằng tên miền giả)', () => {
+    for (const host of ['localhost.evil.com', 'evil-localhost', 'xlocalhost:4000', 'localhost:4000.evil.com', '127.0.0.1.evil.com']) {
+      assert.ok(run({ headers: { host } }).redirect, host)
+    }
+  })
+
+  test('thiếu header Host thì vẫn chuyển hướng, không bỏ qua', () => {
+    assert.ok(run({ headers: {} }).redirect)
+  })
+})
+
+describe('vnNames.findByName', () => {
+  const districts = [{ id: '1', name: 'Quận 1' }, { id: '4', name: 'Quận 10' }, { id: '2', name: 'Quận Tân Bình' }, { id: 'a', name: 'Quận Thủ Đức' }, { id: 'b', name: 'Huyện Thủ Đức' }]
+  test('khớp tên không phân biệt dấu/hoa thường và bỏ tiền tố, không nhầm Quận 1 với Quận 10, không đoán khi mơ hồ', () => {
+    assert.equal(findByName(districts, 'tan binh')?.id, '2')
+    assert.equal(findByName(districts, 'Quận Tân Bình')?.id, '2')
+    assert.equal(findByName(districts, 'Quận 1')?.id, '1')
+    assert.equal(findByName(districts, '10')?.id, '4')
+    assert.equal(findByName(districts, 'Thủ Đức'), undefined)
+    assert.equal(findByName(districts, ''), undefined)
+    assert.equal(findByName(districts, undefined), undefined)
+  })
+})
+
+describe('tính cước vận chuyển qua Goship', () => {
+  const realFetch = globalThis.fetch
+  let rateCalls
+  const RATES = [
+    { id: 'Nl84XzkzOA==', carrier_name: 'Viettel Post', carrier_logo: 'https://x/vtp.png', service: 'Tiết kiệm', expected: 'Dự kiến giao trong 5 ngày', cod_fee: '22000', total_fee: '17000', total_amount: '39000' },
+    { id: 'MTFfN181OTg=', carrier_name: 'Giao Hàng Tiết Kiệm', carrier_logo: 'https://x/ghtk.png', service: 'Nhanh', expected: 'Dự kiến giao trong 2 ngày', cod_fee: '0', total_fee: '18000', total_amount: '18000' },
+    { id: 'bad1', carrier_name: 'Hỏng', total_amount: 'abc' },
+  ]
+  const lists = {
+    '/cities': [{ id: 1, name: 'Hồ Chí Minh' }, { id: 2, name: 'Hà Nội' }],
+    '/cities/1/districts': [{ id: 10, name: 'Quận 1' }],
+    '/districts/10/wards': [{ id: 100, name: 'Phường Bến Nghé' }],
+    '/cities/2/districts': [{ id: 20, name: 'Quận Hoàn Kiếm' }],
+    '/districts/20/wards': [{ id: 200, name: 'Phường Hàng Bạc' }],
+  }
+  const install = ({ rates = RATES, ratesFail = false } = {}) => {
+    rateCalls = []
+    globalThis.fetch = async (url, opts = {}) => {
+      const path = String(url).replace('https://api.goship.io/api/v2', '')
+      if (path === '/rates') {
+        rateCalls.push(JSON.parse(opts.body))
+        if (ratesFail) return { ok: false, status: 500, json: async () => ({}) }
+        return { ok: true, status: 200, json: async () => ({ code: 200, status: 'success', data: rates }) }
+      }
+      return { ok: true, status: 200, json: async () => ({ data: lists[path] || [] }) }
+    }
+    process.env.GOSHIP_TOKEN = 't'
+    _resetGoshipCache()
+  }
+  const done = () => {
+    globalThis.fetch = realFetch
+    delete process.env.GOSHIP_TOKEN
+    _resetGoshipCache()
+  }
+  const settings = (over = {}, goship = {}) => ({
+    shipping: { fee: 25000, freeShippingOver: 0, ...over, goship: { enabled: true, defaultWeightGrams: 4000, origin: { province: 'Hà Nội', district: 'Hoàn Kiếm', ward: 'Hàng Bạc' }, ...goship } },
+  })
+  const address = { province: 'Hồ Chí Minh', district: 'Quận 1', ward: 'Phường Bến Nghé' }
+
+  test('tắt hoặc chưa có token thì không gọi Goship', async () => {
+    install()
+    try {
+      assert.equal((await quoteShipping({ settings: settings({}, { enabled: false }), address, subtotal: 100000, cod: 0 })).status, 'disabled')
+      delete process.env.GOSHIP_TOKEN
+      assert.equal((await quoteShipping({ settings: settings(), address, subtotal: 100000, cod: 0 })).status, 'disabled')
+      assert.equal(rateCalls.length, 0)
+    } finally {
+      done()
+    }
+  })
+
+  test('hỏi cước: gửi mã Goship, cân nặng 4000g cho cả đơn, COD và khai giá theo tiền hàng; trả lựa chọn rẻ trước, bỏ dòng hỏng', async () => {
+    install()
+    try {
+      const q = await quoteShipping({ settings: settings(), address, subtotal: 413565, cod: 413565 })
+      assert.equal(q.status, 'ok')
+      assert.deepEqual(q.options.map((o) => [o.carrier, o.service, o.fee]), [['Giao Hàng Tiết Kiệm', 'Nhanh', 18000], ['Viettel Post', 'Tiết kiệm', 39000]]) // total_amount, rẻ trước
+      assert.deepEqual(rateCalls[0].shipment.address_from, { city: '2', district: '20', ward: '200' })
+      assert.deepEqual(rateCalls[0].shipment.address_to, { city: '1', district: '10', ward: '100' })
+      assert.deepEqual(rateCalls[0].shipment.parcel, { cod: '413565', amount: '413565', weight: '4000', width: '1', height: '1', length: '1' })
+    } finally {
+      done()
+    }
+  })
+
+  test('chuyển khoản trước thì không thu hộ (cod = 0); cân nặng lấy theo Cài đặt', async () => {
+    install()
+    try {
+      await quoteShipping({ settings: settings({}, { defaultWeightGrams: 2500 }), address, subtotal: 100000, cod: 0 })
+      assert.equal(rateCalls[0].shipment.parcel.cod, '0')
+      assert.equal(rateCalls[0].shipment.parcel.weight, '2500')
+    } finally {
+      done()
+    }
+  })
+
+  test('đơn đủ mức miễn phí vận chuyển thì mọi lựa chọn có phí 0 (giữ originalFee để biết cước thật)', async () => {
+    install()
+    try {
+      const q = await quoteShipping({ settings: settings({ freeShippingOver: 300000 }), address, subtotal: 413565, cod: 0 })
+      assert.deepEqual(q.options.map((o) => [o.fee, o.originalFee]), [[0, 18000], [0, 39000]])
+    } finally {
+      done()
+    }
+  })
+
+  test('địa chỉ chưa chọn đủ hoặc không khớp Goship -> incomplete; kho gửi hàng sai -> error; Goship lỗi -> error (không ném lỗi)', async () => {
+    install()
+    try {
+      assert.equal((await quoteShipping({ settings: settings(), address: { ...address, ward: '' }, subtotal: 1, cod: 0 })).status, 'incomplete')
+      assert.equal((await quoteShipping({ settings: settings(), address: { ...address, ward: 'Phường Không Có' }, subtotal: 1, cod: 0 })).status, 'incomplete')
+      assert.equal((await quoteShipping({ settings: settings({}, { origin: { province: '', district: '', ward: '' } }), address, subtotal: 1, cod: 0 })).reason, 'origin')
+      install({ ratesFail: true })
+      assert.equal((await quoteShipping({ settings: settings(), address, subtotal: 1, cod: 0 })).status, 'error')
+      install({ rates: [{ id: 'x', carrier_name: 'A', total_amount: '-5' }] }) // toàn dòng hỏng
+      assert.equal((await quoteShipping({ settings: settings(), address, subtotal: 1, cod: 0 })).status, 'error')
+    } finally {
+      done()
+    }
+  })
+
+  test('chooseShipping: có báo giá thì bắt buộc chọn đúng lựa chọn, không thì phí cố định; client không tự đặt giá được', () => {
+    const st = settings({ fee: 25000 })
+    const ok = { status: 'ok', options: [{ id: 'a', carrier: 'GHTK', service: 'Nhanh', fee: 18000 }, { id: 'b', carrier: 'VTP', service: '', fee: 39000 }] }
+    assert.deepEqual(chooseShipping(st, 100000, ok, 'a'), { fee: 18000, label: 'GHTK – Nhanh (Goship)' })
+    assert.deepEqual(chooseShipping(st, 100000, ok, 'b'), { fee: 39000, label: 'VTP (Goship)' })
+    assert.equal(chooseShipping(st, 100000, ok, undefined).error, 'SHIPPING_CHANGED') // không chọn: không được hưởng phí cố định rẻ hơn
+    assert.equal(chooseShipping(st, 100000, ok, 'zzz').error, 'SHIPPING_CHANGED') // mã không còn hiệu lực
+    for (const status of ['disabled', 'incomplete', 'error']) {
+      assert.deepEqual(chooseShipping(st, 100000, { status, options: [] }, 'a'), { fee: 25000, label: null }, status)
+    }
+    assert.equal(chooseShipping(settings({ fee: 25000, freeShippingOver: 50000 }), 100000, { status: 'disabled', options: [] }).fee, 0)
+  })
+
+  test('cài đặt: bật Goship phải có kho gửi hàng đủ ba cấp; cân nặng trong khoảng cho phép; client cũ chỉ gửi phí vẫn hợp lệ', () => {
+    const base = { fee: 25000, freeShippingOver: 0 }
+    const goship = (g) => ({ ...base, goship: { enabled: true, defaultWeightGrams: 4000, origin: { province: 'Hà Nội', district: 'Hoàn Kiếm', ward: 'Hàng Bạc' }, ...g } })
+    assert.equal(shippingSchema.safeParse(base).success, true)
+    assert.equal(shippingSchema.safeParse(goship({})).success, true)
+    assert.equal(shippingSchema.safeParse(goship({ origin: { province: 'Hà Nội', district: '', ward: '' } })).success, false)
+    assert.equal(shippingSchema.safeParse(goship({ enabled: false, origin: { province: '', district: '', ward: '' } })).success, true) // tắt thì không cần kho
+    for (const w of [0, 99, 100001, 40.5, '4000']) assert.equal(shippingSchema.safeParse(goship({ defaultWeightGrams: w })).success, false, String(w))
+  })
+
+  test('hỏi cước chỉ nhận giỏ hàng + địa chỉ, tiền do client gửi bị bỏ', () => {
+    const r = shippingQuoteSchema.safeParse({ items: [{ productId: 'sp1', quantity: 2, unitPrice: 1 }], paymentMethod: 'COD', province: 'Hà Nội', total: 5 })
+    assert.equal(r.success, true)
+    assert.equal('total' in r.data, false)
+    assert.equal('unitPrice' in r.data.items[0], false)
+    assert.equal(shippingQuoteSchema.safeParse({ items: [], paymentMethod: 'COD', province: 'Hà Nội' }).success, false)
   })
 })

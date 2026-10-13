@@ -8,6 +8,7 @@ import { trackEvent, getAttribution } from '../analytics'
 import TransferQr from '../components/TransferQr'
 import { fillTransferNote } from '../utils/vietqr'
 import AddressFields from '../components/AddressFields'
+import { useShippingQuote } from '../utils/useShippingQuote'
 
 // Ô nhập có nhãn của form thanh toán (đặt ngoài component để không bị dựng lại mỗi lần gõ).
 function CheckoutField({ label, children }) {
@@ -50,6 +51,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const [rateId, setRateId] = useState(null) // lựa chọn vận chuyển khách đã chọn (khi có báo giá Goship)
 
   useEffect(() => {
     api
@@ -80,7 +82,10 @@ export default function Checkout() {
 
   const methods = (options || FALLBACK_OPTIONS).methods
   const { fee, freeShippingOver } = (options || FALLBACK_OPTIONS).shipping
-  const shippingFee = freeShippingOver > 0 && totalPrice >= freeShippingOver ? 0 : fee
+  const fixedFee = freeShippingOver > 0 && totalPrice >= freeShippingOver ? 0 : fee
+  const quote = useShippingQuote({ items, paymentMethod: form.paymentMethod, province: form.province, district: form.district, ward: form.ward })
+  const picked = quote.status === 'ok' ? quote.options.find((o) => o.id === rateId) || quote.options[0] : null // chưa chọn thì lấy lựa chọn rẻ nhất
+  const shippingFee = picked ? picked.fee : fixedFee
   const total = totalPrice + shippingFee
   const selectedMethod = methods.find((m) => m.id === form.paymentMethod)
 
@@ -110,6 +115,7 @@ export default function Checkout() {
         ward: form.ward,
         district: form.district,
         province: form.province,
+        shippingRateId: picked?.id,
         ...attribution,
       })
 
@@ -131,6 +137,7 @@ export default function Checkout() {
     } catch (err) {
       setError(err.message)
       setSubmitting(false)
+      if (err.data?.code === 'SHIPPING_CHANGED') quote.refresh() // cước vừa đổi: hỏi lại để khách chọn đúng lựa chọn mới
     }
   }
 
@@ -167,6 +174,29 @@ export default function Checkout() {
                 </div>
                 <AddressFields value={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} Field={CheckoutField} />
               </div>
+
+              {(quote.status === 'loading' || quote.status === 'ok') && (
+                <>
+                  <h3 className="checkout-section-title" style={{ marginTop: '24px' }}>Đơn vị vận chuyển</h3>
+                  {quote.status === 'loading' ? (
+                    <p className="checkout-ship-note">Đang tính cước vận chuyển…</p>
+                  ) : (
+                    <div className="checkout-payment-options">
+                      {quote.options.map((o) => (
+                        <label key={o.id} className={`checkout-payment-option checkout-ship-option ${picked?.id === o.id ? 'active' : ''}`}>
+                          <input type="radio" name="shipping" checked={picked?.id === o.id} onChange={() => setRateId(o.id)} />
+                          <span className="checkout-ship-name">
+                            {o.carrier}
+                            {o.service ? ` – ${o.service}` : ''}
+                            {o.expected && <small>{o.expected}</small>}
+                          </span>
+                          <strong>{o.fee === 0 ? 'Miễn phí' : formatPrice(o.fee)}</strong>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
 
               <h3 className="checkout-section-title" style={{ marginTop: '24px' }}>Phương thức thanh toán</h3>
               <div className="checkout-payment-options">
@@ -219,7 +249,7 @@ export default function Checkout() {
                 <span>Tổng cộng</span>
                 <strong>{formatPrice(total)}</strong>
               </div>
-              <button className="btn btn-accent cart-checkout-btn" onClick={handleSubmit} disabled={submitting}>
+              <button className="btn btn-accent cart-checkout-btn" onClick={handleSubmit} disabled={submitting || quote.status === 'loading'}>
                 {submitting ? 'Đang đặt hàng...' : 'Đặt hàng'}
               </button>
             </div>

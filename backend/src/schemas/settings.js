@@ -49,10 +49,25 @@ export const paymentSchema = z
   })
 
 const money = (label) => z.number(`${label} không hợp lệ.`).int(`${label} phải là số nguyên.`).min(0, `${label} không được âm.`).max(10_000_000, `${label} quá lớn.`)
-export const shippingSchema = z.object({
-  fee: money('Phí vận chuyển'),
-  freeShippingOver: money('Mức miễn phí vận chuyển'),
-})
+const place = (label) => z.string(`${label} không hợp lệ.`).trim().max(100, `${label} quá dài.`)
+export const shippingSchema = z
+  .object({
+    fee: money('Phí vận chuyển'),
+    freeShippingOver: money('Mức miễn phí vận chuyển'),
+    goship: z
+      .object({
+        enabled: z.boolean('Trạng thái Goship không hợp lệ.'),
+        defaultWeightGrams: z.number('Cân nặng không hợp lệ.').int('Cân nặng phải là số nguyên (gram).').min(100, 'Cân nặng tối thiểu 100g.').max(100_000, 'Cân nặng tối đa 100.000g.'),
+        origin: z.object({ province: place('Tỉnh/thành kho gửi hàng'), district: place('Quận/huyện kho gửi hàng'), ward: place('Phường/xã kho gửi hàng') }),
+      })
+      .optional(),
+  })
+  .superRefine((d, ctx) => {
+    const o = d.goship?.origin
+    if (d.goship?.enabled && !(o?.province && o?.district && o?.ward)) {
+      ctx.addIssue({ code: 'custom', message: 'Chọn đủ tỉnh, quận/huyện, phường/xã của kho gửi hàng trước khi bật tính cước Goship.', path: ['goship', 'origin'] })
+    }
+  })
 
 // Link mạng xã hội/Shopee: bỏ trống được, nếu có phải là http(s).
 const url = (label) =>

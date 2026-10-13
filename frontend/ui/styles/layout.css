@@ -2414,3 +2414,32 @@ main { animation: page-in 0.22s ease-out; }
     to { opacity: 1; }
   }
 }
+
+/* Chọn đơn vị vận chuyển (cước Goship) ở trang thanh toán */
+.checkout-ship-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkout-ship-name {
+  flex: 1;
+}
+
+.checkout-ship-name small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.checkout-ship-option strong {
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+.checkout-ship-note {
+  font-size: 13px;
+  color: var(--text-muted);
+}

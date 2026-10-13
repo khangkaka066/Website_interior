@@ -12,6 +12,7 @@ export default function CarrierSettings() {
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(null) // carrier id being edited
   const [form, setForm] = useState({})
+  const [goship, setGoship] = useState({ loading: true, data: null, error: '' })
 
   async function load() {
     setLoading(true)
@@ -25,8 +26,19 @@ export default function CarrierSettings() {
     }
   }
 
+  // Kiểm tra kết nối Goship thật (backend gọi Goship bằng GOSHIP_TOKEN trong .env; trình duyệt không thấy token).
+  async function checkGoship() {
+    setGoship((g) => ({ ...g, loading: true, error: '' }))
+    try {
+      setGoship({ loading: false, data: await api.get('/shipping/goship/status'), error: '' })
+    } catch (err) {
+      setGoship({ loading: false, data: null, error: err.message })
+    }
+  }
+
   useEffect(() => {
     load()
+    checkGoship()
   }, [])
 
   function startEdit(carrier) {
@@ -57,6 +69,49 @@ export default function CarrierSettings() {
       <a className="detail-back-link" href="#" onClick={(e) => { e.preventDefault(); navigate('/dashboard/shipping') }}>
         ← Quay lại Vận chuyển
       </a>
+
+      <div className="dash-card" style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h3 className="form-card-title" style={{ marginBottom: '4px' }}>Goship <span style={{ color: 'var(--dash-muted)', fontWeight: 400 }}>(gom nhiều hãng vận chuyển)</span></h3>
+            {goship.loading ? (
+              <span className="order-status-badge status-pending">Đang kiểm tra…</span>
+            ) : goship.data?.connected ? (
+              <span className="order-status-badge status-delivered">Đã kết nối Goship</span>
+            ) : (
+              <span className="order-status-badge status-cancelled">{goship.data?.configured === false ? 'Chưa cấu hình' : 'Chưa kết nối được'}</span>
+            )}
+          </div>
+          <button className="dash-btn dash-btn-ghost" onClick={checkGoship} disabled={goship.loading}>Kiểm tra kết nối</button>
+        </div>
+
+        {(goship.error || goship.data?.message) && (
+          <p style={{ fontSize: '13px', color: 'var(--dash-danger)', marginTop: '10px' }}>{goship.error || goship.data.message}</p>
+        )}
+
+        {goship.data?.connected && (
+          <>
+            <p style={{ fontSize: '13px', color: 'var(--dash-muted)', marginTop: '10px' }}>
+              Kết nối bằng một token duy nhất của Goship, <strong>không cần nhập API riêng cho từng hãng</strong>. Goship đang hỗ trợ {goship.data.carriers.length} hãng
+              ({goship.data.cities} tỉnh/thành):
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+              {goship.data.carriers.map((c) => (
+                <span key={c.name} className="order-status-badge status-pending" title={c.codes.join(', ')}>{c.name}</span>
+              ))}
+            </div>
+          </>
+        )}
+
+        {goship.data && !goship.data.connected && (
+          <p style={{ fontSize: '12px', color: 'var(--dash-muted)', marginTop: '8px' }}>
+            Token Goship được đặt trong <code>backend/.env</code> (<code>GOSHIP_TOKEN</code>) và cần khởi động lại backend sau khi đổi. Token không hiện ở trang này.
+          </p>
+        )}
+      </div>
+
+      <h4 style={{ margin: '0 0 4px', fontSize: '14px' }}>Cấu hình riêng từng hãng</h4>
+      <p style={{ fontSize: '12px', color: 'var(--dash-muted)', margin: '0 0 12px' }}>Chỉ cần khi kết nối trực tiếp với một hãng, không qua Goship. Đã dùng Goship thì không cần điền.</p>
 
       {error && <div className="dash-card" style={{ padding: '16px', color: 'var(--dash-danger)' }}>{error}</div>}
 

@@ -11,7 +11,8 @@ const router = Router()
 router.get('/', requireMainAdmin, asyncHandler(async (req, res) => res.json(await getSettings())))
 for (const [key, schema] of [['store', storeSchema], ['payment', paymentSchema], ['shipping', shippingSchema], ['content', contentSchema]]) {
   router.put(`/${key}`, requireMainAdmin, validate(schema), asyncHandler(async (req, res) => {
-    const next = await saveSettings({ [key]: req.body })
+    const body = key === 'shipping' ? { ...(await getSettings()).shipping, ...req.body } : req.body // client cũ không gửi goship thì giữ nguyên cấu hình đang có
+    const next = await saveSettings({ [key]: body })
     res.json(next[key])
   }))
 }

@@ -33,6 +33,7 @@ export const createOrderSchema = z.object({
   ward: optionalText('phường/xã', 100),
   district: optionalText('quận/huyện', 100),
   province: text('tỉnh/thành phố', 100),
+  shippingRateId: optionalText('lựa chọn vận chuyển', 200), // mã lựa chọn cước Goship khách đã chọn; server kiểm tra lại, không tin số tiền
   utmSource: optionalText('utmSource', 100),
   utmMedium: optionalText('utmMedium', 100),
   utmCampaign: optionalText('utmCampaign', 100),
@@ -41,4 +42,13 @@ export const createOrderSchema = z.object({
 export const payosRelinkSchema = z.object({
   orderNumber: text('mã đơn hàng', 30),
   phone: phone(),
+})
+
+// Hỏi cước vận chuyển cho trang thanh toán (công khai). Server tự tính tiền hàng từ giỏ, không nhận tiền từ client.
+export const shippingQuoteSchema = z.object({
+  items: z.array(lineItem).min(1, 'Giỏ hàng trống.').max(100, 'Đơn hàng có quá nhiều sản phẩm.'),
+  paymentMethod: text('phương thức thanh toán', 50),
+  province: text('tỉnh/thành phố', 100),
+  district: optionalText('quận/huyện', 100),
+  ward: optionalText('phường/xã', 100),
 })

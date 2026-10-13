@@ -9,6 +9,7 @@ import { formatCurrency } from '../../utils/format'
 import { BANKS } from '../../data/banks'
 import TransferQr from '../../components/TransferQr'
 import { fillTransferNote } from '../../utils/vietqr'
+import AddressFields from '../../components/AddressFields'
 
 const TABS = [
   { id: 'store', label: 'Cửa hàng' },
@@ -25,6 +26,16 @@ function Field({ label, hint, children }) {
       {children}
       {hint && <span className="set-hint">{hint}</span>}
     </label>
+  )
+}
+
+// Như Field nhưng không bọc <label>: ô chọn địa chỉ có danh sách thả xuống, bấm vào một mục sẽ kích hoạt lại ô nhập và mở lại danh sách nếu bị bọc.
+function PlainField({ label, children }) {
+  return (
+    <div className="set-field">
+      <span className="set-label">{label}</span>
+      {children}
+    </div>
   )
 }
 
@@ -154,10 +165,20 @@ function PaymentTab({ data, onSaved }) {
 }
 
 function ShippingTab({ data, onSaved }) {
+  const goship = data.goship || { enabled: false, defaultWeightGrams: 4000, origin: { province: '', district: '', ward: '' } }
   const [form, setForm] = useState({ fee: String(data.fee), freeShippingOver: String(data.freeShippingOver) })
+  const [gs, setGs] = useState({ enabled: goship.enabled, weight: String(goship.defaultWeightGrams), origin: { ...goship.origin } })
   const [state, save] = useSave('shipping', onSaved)
   const num = (v) => (v === '' ? NaN : Number(v))
-  const dirty = num(form.fee) !== data.fee || num(form.freeShippingOver) !== data.freeShippingOver
+  const o = goship.origin
+  const dirty =
+    num(form.fee) !== data.fee ||
+    num(form.freeShippingOver) !== data.freeShippingOver ||
+    gs.enabled !== goship.enabled ||
+    num(gs.weight) !== goship.defaultWeightGrams ||
+    gs.origin.province !== o.province ||
+    gs.origin.district !== o.district ||
+    gs.origin.ward !== o.ward
   const digits = (k) => (e) => setForm({ ...form, [k]: e.target.value.replace(/[^\d]/g, '') })
   return (
     <>
@@ -165,7 +186,11 @@ function ShippingTab({ data, onSaved }) {
         className="dash-card set-card"
         onSubmit={(e) => {
           e.preventDefault()
-          save({ fee: num(form.fee), freeShippingOver: num(form.freeShippingOver) })
+          save({
+            fee: num(form.fee),
+            freeShippingOver: num(form.freeShippingOver),
+            goship: { enabled: gs.enabled, defaultWeightGrams: num(gs.weight), origin: gs.origin },
+          })
         }}
       >
         <h3 className="form-card-title">Phí vận chuyển</h3>
@@ -179,6 +204,28 @@ function ShippingTab({ data, onSaved }) {
           >
             <input className="dash-input" inputMode="numeric" value={form.freeShippingOver} onChange={digits('freeShippingOver')} />
           </Field>
+        </div>
+
+        <h3 className="form-card-title" style={{ marginTop: '24px' }}>Tính cước theo Goship</h3>
+        <p className="set-hint">
+          Bật thì ở trang thanh toán khách chọn đơn vị vận chuyển và trả đúng cước Goship báo. Goship lỗi hoặc địa chỉ không khớp thì dùng phí vận chuyển mặc định ở trên.
+          Cần có <code>GOSHIP_TOKEN</code> trong <code>backend/.env</code>.
+        </p>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0', cursor: 'pointer' }}>
+          <input type="checkbox" checked={gs.enabled} onChange={(e) => setGs({ ...gs, enabled: e.target.checked })} />
+          Tính cước vận chuyển theo Goship
+        </label>
+        <div className="set-grid">
+          <Field
+            label="Cân nặng tính cước cho mỗi đơn (gram)"
+            hint={Number.isFinite(num(gs.weight)) ? `${num(gs.weight) / 1000} kg, cố định cho cả đơn bất kể số lượng` : 'Nhập số'}
+          >
+            <input className="dash-input" inputMode="numeric" value={gs.weight} onChange={(e) => setGs({ ...gs, weight: e.target.value.replace(/[^\d]/g, '') })} />
+          </Field>
+        </div>
+        <h4 style={{ margin: '16px 0 8px', fontSize: '13px' }}>Kho gửi hàng (điểm lấy hàng để tính cước)</h4>
+        <div className="set-grid">
+          <AddressFields value={gs.origin} onChange={(patch) => setGs((g) => ({ ...g, origin: { ...g.origin, ...patch } }))} Field={PlainField} inputClassName="dash-input" />
         </div>
         <SaveBar state={state} dirty={dirty} />
       </form>

@@ -20,7 +20,7 @@ import accountRoutes from './routes/account.js'
 import discountRoutes from './routes/discounts.js'
 import seoKeywordRoutes from './routes/seo-keywords.js'
 import { authenticate } from './middleware/auth.js'
-import { securityHeaders, compress, globalLimiter } from './middleware/security.js'
+import { securityHeaders, compress, globalLimiter, forceHttps } from './middleware/security.js'
 
 const app = express()
 
@@ -28,12 +28,7 @@ const app = express()
 if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY)
 
 // Sau proxy/CDN có HTTPS: chuyển mọi truy cập http sang https. Bật bằng FORCE_HTTPS=1 (cần TRUST_PROXY để đọc đúng giao thức).
-if (process.env.FORCE_HTTPS) {
-  app.use((req, res, next) => {
-    if (req.secure) return next()
-    res.redirect(308, `https://${req.headers.host}${req.originalUrl}`)
-  })
-}
+if (process.env.FORCE_HTTPS) app.use(forceHttps)
 
 app.use(securityHeaders)
 app.use(compress)

@@ -38,7 +38,9 @@ export const DEFAULTS = {
       },
     ],
   },
-  shipping: { fee: 25000, freeShippingOver: 0 },
+  // goship: tính cước thật theo Goship ở trang thanh toán (mặc định tắt cho tới khi chọn kho gửi hàng và bật).
+  // defaultWeightGrams: cân nặng cố định cho cả đơn khi hỏi cước, bất kể số lượng.
+  shipping: { fee: 25000, freeShippingOver: 0, goship: { enabled: false, defaultWeightGrams: 4000, origin: { province: '', district: '', ward: '' } } },
   // Giảm giá theo SKU (Dashboard > Giảm giá): [{ sku, percent }]. SKU của sản phẩm thì giảm mọi phân loại, SKU của phân loại thì chỉ giảm phân loại đó.
   discounts: { rules: [] },
   // Nội dung các trang Về chúng tôi / Liên hệ / FAQ (sửa ở Cài đặt > Nội dung trang).
@@ -79,7 +81,15 @@ function merge(saved) {
   return {
     store: { ...DEFAULTS.store, ...(s.store || {}) },
     payment: { methods },
-    shipping: { ...DEFAULTS.shipping, ...(s.shipping || {}) },
+    shipping: {
+      ...DEFAULTS.shipping,
+      ...(s.shipping || {}),
+      goship: {
+        ...DEFAULTS.shipping.goship,
+        ...(s.shipping?.goship || {}),
+        origin: { ...DEFAULTS.shipping.goship.origin, ...(s.shipping?.goship?.origin || {}) },
+      },
+    },
     discounts: { rules: Array.isArray(s.discounts?.rules) ? s.discounts.rules : [] },
     content: {
       about: { ...DEFAULTS.content.about, ...(s.content?.about || {}) },

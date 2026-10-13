@@ -3,7 +3,8 @@ import { toPlain } from '../utils/serialize.js'
 import { generateOrderNumber } from '../utils/ids.js'
 import { canTransitionOrder } from '../constants/workflow.js'
 import { getStorefrontProduct, reserveStock, releaseStock, loadProducts, StockError } from '../lib/productStore.js'
-import { getSettings, shippingFeeFor } from '../lib/settingsStore.js'
+import { getSettings, shippingFeeFor, COD_METHOD_ID } from '../lib/settingsStore.js'
+import { quoteShipping, chooseShipping } from '../lib/shippingRates.js'
 import { sendMail } from '../lib/mailer.js'
 import { PAYOS_METHOD_ID, payosConfigured, createPaymentLink } from '../lib/payos.js'
 import { orderCreatedEmail, orderStatusEmail, NOTIFY_STATUSES } from '../lib/emailTemplates.js'
@@ -158,6 +159,7 @@ export async function createOrder(req, res) {
     ward,
     district,
     province,
+    shippingRateId,
     utmSource,
     utmMedium,
     utmCampaign,
@@ -188,7 +190,13 @@ export async function createOrder(req, res) {
   const discount = 0
   const tax = 0
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0)
-  const shippingFee = shippingFeeFor(settings, subtotal)
+  // Phí vận chuyển do server quyết định: báo giá Goship chạy được thì khách phải chọn đúng một lựa chọn còn hiệu lực, không thì phí cố định.
+  const quote = await quoteShipping({ settings, address: { province, district, ward }, subtotal, cod: paymentMethod === COD_METHOD_ID ? subtotal : 0 })
+  const shipping = chooseShipping(settings, subtotal, quote, shippingRateId)
+  if (shipping.error) {
+    return res.status(409).json({ error: 'Cước vận chuyển đã thay đổi hoặc chưa chọn đơn vị vận chuyển, vui lòng chọn lại.', code: 'SHIPPING_CHANGED' })
+  }
+  const shippingFee = shipping.fee
   const total = subtotal - discount + shippingFee + tax
 
   const dbCustomer = await resolveOrderCustomer(req.user, customer)
@@ -228,7 +236,7 @@ export async function createOrder(req, res) {
           items: {
             create: lines,
           },
-          statusEvents: { create: { status: 'PENDING_CONFIRMATION', note: 'Đơn hàng được tạo' } },
+          statusEvents: { create: { status: 'PENDING_CONFIRMATION', note: shipping.label ? `Đơn hàng được tạo · Vận chuyển: ${shipping.label}` : 'Đơn hàng được tạo' } },
         },
         include: ORDER_INCLUDE,
       })
@@ -492,4 +500,21 @@ export async function trackOrder(req, res) {
         items: o.items.map((i) => ({ name: i.name, variant: i.variant, quantity: i.quantity })),
       })),
   })
+}
+
+// Báo giá vận chuyển cho trang thanh toán: { mode: 'goship', options } hoặc { mode: 'fixed', fee } (dùng phí cố định trong Cài đặt).
+export async function shippingQuote(req, res) {
+  const { items, paymentMethod, province, district, ward } = req.body
+  const lines = []
+  for (const it of items) {
+    const { line, error } = priceLine(it)
+    if (error) return res.status(400).json({ error })
+    lines.push(line)
+  }
+  const settings = await getSettings()
+  const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0)
+  const quote = await quoteShipping({ settings, address: { province, district, ward }, subtotal, cod: paymentMethod === COD_METHOD_ID ? subtotal : 0 })
+  res.set('Cache-Control', 'no-store')
+  if (quote.status === 'ok') return res.json({ mode: 'goship', options: quote.options })
+  res.json({ mode: 'fixed', fee: shippingFeeFor(settings, subtotal), reason: quote.status })
 }

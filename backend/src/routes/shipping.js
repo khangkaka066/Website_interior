@@ -10,6 +10,7 @@ import {
   cancelShipment,
 } from '../controllers/shipping.js'
 import { listCarriers, createCarrier, updateCarrier } from '../controllers/carriers.js'
+import { checkGoship } from '../lib/goship.js'
 import { validate } from '../middleware/validate.js'
 import { requirePermission } from '../middleware/auth.js'
 
@@ -20,6 +21,11 @@ const guard = requirePermission('shipping')
 
 router.get('/dashboard', guard, asyncHandler(getShippingDashboard))
 router.get('/alerts', guard, asyncHandler(getShippingAlerts))
+// Trạng thái kết nối Goship (kiểm tra thật). Đặt trước '/:id' để không bị hiểu là mã vận đơn.
+router.get('/goship/status', guard, asyncHandler(async (req, res) => {
+  res.set('Cache-Control', 'no-store')
+  res.json(await checkGoship())
+}))
 router.get('/carriers', guard, asyncHandler(listCarriers))
 router.post('/carriers', guard, validate(createCarrierSchema), asyncHandler(createCarrier))
 router.patch('/carriers/:id', guard, validate(updateCarrierSchema), asyncHandler(updateCarrier))
