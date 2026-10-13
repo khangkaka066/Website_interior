@@ -370,3 +370,204 @@ video {
     animation: none;
   }
 }
+
+/* ====================================================================== */
+/* Thích ứng điện thoại / tablet (đặt cuối file để thắng đúng thứ tự cascade) */
+/* ====================================================================== */
+
+/* Header: tablet không được rộng hơn màn hình. Bỏ chữ "Giỏ hàng" (giữ số lượng + tổng tiền), ô tìm kiếm co lại được. */
+@media (max-width: 1024px) {
+  .search-box {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .cart-word {
+    display: none;
+  }
+}
+
+/* Điện thoại: logo và các nút (hotline, tài khoản, yêu thích, giỏ) chung một hàng. */
+@media (max-width: 480px) {
+  .header-top {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .header-actions {
+    gap: 12px;
+  }
+  .cart-total,
+  .account-logout {
+    display: none; /* tổng tiền xem ở trang giỏ hàng; đăng xuất ở trang tài khoản */
+  }
+  /* Đã đăng nhập: chữ "Quản trị"/"Tài khoản" thành biểu tượng người dùng để các nút không bị đẩy xuống dòng. */
+  .account-admin-link .account-text {
+    display: none;
+  }
+  .account-admin-link .account-icon {
+    display: block;
+  }
+  /* Thanh menu cuộn ngang: mờ dần ở mép phải để biết còn mục phía sau, chừa lề để mục cuối kéo ra khỏi vùng mờ. */
+  .main-nav {
+    padding-right: 32px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  }
+}
+
+/* Trang chi tiết sản phẩm. Lỗi cũ: quy tắc 3 cột ở màn ≤1279px (trong file này) đè lên quy tắc 1 cột ở màn ≤900px (layout.css)
+   vì đứng sau, nên điện thoại vẫn bị 3 cột, cột chữ chỉ còn ~140px và trang tràn ngang gần 1000px. */
+@media (max-width: 900px) {
+  .pdp {
+    padding: 24px 0 72px;
+  }
+  /* Tablet: ảnh bên trái (ảnh nhỏ nằm dưới ảnh lớn), thông tin bên phải. */
+  .pdp-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'main info'
+      'thumbs info';
+    column-gap: 28px;
+    row-gap: 12px;
+    align-items: start;
+  }
+  .pdp-main-image {
+    grid-area: main;
+  }
+  .pdp-thumbs {
+    grid-area: thumbs;
+    order: 0;
+    flex-direction: row;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .pdp-thumbs::-webkit-scrollbar {
+    display: none;
+  }
+  .pdp-thumb {
+    flex: 0 0 64px;
+    width: 64px;
+  }
+  .pdp-info {
+    grid-area: info;
+    min-width: 0;
+  }
+  /* Số lượng + Thêm vào giỏ cùng hàng, Mua ngay xuống hàng riêng cho đủ rộng để bấm. */
+  .pdp-purchase-row {
+    flex-wrap: wrap;
+  }
+  .pdp-buy-now {
+    flex-basis: 100%;
+  }
+}
+
+/* Điện thoại: một cột: ảnh lớn, dải ảnh nhỏ cuộn ngang, rồi thông tin. */
+@media (max-width: 640px) {
+  .pdp-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'main'
+      'thumbs'
+      'info';
+  }
+  .pdp-main-image img {
+    padding: 16px;
+  }
+  .pdp-add-to-cart {
+    padding-left: 16px;
+    padding-right: 16px;
+    white-space: nowrap;
+  }
+}
+
+/* Nút nổi (Gọi, chat): nhỏ gọn hơn và sát mép hơn trên điện thoại; chừa chỗ cuối trang để không che chữ chân trang. */
+@media (max-width: 768px) {
+  .chat-widget {
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    gap: 10px;
+  }
+  .chat-bubble-btn {
+    width: 50px;
+    height: 50px;
+  }
+  .footer-bottom {
+    padding-bottom: 88px;
+  }
+}
+
+/* Màn hình cảm ứng: vùng chạm tối thiểu ~40px cho các nút và link nhỏ (header, menu, bộ lọc, chân trang, giỏ hàng). */
+@media (pointer: coarse) {
+  .header-actions {
+    gap: 4px;
+  }
+  .icon-btn,
+  .wish-link {
+    min-width: 40px;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+  }
+  .cart {
+    min-height: 40px;
+    padding: 0 6px;
+  }
+  .support {
+    min-width: 40px;
+    min-height: 40px;
+    justify-content: center;
+  }
+  .account-admin-link,
+  .account-logout {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 6px;
+  }
+  .nav-products-toggle {
+    padding: 10px;
+  }
+  .main-nav a,
+  .nav-products-link {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .tab {
+    min-height: 40px;
+  }
+  .wish-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .filter-group-head {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .filter-checkbox {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+  .filter-checkbox input {
+    width: 20px;
+    height: 20px;
+  }
+  .footer-columns a {
+    display: inline-block;
+    padding: 9px 0;
+  }
+  .cart-row-remove {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .cart-continue-link,
+  .pdp-back,
+  .view-all-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+}
+
+.account-icon {
+  display: none; /* chỉ hiện trên điện thoại hẹp (xem khối max-width: 480px ở trên) */
+}

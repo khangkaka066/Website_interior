@@ -64,7 +64,7 @@ export default function Header() {
         </Suspense>
 
         <div className="header-actions">
-          <div className="support">
+          <a className="support" href={`tel:${String(shopInfo.hotline).replace(/[^\d+]/g, '')}`} aria-label={`Gọi hotline ${shopInfo.hotline}`}>
             <span className="headset-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path
@@ -81,17 +81,23 @@ export default function Header() {
               <span>Hotline CSKH</span>
               <strong>{shopInfo.hotline}</strong>
             </div>
-          </div>
+          </a>
           {session ? (
             <div className="account-menu">
               <span className="account-greeting">Xin chào, {session.name}</span>
               {session.role === 'ADMIN' ? (
-                <Link to="/dashboard" className="account-admin-link">
-                  Quản trị
+                <Link to="/dashboard" className="account-admin-link" aria-label="Quản trị">
+                  <svg className="account-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8c1.2-4 4-6 7-6s5.8 2 7 6" stroke="currentColor" strokeWidth="1.6" fill="none" />
+                </svg>
+                <span className="account-text">Quản trị</span>
                 </Link>
               ) : (
-                <Link to="/account" className="account-admin-link">
-                  Tài khoản
+                <Link to="/account" className="account-admin-link" aria-label="Tài khoản">
+                  <svg className="account-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8c1.2-4 4-6 7-6s5.8 2 7 6" stroke="currentColor" strokeWidth="1.6" fill="none" />
+                </svg>
+                <span className="account-text">Tài khoản</span>
                 </Link>
               )}
               <button className="account-logout" onClick={handleLogout}>
@@ -130,7 +136,16 @@ export default function Header() {
               <circle cx="9" cy="20" r="1.4" fill="currentColor" />
               <circle cx="17" cy="20" r="1.4" fill="currentColor" />
             </svg>
-            <span>Giỏ hàng {totalCount > 0 ? `(${totalCount}) ${formatPrice(totalPrice)}` : '0đ'}</span>
+            <span>
+              <span className="cart-word">Giỏ hàng </span>
+              {totalCount > 0 ? (
+                <>
+                  ({totalCount}) <span className="cart-total">{formatPrice(totalPrice)}</span>
+                </>
+              ) : (
+                '0đ'
+              )}
+            </span>
           </Link>
         </div>
       </div>
