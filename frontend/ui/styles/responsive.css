@@ -375,14 +375,19 @@ video {
 /* Thích ứng điện thoại / tablet (đặt cuối file để thắng đúng thứ tự cascade) */
 /* ====================================================================== */
 
-/* Header: tablet không được rộng hơn màn hình. Bỏ chữ "Giỏ hàng" (giữ số lượng + tổng tiền), ô tìm kiếm co lại được. */
+/* Header: tablet không được rộng hơn màn hình. Bỏ chữ "Giỏ hàng" (giữ số lượng + tổng tiền) và lời chào dài. */
 @media (max-width: 1024px) {
+  .cart-word,
+  .account-greeting {
+    display: none;
+  }
+}
+
+/* Tablet (769-1024px): ô tìm kiếm co lại được. Không áp dụng cho ≤768px, nơi ô tìm kiếm chiếm cả một hàng riêng. */
+@media (min-width: 769px) and (max-width: 1024px) {
   .search-box {
     flex: 1 1 0;
     min-width: 0;
-  }
-  .cart-word {
-    display: none;
   }
 }
 
@@ -418,7 +423,8 @@ video {
    vì đứng sau, nên điện thoại vẫn bị 3 cột, cột chữ chỉ còn ~140px và trang tràn ngang gần 1000px. */
 @media (max-width: 900px) {
   .pdp {
-    padding: 24px 0 72px;
+    padding-top: 24px; /* chỉ chỉnh lề trên/dưới: lề ngang là của .container */
+    padding-bottom: 72px;
   }
   /* Tablet: ảnh bên trái (ảnh nhỏ nằm dưới ảnh lớn), thông tin bên phải. */
   .pdp-layout {
@@ -517,12 +523,15 @@ video {
     min-height: 40px;
     justify-content: center;
   }
-  .account-admin-link,
-  .account-logout {
+  .account-admin-link {
     display: inline-flex;
     align-items: center;
     min-height: 40px;
     padding: 0 6px;
+  }
+  .account-logout {
+    min-height: 40px;
+    padding: 0 6px; /* không đặt display: nút này bị ẩn trên điện thoại hẹp */
   }
   .nav-products-toggle {
     padding: 10px;
@@ -570,4 +579,33 @@ video {
 
 .account-icon {
   display: none; /* chỉ hiện trên điện thoại hẹp (xem khối max-width: 480px ở trên) */
+}
+
+/* Điện thoại hẹp (≤380px, ví dụ 360px): thu nhỏ nhẹ logo và vùng chạm để logo + các nút còn chung một hàng. */
+@media (max-width: 380px) {
+  .logo-text {
+    font-size: 17px;
+  }
+  .icon-btn,
+  .wish-link,
+  .support {
+    min-width: 36px;
+  }
+  .cart {
+    padding: 0 4px;
+  }
+}
+
+/* Điện thoại / tablet: nội dung hero không dính sát đáy header. */
+@media (max-width: 768px) {
+  .hero-inner {
+    padding-top: 36px;
+  }
+}
+
+/* Chân trang: chừa khoảng trước dòng bản quyền để không dính sát mục cuối của danh sách. */
+@media (max-width: 1024px) {
+  .footer-columns {
+    padding-bottom: 28px;
+  }
 }
