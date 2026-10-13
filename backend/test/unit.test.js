@@ -884,6 +884,17 @@ describe('tính cước vận chuyển qua Goship', () => {
     }
   })
 
+  test('đơn COD: Goship cộng tiền thu hộ vào total_amount, nhưng phí khách trả chỉ là total_fee + cod_fee', async () => {
+    // Số liệu lấy từ lần hỏi cước thật (cod 413.565đ): total_fee 22.000, cod_fee 0, total_amount 435.565.
+    install({ rates: [{ id: 'real', carrier_name: 'Best Express', service: 'Nhanh', total_fee: '22000', cod_fee: '0', total_amount: '435565' }, { id: 'withCodFee', carrier_name: 'X', service: 'Y', total_fee: '30000', cod_fee: '5000', total_amount: '448565' }] })
+    try {
+      const q = await quoteShipping({ settings: settings(), address, subtotal: 413565, cod: 413565 })
+      assert.deepEqual(q.options.map((o) => [o.carrier, o.fee]), [['Best Express', 22000], ['X', 35000]])
+    } finally {
+      done()
+    }
+  })
+
   test('hỏi cước: gửi mã Goship, cân nặng 4000g cho cả đơn, COD và khai giá theo tiền hàng; trả lựa chọn rẻ trước, bỏ dòng hỏng', async () => {
     install()
     try {

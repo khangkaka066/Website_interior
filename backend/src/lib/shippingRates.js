@@ -17,9 +17,10 @@ export async function resolveAddressIds({ province, district, ward }) {
   return { city: city.id, district: dist.id, ward: w.id }
 }
 
-// Một dòng cước của Goship -> lựa chọn cho khách. Khách trả total_amount (cước + phí thu hộ COD nếu có).
+// Một dòng cước của Goship -> lựa chọn cho khách. Khách trả total_fee + cod_fee (cước ship + phí thu hộ nếu hãng tính riêng).
+// KHÔNG dùng total_amount: với đơn COD, Goship cộng cả số tiền thu hộ vào đó (đã thử thật: cước 22.000đ nhưng total_amount 435.565đ).
 function toOption(row, free) {
-  const fee = Number(row.total_amount ?? Number(row.total_fee) + Number(row.cod_fee || 0))
+  const fee = Number(row.total_fee) + Number(row.cod_fee || 0)
   if (!row.id || !Number.isFinite(fee) || fee < 0) return null
   return {
     id: String(row.id),
