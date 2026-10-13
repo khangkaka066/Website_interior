@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma.js'
 import { toPlain } from '../utils/serialize.js'
 import { generateTrackingId } from '../utils/ids.js'
 import { canTransitionShipping, SHIPPING_TO_ORDER_STATUS } from '../constants/workflow.js'
+import { ShipmentError, cancelOnGoship } from '../lib/goshipShipments.js'
 
 const SHIPMENT_INCLUDE = {
   carrier: true,
@@ -258,10 +259,19 @@ export async function updateShipmentStatus(req, res) {
 
 export async function cancelShipment(req, res) {
   const { note } = req.body || {}
-  const shipment = await prisma.shipment.findUnique({ where: { id: req.params.id } })
+  const shipment = await prisma.shipment.findUnique({ where: { id: req.params.id }, include: { carrier: true } })
   if (!shipment) return res.status(404).json({ error: 'Không tìm thấy vận đơn.' })
   if (['DELIVERED', 'RETURNED'].includes(shipment.status)) {
     return res.status(400).json({ error: 'Không thể hủy vận đơn đã hoàn tất.' })
+  }
+
+  // Vận đơn Goship: hủy bên Goship trước. Goship không hủy được (ví dụ hãng đã lấy hàng) thì giữ nguyên, không đánh dấu hủy ở mình.
+  let remote = { cancelledRemote: false }
+  try {
+    remote = await cancelOnGoship(shipment)
+  } catch (err) {
+    if (err instanceof ShipmentError) return res.status(err.status).json({ error: err.message, code: err.code })
+    throw err
   }
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -269,7 +279,7 @@ export async function cancelShipment(req, res) {
       where: { id: shipment.id },
       data: {
         status: 'NOT_CREATED',
-        trackingEvents: { create: { status: 'Đã hủy vận đơn', note } },
+        trackingEvents: { create: { status: 'Đã hủy vận đơn', note: remote.cancelledRemote ? [note, 'Đã hủy bên Goship'].filter(Boolean).join(' · ') : note } },
       },
       include: SHIPMENT_INCLUDE,
     })

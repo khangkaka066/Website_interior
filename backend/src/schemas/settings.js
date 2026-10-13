@@ -50,6 +50,11 @@ export const paymentSchema = z
 
 const money = (label) => z.number(`${label} không hợp lệ.`).int(`${label} phải là số nguyên.`).min(0, `${label} không được âm.`).max(10_000_000, `${label} quá lớn.`)
 const place = (label) => z.string(`${label} không hợp lệ.`).trim().max(100, `${label} quá dài.`)
+const phoneText = z
+  .string('Số điện thoại người gửi không hợp lệ.')
+  .trim()
+  .max(20, 'Số điện thoại người gửi quá dài.')
+  .refine((v) => v === '' || /^[0-9+().\s-]{8,20}$/.test(v), 'Số điện thoại người gửi chỉ gồm chữ số (8 đến 20 ký tự).')
 export const shippingSchema = z
   .object({
     fee: money('Phí vận chuyển'),
@@ -57,15 +62,30 @@ export const shippingSchema = z
     goship: z
       .object({
         enabled: z.boolean('Trạng thái Goship không hợp lệ.'),
+        createShipments: z.boolean('Trạng thái tạo vận đơn không hợp lệ.').optional().default(false),
         defaultWeightGrams: z.number('Cân nặng không hợp lệ.').int('Cân nặng phải là số nguyên (gram).').min(100, 'Cân nặng tối thiểu 100g.').max(100_000, 'Cân nặng tối đa 100.000g.'),
-        origin: z.object({ province: place('Tỉnh/thành kho gửi hàng'), district: place('Quận/huyện kho gửi hàng'), ward: place('Phường/xã kho gửi hàng') }),
+        origin: z.object({
+          province: place('Tỉnh/thành kho gửi hàng'),
+          district: place('Quận/huyện kho gửi hàng'),
+          ward: place('Phường/xã kho gửi hàng'),
+          street: z.string('Địa chỉ kho gửi hàng không hợp lệ.').trim().max(200, 'Địa chỉ kho gửi hàng quá dài.').optional().default(''),
+          name: place('Tên người gửi').optional().default(''),
+          phone: phoneText.optional().default(''),
+        }),
       })
       .optional(),
   })
   .superRefine((d, ctx) => {
-    const o = d.goship?.origin
-    if (d.goship?.enabled && !(o?.province && o?.district && o?.ward)) {
+    const g = d.goship
+    const o = g?.origin
+    if (g?.enabled && !(o?.province && o?.district && o?.ward)) {
       ctx.addIssue({ code: 'custom', message: 'Chọn đủ tỉnh, quận/huyện, phường/xã của kho gửi hàng trước khi bật tính cước Goship.', path: ['goship', 'origin'] })
+    }
+    if (g?.createShipments && !g.enabled) {
+      ctx.addIssue({ code: 'custom', message: 'Cần bật tính cước Goship trước khi cho phép tạo vận đơn thật.', path: ['goship', 'createShipments'] })
+    }
+    if (g?.createShipments && !(o?.street && o?.name && o?.phone)) {
+      ctx.addIssue({ code: 'custom', message: 'Nhập đủ địa chỉ (số nhà, đường), tên và số điện thoại người gửi trước khi cho phép tạo vận đơn thật.', path: ['goship', 'origin'] })
     }
   })
 

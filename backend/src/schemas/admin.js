@@ -221,3 +221,9 @@ export const updatePostSchema = z.object({
   coverUrl: z.union([z.literal('').transform(() => null), z.null(), url('ảnh bìa')]).optional(),
   status: z.enum(['draft', 'published'], 'Trạng thái không hợp lệ.').optional(),
 })
+
+// Tạo vận đơn THẬT qua Goship: bắt buộc chọn một lựa chọn cước và xác nhận tường minh.
+export const goshipCreateShipmentSchema = z.object({
+  rateId: z.string('Chưa chọn đơn vị vận chuyển.').trim().min(1, 'Chưa chọn đơn vị vận chuyển.').max(200, 'Mã lựa chọn không hợp lệ.'),
+  confirm: z.literal(true, 'Cần xác nhận đây là vận đơn thật.'),
+})

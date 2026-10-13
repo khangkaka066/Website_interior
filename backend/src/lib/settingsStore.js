@@ -41,7 +41,18 @@ export const DEFAULTS = {
   // goship: tính cước thật theo Goship ở trang thanh toán (mặc định tắt cho tới khi chọn kho gửi hàng và bật).
   // defaultWeightGrams: cân nặng cố định cho cả đơn khi hỏi cước, bất kể số lượng.
   // fee: phí cố định chỉ dùng khi không tính được cước Goship (mặc định 0: không thu phí cố định).
-  shipping: { fee: 0, freeShippingOver: 0, goship: { enabled: false, defaultWeightGrams: 4000, origin: { province: '', district: '', ward: '' } } },
+  shipping: {
+    fee: 0,
+    freeShippingOver: 0,
+    goship: {
+      enabled: false,
+      // createShipments: cho phép admin tạo vận đơn THẬT qua Goship (phát sinh cước). Mặc định tắt.
+      createShipments: false,
+      defaultWeightGrams: 4000,
+      // origin: kho gửi hàng. province/district/ward dùng để tính cước; street/name/phone là thông tin người gửi trên vận đơn.
+      origin: { province: '', district: '', ward: '', street: '', name: '', phone: '' },
+    },
+  },
   // Giảm giá theo SKU (Dashboard > Giảm giá): [{ sku, percent }]. SKU của sản phẩm thì giảm mọi phân loại, SKU của phân loại thì chỉ giảm phân loại đó.
   discounts: { rules: [] },
   // Nội dung các trang Về chúng tôi / Liên hệ / FAQ (sửa ở Cài đặt > Nội dung trang).

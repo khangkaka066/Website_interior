@@ -40,7 +40,15 @@ app.use(cors({ origin: origins }))
 app.use('/api/admin-products', express.json({ limit: '30mb' }))
 // Nhập giảm giá từ file Excel gửi tới 5000 dòng nên lớn hơn 1mb.
 app.use('/api/discounts', express.json({ limit: '5mb' }))
-app.use(express.json({ limit: '1mb' }))
+// Webhook Goship cần thân request gốc để kiểm tra chữ ký (HMAC) nên giữ lại bản Buffer riêng cho đường dẫn đó.
+app.use(
+  express.json({
+    limit: '1mb',
+    verify: (req, res, buf) => {
+      if (req.originalUrl.startsWith('/api/shipping/goship/webhook')) req.rawBody = buf
+    },
+  }),
+)
 app.use(authenticate)
 
 app.get('/api/health', (req, res) => {

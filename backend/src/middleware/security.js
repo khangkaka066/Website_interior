@@ -38,6 +38,9 @@ export const analyticsLimiter = limiter(minutes(1), 120)
 // Báo giá vận chuyển ở trang thanh toán (công khai, mỗi lần có thể gọi Goship): đủ cho khách đổi địa chỉ/phương thức nhiều lần.
 export const quoteLimiter = limiter(minutes(1), 30)
 
+// Webhook Goship (công khai, xác thực bằng chữ ký): chặn bơm request giả nhưng đủ rộng cho một đợt cập nhật trạng thái.
+export const webhookLimiter = limiter(minutes(1), 120)
+
 // Tra cứu đơn của khách (công khai): chặn dò mã đơn + số điện thoại hàng loạt.
 export const trackLimiter = limiter(minutes(15), 30)
 

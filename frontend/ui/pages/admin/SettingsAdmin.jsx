@@ -165,9 +165,9 @@ function PaymentTab({ data, onSaved }) {
 }
 
 function ShippingTab({ data, onSaved }) {
-  const goship = data.goship || { enabled: false, defaultWeightGrams: 4000, origin: { province: '', district: '', ward: '' } }
+  const goship = data.goship || { enabled: false, createShipments: false, defaultWeightGrams: 4000, origin: { province: '', district: '', ward: '', street: '', name: '', phone: '' } }
   const [form, setForm] = useState({ fee: String(data.fee), freeShippingOver: String(data.freeShippingOver) })
-  const [gs, setGs] = useState({ enabled: goship.enabled, weight: String(goship.defaultWeightGrams), origin: { ...goship.origin } })
+  const [gs, setGs] = useState({ enabled: goship.enabled, createShipments: Boolean(goship.createShipments), weight: String(goship.defaultWeightGrams), origin: { street: '', name: '', phone: '', ...goship.origin } })
   const [state, save] = useSave('shipping', onSaved)
   const num = (v) => (v === '' ? NaN : Number(v))
   const o = goship.origin
@@ -178,7 +178,11 @@ function ShippingTab({ data, onSaved }) {
     num(gs.weight) !== goship.defaultWeightGrams ||
     gs.origin.province !== o.province ||
     gs.origin.district !== o.district ||
-    gs.origin.ward !== o.ward
+    gs.origin.ward !== o.ward ||
+    gs.createShipments !== Boolean(goship.createShipments) ||
+    (gs.origin.street || '') !== (o.street || '') ||
+    (gs.origin.name || '') !== (o.name || '') ||
+    (gs.origin.phone || '') !== (o.phone || '')
   const digits = (k) => (e) => setForm({ ...form, [k]: e.target.value.replace(/[^\d]/g, '') })
   return (
     <>
@@ -189,7 +193,7 @@ function ShippingTab({ data, onSaved }) {
           save({
             fee: num(form.fee),
             freeShippingOver: num(form.freeShippingOver),
-            goship: { enabled: gs.enabled, defaultWeightGrams: num(gs.weight), origin: gs.origin },
+            goship: { enabled: gs.enabled, createShipments: gs.createShipments, defaultWeightGrams: num(gs.weight), origin: gs.origin },
           })
         }}
       >
@@ -227,6 +231,28 @@ function ShippingTab({ data, onSaved }) {
         <div className="set-grid">
           <AddressFields value={gs.origin} onChange={(patch) => setGs((g) => ({ ...g, origin: { ...g.origin, ...patch } }))} Field={PlainField} inputClassName="dash-input" />
         </div>
+        <div className="set-grid" style={{ marginTop: '12px' }}>
+          <Field label="Địa chỉ kho (số nhà, đường)" hint="In trên vận đơn làm địa chỉ lấy hàng">
+            <input className="dash-input" value={gs.origin.street || ''} onChange={(e) => setGs((g) => ({ ...g, origin: { ...g.origin, street: e.target.value } }))} maxLength={200} />
+          </Field>
+          <Field label="Tên người gửi" hint="Người shipper liên hệ khi lấy hàng">
+            <input className="dash-input" value={gs.origin.name || ''} onChange={(e) => setGs((g) => ({ ...g, origin: { ...g.origin, name: e.target.value } }))} maxLength={100} />
+          </Field>
+          <Field label="Số điện thoại người gửi">
+            <input className="dash-input" inputMode="tel" value={gs.origin.phone || ''} onChange={(e) => setGs((g) => ({ ...g, origin: { ...g.origin, phone: e.target.value } }))} maxLength={20} />
+          </Field>
+        </div>
+
+        <h3 className="form-card-title" style={{ marginTop: '24px' }}>Tạo vận đơn thật qua Goship</h3>
+        <p className="set-hint">
+          Khi bật, trang chi tiết đơn có nút <strong>"Tạo vận đơn qua Goship"</strong>: gửi yêu cầu lấy hàng tới hãng và <strong>phát sinh cước thật</strong>.
+          Mỗi lần tạo luôn có hộp xác nhận. Cần bật "Tính cước theo Goship" và nhập đủ thông tin kho, người gửi ở trên. Trạng thái giao hàng được cập nhật qua webhook
+          (xem hướng dẫn ở trang Đơn vị vận chuyển).
+        </p>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0', cursor: 'pointer' }}>
+          <input type="checkbox" checked={gs.createShipments} onChange={(e) => setGs({ ...gs, createShipments: e.target.checked })} />
+          Cho phép tạo vận đơn thật qua Goship
+        </label>
         <SaveBar state={state} dirty={dirty} />
       </form>
       <div className="dash-card set-card">

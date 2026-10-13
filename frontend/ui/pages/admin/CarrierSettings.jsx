@@ -103,6 +103,23 @@ export default function CarrierSettings() {
           </>
         )}
 
+        {goship.data?.connected && (
+          <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--dash-border)', fontSize: '13px' }}>
+            <strong>Cập nhật trạng thái giao hàng (webhook)</strong>
+            <p style={{ color: 'var(--dash-muted)', margin: '6px 0' }}>
+              Để đơn tự cập nhật khi hãng lấy hàng, giao thành công, hoàn hàng..., đăng ký địa chỉ sau ở cổng Goship (mục "Kết nối API", "Webhook", chọn HTTPS):
+            </p>
+            <code style={{ display: 'block', padding: '8px 10px', background: 'var(--dash-bg, #f6efe8)', wordBreak: 'break-all' }}>
+              {typeof window === 'undefined' ? '' : `${window.location.origin}/api/shipping/goship/webhook`}
+            </code>
+            <p style={{ color: goship.data.webhookSecret ? 'var(--dash-muted)' : 'var(--dash-danger)', margin: '8px 0 0' }}>
+              {goship.data.webhookSecret
+                ? 'Đã có GOSHIP_CLIENT_SECRET: webhook được xác thực chữ ký.'
+                : 'Chưa có GOSHIP_CLIENT_SECRET trong backend/.env: webhook không xác thực được chữ ký, hệ thống sẽ đối chiếu lại với API Goship cho mỗi cập nhật (chậm hơn nhưng vẫn an toàn).'}
+            </p>
+          </div>
+        )}
+
         {goship.data && !goship.data.connected && (
           <p style={{ fontSize: '12px', color: 'var(--dash-muted)', marginTop: '8px' }}>
             Token Goship được đặt trong <code>backend/.env</code> (<code>GOSHIP_TOKEN</code>) và cần khởi động lại backend sau khi đổi. Token không hiện ở trang này.

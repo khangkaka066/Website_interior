@@ -6,6 +6,7 @@ import AdminLayout from '../../components/dashboard/AdminLayout'
 import StatusTimeline from '../../components/dashboard/StatusTimeline'
 import ConfirmModal from '../../components/dashboard/ConfirmModal'
 import CreateShipmentModal from '../../components/dashboard/orders/CreateShipmentModal'
+import GoshipShipmentModal from '../../components/dashboard/orders/GoshipShipmentModal'
 import { api } from '../../api'
 import {
   ORDER_STATUS,
@@ -32,7 +33,12 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [modal, setModal] = useState(null) // 'cancel' | 'confirm' | 'refund' | 'create-shipment'
+  const [modal, setModal] = useState(null) // 'cancel' | 'confirm' | 'refund' | 'create-shipment' | 'goship-shipment'
+  const [goshipReady, setGoshipReady] = useState(false) // đã bật tạo vận đơn thật qua Goship ở Cài đặt
+
+  useEffect(() => {
+    api.get('/shipping/goship/config').then((c) => setGoshipReady(Boolean(c.ready))).catch(() => setGoshipReady(false))
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -114,7 +120,12 @@ export default function OrderDetail() {
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {canConfirm && <button className="dash-btn" onClick={handleConfirmOrder}>Xác nhận đơn</button>}
-          {canCreateShipment && <button className="dash-btn" onClick={() => setModal('create-shipment')}>Tạo vận đơn</button>}
+          {canCreateShipment && goshipReady && <button className="dash-btn" onClick={() => setModal('goship-shipment')}>Tạo vận đơn qua Goship</button>}
+          {canCreateShipment && (
+            <button className={goshipReady ? 'dash-btn dash-btn-ghost' : 'dash-btn'} onClick={() => setModal('create-shipment')}>
+              {goshipReady ? 'Tạo vận đơn thủ công' : 'Tạo vận đơn'}
+            </button>
+          )}
           {order.shipment && (
             <button className="dash-btn dash-btn-ghost" onClick={() => navigate(`/dashboard/shipping/${order.shipment.id}`)}>
               Xem vận đơn
@@ -278,6 +289,17 @@ export default function OrderDetail() {
           confirmLabel="Hoàn tiền"
           onConfirm={handleRefund}
           onClose={() => setModal(null)}
+        />
+      )}
+      {modal === 'goship-shipment' && (
+        <GoshipShipmentModal
+          order={order}
+          onClose={() => setModal(null)}
+          onManual={() => setModal('create-shipment')}
+          onCreated={(shipment) => {
+            setModal(null)
+            navigate(`/dashboard/shipping/${shipment.id}`)
+          }}
         />
       )}
       {modal === 'create-shipment' && (

@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import crypto from 'node:crypto'
+import crypto, { createHmac } from 'node:crypto'
 import { EventEmitter } from 'node:events'
 
 import { toStorefront } from '../src/lib/productStore.js'
@@ -21,6 +21,9 @@ import { forceHttps } from '../src/middleware/security.js'
 import { findByName } from '../src/lib/vnNames.js'
 import { quoteShipping, chooseShipping } from '../src/lib/shippingRates.js'
 import { shippingSchema } from '../src/schemas/settings.js'
+import { verifyGoshipSignature, phpJsonEncode } from '../src/lib/goshipSignature.js'
+import { mapGoshipStatus, nextShippingStatus, buildShipmentBody, normalizeWebhook, fromApiShipment } from '../src/lib/goshipShipments.js'
+import { createGoshipShipment, cancelGoshipShipment, searchGoshipShipment, isGoshipCode } from '../src/lib/goship.js'
 import { shippingQuoteSchema } from '../src/schemas/orders.js'
 import { createOrderSchema } from '../src/schemas/orders.js'
 import { registerSchema, resetPasswordSchema, forgotPasswordSchema } from '../src/schemas/auth.js'
@@ -974,5 +977,190 @@ describe('tính cước vận chuyển qua Goship', () => {
     assert.equal('total' in r.data, false)
     assert.equal('unitPrice' in r.data.items[0], false)
     assert.equal(shippingQuoteSchema.safeParse({ items: [], paymentMethod: 'COD', province: 'Hà Nội' }).success, false)
+  })
+})
+
+describe('Goship: chữ ký webhook', () => {
+  const secret = 'client-secret-test'
+  const payload = { gcode: 'GS6ZE234V6', order_id: 'CLV123', status: '901', status_text: 'Chờ lấy hàng', tracking_url: 'https://donhang.ghn.vn/?order_code=GAPBLXAE' }
+  const raw = JSON.stringify(payload)
+  const h = (data, enc) => {
+    const bin = createHmac('sha256', secret).update(data).digest()
+    return enc === 'bin' ? bin.toString('base64') : enc === 'hexb64' ? Buffer.from(bin.toString('hex')).toString('base64') : bin.toString('hex')
+  }
+
+  test('nhận mọi cách ký mà tài liệu có thể ngụ ý: thân gốc / JSON dựng lại / JSON kiểu PHP, base64 nhị phân / base64(hex) / hex', () => {
+    for (const [data, name] of [[raw, 'thân gốc'], [phpJsonEncode(payload), 'JSON kiểu PHP']]) {
+      for (const enc of ['bin', 'hexb64', 'hex']) {
+        const r = verifyGoshipSignature({ rawBody: raw, parsed: payload, header: h(data, enc), secret })
+        assert.equal(r.ok, true, `${name}/${enc}`)
+      }
+    }
+  })
+
+  test('JSON kiểu PHP thoát dấu / và ký tự tiếng Việt như json_encode mặc định', () => {
+    assert.equal(phpJsonEncode({ a: 'Chờ lấy hàng', u: 'x/y' }), '{"a":"Ch\\u1edd l\\u1ea5y h\\u00e0ng","u":"x\\/y"}')
+  })
+
+  test('sai khóa, thiếu header, thiếu khóa, thân bị sửa đều không hợp lệ', () => {
+    const good = h(raw, 'bin')
+    assert.equal(verifyGoshipSignature({ rawBody: raw, parsed: payload, header: good, secret: 'khoa-khac' }).ok, false)
+    assert.equal(verifyGoshipSignature({ rawBody: raw, parsed: payload, header: '', secret }).ok, false)
+    assert.equal(verifyGoshipSignature({ rawBody: raw, parsed: payload, header: good, secret: '' }).ok, false)
+    const tampered = { ...payload, status: '905' }
+    assert.equal(verifyGoshipSignature({ rawBody: JSON.stringify(tampered), parsed: tampered, header: good, secret }).ok, false)
+    assert.equal(verifyGoshipSignature({ rawBody: raw, parsed: payload, header: 'abc', secret }).ok, false)
+  })
+})
+
+describe('Goship: trạng thái vận đơn', () => {
+  test('ánh xạ mã Goship sang trạng thái của mình', () => {
+    const t = { 901: 'AWAITING_PICKUP', 902: 'AWAITING_PICKUP', 903: 'PICKED_UP', 904: 'OUT_FOR_DELIVERY', 905: 'DELIVERED', 906: 'FAILED', 907: 'RETURNING', 908: 'RETURNED', 913: 'DELIVERED', 917: 'FAILED', 919: 'IN_TRANSIT' }
+    for (const [code, local] of Object.entries(t)) assert.equal(mapGoshipStatus(code).local, local, code)
+    assert.equal(mapGoshipStatus('905').local, 'DELIVERED') // mã dạng chuỗi như trong webhook
+    for (const code of [900, 909, 910, 911, 912, 915, 916, 918, 1000, 999]) assert.equal(mapGoshipStatus(code).local, undefined, String(code)) // chỉ ghi nhận, không đổi trạng thái
+    assert.equal(mapGoshipStatus(914).cancel, true)
+  })
+
+  test('chỉ đi tới: bỏ qua webhook trễ/lặp, cho nhảy bước, vận đơn đã kết thúc hoặc đã hủy thì bỏ qua', () => {
+    assert.equal(nextShippingStatus('AWAITING_PICKUP', 'PICKED_UP'), 'PICKED_UP')
+    assert.equal(nextShippingStatus('PICKED_UP', 'OUT_FOR_DELIVERY'), 'OUT_FOR_DELIVERY') // bỏ qua "trung chuyển"
+    assert.equal(nextShippingStatus('AWAITING_PICKUP', 'DELIVERED'), 'DELIVERED')
+    assert.equal(nextShippingStatus('OUT_FOR_DELIVERY', 'PICKED_UP'), null) // đến trễ, lùi
+    assert.equal(nextShippingStatus('PICKED_UP', 'PICKED_UP'), null)
+    assert.equal(nextShippingStatus('DELIVERED', 'FAILED'), null)
+    assert.equal(nextShippingStatus('RETURNED', 'DELIVERED'), null)
+    assert.equal(nextShippingStatus('NOT_CREATED', 'PICKED_UP'), null) // vận đơn đã hủy không "sống lại"
+  })
+
+  test('giao thất bại, hoàn hàng và giao lại', () => {
+    assert.equal(nextShippingStatus('OUT_FOR_DELIVERY', 'FAILED'), 'FAILED')
+    assert.equal(nextShippingStatus('FAILED', 'RETURNING'), 'RETURNING')
+    assert.equal(nextShippingStatus('RETURNING', 'RETURNED'), 'RETURNED')
+    assert.equal(nextShippingStatus('RETURNING', 'FAILED'), null)
+    assert.equal(nextShippingStatus('RETURNING', 'OUT_FOR_DELIVERY'), null) // đang hoàn thì bỏ qua mốc giao thường
+    assert.equal(nextShippingStatus('FAILED', 'OUT_FOR_DELIVERY'), 'OUT_FOR_DELIVERY') // hãng giao lại
+    assert.equal(nextShippingStatus('FAILED', 'PICKED_UP'), null)
+  })
+
+  test('chuẩn hóa webhook và dữ liệu API Goship về cùng một dạng', () => {
+    const p = normalizeWebhook({ gcode: 'G1', code: 'C1', order_id: 'CLV1', status: 905, status_text: 'Giao thành công', fee: '35650', cod: '0' })
+    assert.deepEqual([p.gcode, p.code, p.orderId, p.status, p.fee], ['G1', 'C1', 'CLV1', '905', 35650])
+    assert.equal(normalizeWebhook(null).gcode, '') // thân rỗng/không phải đối tượng không gây lỗi
+    const api = fromApiShipment({ id: 'G1', status_code: 904, status_text: 'Giao hàng', fee: 36000, tracking_url: 'https://x' }, p)
+    assert.deepEqual([api.gcode, api.status, api.statusText, api.fee, api.trackingUrl], ['G1', '904', 'Giao hàng', 36000, 'https://x'])
+  })
+})
+
+describe('Goship: thân vận đơn gửi đi', () => {
+  const settings = { shipping: { goship: { defaultWeightGrams: 4000, origin: { name: 'Kho CLEVI', phone: '0356789749', street: '47 Linh Đông', province: 'Hồ Chí Minh', district: 'Thủ Đức', ward: 'Linh Đông' } } } }
+  const order = (over = {}) => ({ orderNumber: 'CLV1001', recipientName: 'Nguyễn An', recipientPhone: '0900000000', addressLine: '12 Cộng Hòa', subtotal: 413565, total: 438565, paymentMethod: 'COD', ...over })
+  const ids = { from: { city: '700000', district: '701', ward: '10' }, to: { city: '100000', district: '100200', ward: '79' } }
+
+  test('đơn COD: thu hộ đúng tổng khách trả, shop trả cước (payer 1), mã đơn của mình, cân nặng cố định, kích thước tối thiểu', () => {
+    const b = buildShipmentBody({ order: order(), settings, rateId: 'RATE1', ...ids })
+    assert.equal(b.rate, 'RATE1')
+    assert.equal(b.payer, 1)
+    assert.equal(b.order_id, 'CLV1001')
+    assert.deepEqual(b.address_from, { name: 'Kho CLEVI', phone: '0356789749', street: '47 Linh Đông', city: '700000', district: '701', ward: '10' })
+    assert.deepEqual(b.address_to, { name: 'Nguyễn An', phone: '0900000000', street: '12 Cộng Hòa', city: '100000', district: '100200', ward: '79' })
+    assert.deepEqual(b.parcel, { cod: '438565', amount: '413565', weight: '4000', width: '1', height: '1', length: '1', metadata: 'Đơn CLV1001' })
+  })
+
+  test('đơn đã chuyển khoản: không thu hộ', () => {
+    assert.equal(buildShipmentBody({ order: order({ paymentMethod: 'Chuyển khoản' }), settings, rateId: 'R', ...ids }).parcel.cod, '0')
+  })
+})
+
+describe('Goship: client vận đơn', () => {
+  const realFetch = globalThis.fetch
+  const reply = (status, json) => ({ ok: status < 400, status, json: async () => json })
+  let calls
+  const mock = (impl) => {
+    calls = []
+    globalThis.fetch = async (url, opts) => {
+      calls.push({ url, method: opts.method, body: opts.body ? JSON.parse(opts.body) : null })
+      return impl(url, opts)
+    }
+    process.env.GOSHIP_TOKEN = 't'
+    process.env.GOSHIP_BASE_URL = 'https://goship.test/api/v2'
+  }
+  const done = () => {
+    globalThis.fetch = realFetch
+    delete process.env.GOSHIP_TOKEN
+    delete process.env.GOSHIP_BASE_URL
+  }
+
+  test('tạo vận đơn: gửi POST /shipments bọc trong "shipment", đọc kết quả ở cấp ngoài cùng', async () => {
+    mock(() => reply(200, { code: 200, status: 'success', id: 'GSOX6OQQLQ', shipment_status: 901, fee: '22000', tracking_number: 'G8SKL8SS', carrier: 'Giao Hàng Nhanh', carrier_short_name: 'GHN' }))
+    try {
+      const d = await createGoshipShipment({ rate: 'R1', payer: 1 })
+      assert.deepEqual([calls[0].method, calls[0].url, calls[0].body], ['POST', 'https://goship.test/api/v2/shipments', { shipment: { rate: 'R1', payer: 1 } }])
+      assert.deepEqual([d.id, d.shipment_status, d.tracking_number], ['GSOX6OQQLQ', 901, 'G8SKL8SS'])
+    } finally {
+      done()
+    }
+  })
+
+  test('tạo vận đơn: Goship báo lỗi thì ném lỗi kèm lời của Goship; mất mạng thì đánh dấu network để dò lại', async () => {
+    mock(() => reply(422, { code: 422, status: 'error', message: 'Rate không hợp lệ' }))
+    try {
+      await assert.rejects(createGoshipShipment({}), (e) => /Rate không hợp lệ/.test(e.message) && !e.network)
+      globalThis.fetch = async () => {
+        throw new Error('ECONNRESET')
+      }
+      await assert.rejects(createGoshipShipment({}), (e) => e.network === true)
+    } finally {
+      done()
+    }
+  })
+
+  test('hủy vận đơn: DELETE /shipments/{id}; 404 giữ mã 404; mã lạ bị chặn trước khi gọi mạng', async () => {
+    mock(() => reply(200, { code: 200, status: 'success' }))
+    try {
+      assert.equal(await cancelGoshipShipment('56GDG8F'), true)
+      assert.deepEqual([calls[0].method, calls[0].url], ['DELETE', 'https://goship.test/api/v2/shipments/56GDG8F'])
+      mock(() => reply(404, { code: 404, status: 'Error', data: 'Resource Not Found', message: 'Not Found' }))
+      await assert.rejects(cancelGoshipShipment('NOPE123'), (e) => e.status === 404)
+      mock(() => reply(200, { code: 200 }))
+      await assert.rejects(cancelGoshipShipment('../x'), /không hợp lệ/)
+      assert.equal(calls.length, 0)
+    } finally {
+      done()
+    }
+  })
+
+  test('tìm vận đơn theo mã: trả phần tử đầu hoặc null; mã lạ không gọi mạng', async () => {
+    mock((url) => reply(200, { data: url.includes('code=CLV1') ? [{ id: 'G1', status_code: 901 }, { id: 'G2' }] : [] }))
+    try {
+      assert.equal((await searchGoshipShipment('CLV1')).id, 'G1')
+      assert.equal(await searchGoshipShipment('CLV2'), null)
+      assert.equal(await searchGoshipShipment('a b'), null)
+      assert.equal(calls.length, 2)
+      assert.equal(isGoshipCode('GSOX6OQQLQ'), true)
+      assert.equal(isGoshipCode('a/b'), false)
+    } finally {
+      done()
+    }
+  })
+})
+
+describe('cài đặt tạo vận đơn thật', () => {
+  const origin = { province: 'Hồ Chí Minh', district: 'Thủ Đức', ward: 'Linh Đông', street: '47 Linh Đông', name: 'Kho CLEVI', phone: '0356 789 749' }
+  const body = (g) => ({ fee: 0, freeShippingOver: 0, goship: { enabled: true, defaultWeightGrams: 4000, origin, ...g } })
+
+  test('mặc định tắt; bật phải có tính cước Goship và đủ thông tin người gửi', () => {
+    assert.equal(shippingSchema.safeParse(body({})).data.goship.createShipments, false)
+    assert.equal(shippingSchema.safeParse(body({ createShipments: true })).success, true)
+    assert.equal(shippingSchema.safeParse(body({ createShipments: true, enabled: false })).success, false)
+    for (const miss of ['street', 'name', 'phone']) assert.equal(shippingSchema.safeParse(body({ createShipments: true, origin: { ...origin, [miss]: '' } })).success, false, miss)
+    assert.equal(shippingSchema.safeParse(body({ createShipments: true, origin: { ...origin, phone: 'abc' } })).success, false)
+  })
+
+  test('client cũ không gửi các trường mới vẫn hợp lệ', () => {
+    const old = { fee: 0, freeShippingOver: 0, goship: { enabled: true, defaultWeightGrams: 4000, origin: { province: 'A', district: 'B', ward: 'C' } } }
+    const r = shippingSchema.safeParse(old)
+    assert.equal(r.success, true)
+    assert.equal(r.data.goship.createShipments, false)
   })
 })

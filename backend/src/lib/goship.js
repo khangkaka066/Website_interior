@@ -15,12 +15,13 @@ const inflight = new Map() // đường dẫn -> Promise (nhiều khách cùng x
 
 export const goshipConfigured = () => Boolean(process.env.GOSHIP_TOKEN)
 
-async function goshipRequest(path, body) {
+// Gọi Goship, trả về { res, json }. Mất kết nối / quá hạn thì ném GoshipError (kèm cờ network để biết kết quả có thể chưa rõ).
+async function goshipCall(method, path, body) {
   const base = (process.env.GOSHIP_BASE_URL || 'https://api.goship.io/api/v2').replace(/\/$/, '')
   let res
   try {
     res = await fetch(base + path, {
-      method: body ? 'POST' : 'GET',
+      method,
       headers: {
         Accept: 'application/json',
         ...(body ? { 'Content-Type': 'application/json' } : {}),
@@ -32,9 +33,16 @@ async function goshipRequest(path, body) {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
   } catch {
-    throw new GoshipError('Không kết nối được Goship.', 502)
+    const err = new GoshipError('Không kết nối được Goship.', 502)
+    err.network = true
+    throw err
   }
   const json = await res.json().catch(() => null)
+  return { res, json }
+}
+
+async function goshipRequest(path, body) {
+  const { res, json } = await goshipCall(body ? 'POST' : 'GET', path, body)
   if (!res.ok || !Array.isArray(json?.data)) throw new GoshipError(json?.data?.error || json?.message || `Goship trả lỗi (HTTP ${res.status}).`, 502)
   return json.data
 }
@@ -67,6 +75,39 @@ export const isGoshipId = (v) => /^\d{1,10}$/.test(String(v))
 
 // Hỏi cước (chỉ báo giá, không tạo vận đơn). shipment: { address_from, address_to, parcel } theo https://doc.goship.io.
 export const requestRates = (shipment) => goshipRequest('/rates', { shipment })
+
+// ---- Vận đơn (PHÁT SINH CƯỚC THẬT khi dùng token môi trường thật) ----
+
+// Mã vận đơn Goship đi vào đường dẫn gọi Goship nên chỉ nhận chữ, số, gạch.
+export const isGoshipCode = (v) => /^[A-Za-z0-9_-]{3,60}$/.test(String(v))
+
+// Tạo vận đơn. Goship xử lý bất đồng bộ và LUÔN trả HTTP 200 kể cả khi lỗi: lỗi thể hiện ở shipment_status 900 + carrier_error,
+// nên nơi gọi phải kiểm tra kết quả chứ không chỉ mã HTTP. Trả về đối tượng vận đơn của Goship (id, tracking_number, fee...).
+export async function createGoshipShipment(shipment) {
+  const { res, json } = await goshipCall('POST', '/shipments', { shipment })
+  if (!res.ok || !json || json.status === 'error') {
+    throw new GoshipError(json?.message || json?.data?.error || `Goship từ chối tạo vận đơn (HTTP ${res.status}).`, 502)
+  }
+  const d = json.data && !Array.isArray(json.data) && typeof json.data === 'object' ? json.data : json
+  return d
+}
+
+// Hủy vận đơn (chưa lấy hàng thì mới hủy được; Goship không cho sửa, muốn đổi thì hủy và tạo lại).
+export async function cancelGoshipShipment(id) {
+  if (!isGoshipCode(id)) throw new GoshipError('Mã vận đơn Goship không hợp lệ.', 400)
+  const { res, json } = await goshipCall('DELETE', `/shipments/${encodeURIComponent(id)}`)
+  if (res.ok && (json?.code === 200 || json?.status === 'success')) return true
+  const err = new GoshipError(json?.message || (typeof json?.data === 'string' ? json.data : '') || `Goship không hủy được vận đơn (HTTP ${res.status}).`, res.status === 404 ? 404 : 502)
+  throw err
+}
+
+// Tìm vận đơn theo mã Goship, mã đơn của mình (order_id) hoặc mã hãng. Trả về vận đơn đầu tiên hoặc null.
+export async function searchGoshipShipment(code) {
+  if (!isGoshipCode(code)) return null
+  const { res, json } = await goshipCall('GET', `/shipments/search?code=${encodeURIComponent(code)}`)
+  if (!res.ok || !Array.isArray(json?.data)) throw new GoshipError(`Goship không tra cứu được vận đơn (HTTP ${res.status}).`, 502)
+  return json.data[0] || null
+}
 
 export const listCities = () => cachedGet('/cities', pick)
 export const listDistricts = (cityId) => cachedGet(`/cities/${cityId}/districts`, pick)
@@ -104,7 +145,7 @@ export async function checkGoship() {
       byName.set(name, [...(byName.get(name) || []), code])
     }
     const carriers = [...byName].map(([name, c]) => ({ name, codes: c })).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
-    return { configured: true, connected: true, message: '', cities: cities.length, carriers }
+    return { configured: true, connected: true, message: '', cities: cities.length, carriers, webhookSecret: Boolean(process.env.GOSHIP_CLIENT_SECRET) }
   } catch (err) {
     const rejected = /unauthenticated/i.test(err.message)
     return {
