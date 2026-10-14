@@ -1731,6 +1731,18 @@
   padding: 10px 14px;
   font-size: 13px;
   line-height: 1.5;
+  white-space: pre-wrap; /* giữ xuống dòng khi nhân viên chèn nhiều link */
+  overflow-wrap: anywhere; /* link dài không làm vỡ khung */
+}
+
+.chat-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-bubble-admin .chat-link {
+  color: var(--accent);
 }
 
 .chat-bubble-admin {

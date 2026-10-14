@@ -5,6 +5,7 @@ import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
 import { formatDateTime, formatCurrency } from '../../utils/format'
 import { openEventStream } from '../../utils/eventStream'
+import LinkifiedText from '../../components/LinkifiedText'
 
 const FALLBACK_POLL_MS = 30000 // dự phòng; cập nhật chính đến qua luồng thời gian thực
 
@@ -174,7 +175,7 @@ export default function MessagesInbox() {
               <div className="msg-thread-body" ref={scrollRef}>
                 {messages.map((m) => (
                   <div key={m.id} className={`chat-bubble ${m.sender === 'ADMIN' ? 'chat-bubble-me' : 'chat-bubble-admin'}`}>
-                    {m.content}
+                    <LinkifiedText text={m.content} />
                   </div>
                 ))}
               </div>

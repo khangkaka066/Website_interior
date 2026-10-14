@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { api } from '../api'
 import { useShopInfo } from '../useShopInfo'
 import { openEventStream } from '../utils/eventStream'
+import LinkifiedText from './LinkifiedText'
 
 const STORAGE_KEY = 'clevinum_chat_conversation_id'
 const SEEN_KEY = 'clevinum_chat_last_seen'
@@ -162,7 +163,7 @@ export default function ChatWidget() {
                 ) : (
                   messages.map((m) => (
                     <div key={m.id} className={`chat-bubble ${m.sender === 'CUSTOMER' ? 'chat-bubble-me' : 'chat-bubble-admin'}`}>
-                      {m.content}
+                      <LinkifiedText text={m.content} />
                     </div>
                   ))
                 )}
