@@ -1,3 +1,4 @@
+import { displayCode } from './orderCode.js'
 import { shopUrl } from './mailer.js'
 import { getSettings } from './settingsStore.js'
 
@@ -57,14 +58,15 @@ export async function orderStatusEmail(order, status) {
   const info = STATUS_TEXT[status]
   if (!info) return null
   const { store } = await getSettings()
-  const subject = `${info[0]} — ${order.orderNumber}`
+  const code = displayCode(order) // có vận đơn thì ghi mã vận đơn của hãng
+  const subject = `${info[0]} — ${code}`
   const html = layout(
     store.name,
     info[0],
-    `<p>Đơn hàng <strong>${esc(order.orderNumber)}</strong>: ${esc(info[1])}</p>
+    `<p>Đơn hàng <strong>${esc(code)}</strong>: ${esc(info[1])}</p>
 <p><a href="${esc(trackLink(order))}" style="background:#c8913f;color:#fff;padding:10px 18px;border-radius:20px;text-decoration:none;display:inline-block">Xem chi tiết đơn hàng</a></p>`,
   )
-  return { subject, html, text: `${info[0]} (${order.orderNumber}). ${info[1]} Chi tiết: ${trackLink(order)}` }
+  return { subject, html, text: `${info[0]} (${code}). ${info[1]} Chi tiết: ${trackLink(order)}` }
 }
 
 export async function passwordResetEmail(name, token) {

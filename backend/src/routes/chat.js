@@ -10,11 +10,15 @@ import {
   closeConversation,
   customerStream,
   adminStream,
+  listQuickReplies,
+  createQuickReply,
+  updateQuickReply,
+  deleteQuickReply,
 } from '../controllers/chat.js'
 import { requirePermission } from '../middleware/auth.js'
 import { chatLimiter } from '../middleware/security.js'
 import { validate } from '../middleware/validate.js'
-import { startConversationSchema, messageSchema } from '../schemas/chat.js'
+import { startConversationSchema, messageSchema, quickReplySchema } from '../schemas/chat.js'
 
 const router = Router()
 const guard = requirePermission('messages')
@@ -33,5 +37,11 @@ router.get('/conversations', guard, asyncHandler(listConversations))
 router.post('/conversations/:id/admin-messages', guard, validate(messageSchema), asyncHandler(postAdminMessage))
 router.post('/conversations/:id/read', guard, asyncHandler(markRead))
 router.post('/conversations/:id/close', guard, asyncHandler(closeConversation))
+
+// Câu trả lời nhanh của nhân viên (lưu database, dùng chung).
+router.get('/quick-replies', guard, asyncHandler(listQuickReplies))
+router.post('/quick-replies', guard, validate(quickReplySchema), asyncHandler(createQuickReply))
+router.put('/quick-replies/:id', guard, validate(quickReplySchema), asyncHandler(updateQuickReply))
+router.delete('/quick-replies/:id', guard, asyncHandler(deleteQuickReply))
 
 export default router

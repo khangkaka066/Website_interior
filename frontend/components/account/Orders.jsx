@@ -89,7 +89,7 @@ export function OrderList({ onOpen }) {
           <button key={o.orderNumber} onClick={() => onOpen(o.orderNumber)}
             className="block w-full rounded-xl border border-line bg-white p-4 text-left hover:border-accent">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-semibold">{o.orderNumber}</span>
+              <span className="font-semibold">{o.code || o.orderNumber}</span>
               <span className="flex gap-2">
                 <Badge def={ORDER_STATUS[o.status]} fallback={o.status} />
                 <Badge def={PAYMENT_STATUS[o.paymentStatus]} fallback={o.paymentStatus} />
@@ -125,7 +125,7 @@ export function OrderDetail({ orderNumber, onBack }) {
       {order && (
         <div className="mt-4 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-xl font-bold">Đơn {order.orderNumber}</h2>
+            <h2 className="text-xl font-bold">Đơn {order.code || order.orderNumber}</h2>
             <span className="flex gap-2">
               <Badge def={ORDER_STATUS[order.status]} fallback={order.status} />
               <Badge def={PAYMENT_STATUS[order.paymentStatus]} fallback={order.paymentStatus} />

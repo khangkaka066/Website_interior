@@ -106,14 +106,17 @@ export default function OrderDetail() {
   const timelineEvents = order.statusEvents.filter((e) => ORDER_TIMELINE_STEPS.includes(e.status))
 
   return (
-    <AdminLayout activeNav="orders" pageTitle={order.orderNumber}>
+    <AdminLayout activeNav="orders" pageTitle={order.code || order.orderNumber}>
       <a className="detail-back-link" href="#" onClick={(e) => { e.preventDefault(); navigate('/dashboard/orders') }}>
         ← Quay lại danh sách đơn hàng
       </a>
 
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <h2 style={{ margin: 0, fontSize: '20px', color: 'var(--dash-heading)' }}>{order.orderNumber}</h2>
+          <h2 style={{ margin: 0, fontSize: '20px', color: 'var(--dash-heading)' }}>{order.code || order.orderNumber}</h2>
+          {order.code && order.code !== order.orderNumber && (
+            <span style={{ fontSize: '12px', color: 'var(--dash-muted)' }}>Mã đơn: {order.orderNumber}</span>
+          )}
           <span className={`order-status-badge ${ORDER_STATUS[order.status]?.cls || ''}`}>{orderStatusLabel(order.status)}</span>
           <span className={`order-status-badge ${PAYMENT_STATUS[order.paymentStatus]?.cls || ''}`}>{paymentStatusLabel(order.paymentStatus)}</span>
           <span style={{ fontSize: '12px', color: 'var(--dash-muted)' }}>Đặt lúc {formatDateTime(order.createdAt)}</span>
@@ -238,7 +241,8 @@ export default function OrderDetail() {
           {order.shipment ? (
             <div style={{ fontSize: '13px', lineHeight: '1.9' }}>
               <div><strong>Đơn vị:</strong> {order.shipment.carrier.name}</div>
-              <div><strong>Mã vận đơn:</strong> {order.shipment.trackingId}</div>
+              <div><strong>Mã vận đơn (hãng):</strong> {order.shipment.carrierCode || <span style={{ color: 'var(--dash-muted)' }}>chưa có — nhập ở trang vận đơn</span>}</div>
+              <div><strong>Mã nội bộ:</strong> {order.shipment.trackingId}</div>
               <div><strong>Phí vận chuyển:</strong> {formatCurrency(order.shipment.shippingFee)}</div>
               <div>
                 <strong>Trạng thái:</strong>{' '}

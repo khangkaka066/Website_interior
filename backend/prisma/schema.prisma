@@ -263,6 +263,8 @@ model ShippingCarrier {
 model Shipment {
   id         String @id @default(cuid())
   trackingId String @unique
+  // Mã vận đơn của hãng vận chuyển (GHN, GHTK...). Có thì hiển thị thay cho mã đơn ORD-xxxxx (xem lib/orderCode.js).
+  carrierCode String?
 
   orderId String @unique
   order   Order  @relation(fields: [orderId], references: [id])
@@ -298,6 +300,7 @@ model Shipment {
 
   @@index([status])
   @@index([carrierId])
+  @@index([carrierCode])
 }
 
 // Timeline: Đã tạo vận đơn -> Đã lấy hàng -> Đã đến kho -> Đang trung chuyển
@@ -375,6 +378,16 @@ model Message {
   createdAt      DateTime      @default(now())
 
   @@index([conversationId])
+}
+
+// Câu trả lời nhanh của nhân viên tư vấn trong mục Tin nhắn (dùng chung cho cả đội). {ten} trong text được thay bằng tên khách.
+model QuickReply {
+  id        String   @id @default(cuid())
+  label     String
+  text      String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ---------------------------------------------------------------------------

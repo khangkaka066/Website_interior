@@ -52,7 +52,7 @@ export default function RecentOrders() {
                       navigate(`/dashboard/orders/${o.id}`)
                     }}
                   >
-                    {o.orderNumber}
+                    {o.code || o.orderNumber}
                   </a>
                 </td>
                 <td>{o.customer?.name || o.recipientName}</td>

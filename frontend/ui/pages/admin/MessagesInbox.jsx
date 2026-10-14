@@ -13,26 +13,6 @@ const FALLBACK_POLL_MS = 30000 // dự phòng; cập nhật chính đến qua lu
 const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase()
 const productLink = (id) => `${window.location.origin}/products/${encodeURIComponent(id)}`
 
-// Tin nhắn mẫu có sẵn. {ten} được thay bằng tên khách. Nhân viên có thể lưu thêm mẫu riêng (lưu trong trình duyệt này).
-const DEFAULT_REPLIES = [
-  { id: 'd1', label: 'Chào khách', text: 'Chào {ten}, em có thể hỗ trợ gì cho mình ạ?' },
-  { id: 'd2', label: 'Hỏi nhu cầu', text: 'Anh/chị cho em biết kích thước cửa, vị trí lắp đặt và màu sắc mong muốn để em tư vấn mẫu phù hợp nhé ạ.' },
-  { id: 'd3', label: 'Xin số điện thoại', text: 'Anh/chị để lại số điện thoại để bên em gọi tư vấn và báo giá chi tiết nhanh hơn nhé ạ.' },
-  { id: 'd4', label: 'Xin địa chỉ', text: 'Anh/chị cho em xin địa chỉ nhận hàng để em kiểm tra phí vận chuyển giúp mình nhé ạ.' },
-  { id: 'd5', label: 'Chờ chút', text: 'Anh/chị vui lòng đợi em ít phút để kiểm tra giúp mình nhé ạ.' },
-  { id: 'd6', label: 'Cảm ơn', text: 'Cảm ơn anh/chị đã quan tâm. Cần hỗ trợ thêm anh/chị cứ nhắn cho em nhé ạ!' },
-]
-const REPLIES_KEY = 'clevinum_quick_replies'
-
-function loadCustomReplies() {
-  try {
-    const list = JSON.parse(localStorage.getItem(REPLIES_KEY) || '[]')
-    return Array.isArray(list) ? list.filter((r) => r && typeof r.id === 'string' && typeof r.text === 'string') : []
-  } catch {
-    return []
-  }
-}
-
 async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text)
@@ -59,18 +39,17 @@ export default function MessagesInbox() {
   const [products, setProducts] = useState([])
   const [productQuery, setProductQuery] = useState('')
   const [copiedId, setCopiedId] = useState(null)
-  const [customReplies, setCustomReplies] = useState([])
+  // Câu trả lời nhanh: lưu database, dùng chung cho cả đội. {ten} trong nội dung được thay bằng tên khách.
+  const [replies, setReplies] = useState([])
+  const [repliesError, setRepliesError] = useState('')
+  const [editor, setEditor] = useState(null) // { id|null, label, text } khi đang thêm/sửa
 
-  useEffect(() => setCustomReplies(loadCustomReplies()), [])
-
-  function saveCustomReplies(list) {
-    setCustomReplies(list)
-    try {
-      localStorage.setItem(REPLIES_KEY, JSON.stringify(list))
-    } catch {
-      // trình duyệt chặn lưu: mẫu vẫn dùng được trong phiên này
-    }
-  }
+  useEffect(() => {
+    api
+      .get('/chat/quick-replies')
+      .then((d) => setReplies(d.items))
+      .catch((err) => setRepliesError(err.message))
+  }, [])
 
   // Chèn mẫu vào ô soạn (không tự gửi) để nhân viên chỉnh lại trước khi gửi.
   function applyReply(r) {
@@ -79,10 +58,33 @@ export default function MessagesInbox() {
     draftRef.current?.focus()
   }
 
-  function saveDraftAsReply() {
-    const text = draft.trim()
-    if (!text || customReplies.some((r) => r.text === text)) return
-    saveCustomReplies([...customReplies, { id: `c${Date.now()}`, label: text.length > 22 ? `${text.slice(0, 22)}…` : text, text }])
+  async function saveEditor(e) {
+    e.preventDefault()
+    const label = editor.label.trim()
+    const text = editor.text.trim()
+    if (!label || !text) return setEditor({ ...editor, error: 'Nhập đủ tên nút và nội dung.' })
+    try {
+      if (editor.id) {
+        const row = await api.put(`/chat/quick-replies/${editor.id}`, { label, text })
+        setReplies((list) => list.map((r) => (r.id === row.id ? row : r)))
+      } else {
+        const row = await api.post('/chat/quick-replies', { label, text })
+        setReplies((list) => [...list, row])
+      }
+      setEditor(null)
+    } catch (err) {
+      setEditor({ ...editor, error: err.message })
+    }
+  }
+
+  async function removeReply(r) {
+    try {
+      await api.delete(`/chat/quick-replies/${r.id}`)
+      setReplies((list) => list.filter((x) => x.id !== r.id))
+      setRepliesError('')
+    } catch (err) {
+      setRepliesError(err.message)
+    }
   }
 
   useEffect(() => {
@@ -226,18 +228,46 @@ export default function MessagesInbox() {
               </div>
 
               <div className="msg-quick-replies">
-                {[...DEFAULT_REPLIES, ...customReplies].map((r) => (
+                {replies.map((r) => (
                   <span key={r.id} className="msg-quick-chip">
                     <button type="button" title={r.text} onClick={() => applyReply(r)}>{r.label}</button>
-                    {r.id.startsWith('c') && (
-                      <button type="button" className="msg-quick-del" aria-label={`Xóa mẫu ${r.label}`} onClick={() => saveCustomReplies(customReplies.filter((x) => x.id !== r.id))}>×</button>
-                    )}
+                    <button type="button" className="msg-quick-act" aria-label={`Sửa câu ${r.label}`} title="Sửa" onClick={() => setEditor({ id: r.id, label: r.label, text: r.text })}>✎</button>
+                    <button type="button" className="msg-quick-act" aria-label={`Xóa câu ${r.label}`} title="Xóa" onClick={() => removeReply(r)}>×</button>
                   </span>
                 ))}
-                <button type="button" className="msg-quick-save" onClick={saveDraftAsReply} disabled={!draft.trim()} title="Lưu nội dung đang soạn thành mẫu">
-                  + Lưu câu đang soạn
+                <button
+                  type="button"
+                  className="msg-quick-save"
+                  onClick={() => setEditor({ id: null, label: draft.trim().slice(0, 22), text: draft.trim() })}
+                  title="Thêm câu trả lời nhanh (lấy sẵn nội dung đang soạn nếu có)"
+                >
+                  + Thêm câu
                 </button>
+                {repliesError && <span className="msg-quick-error">{repliesError}</span>}
               </div>
+
+              {editor && (
+                <form className="msg-quick-editor" onSubmit={saveEditor}>
+                  <input
+                    value={editor.label}
+                    maxLength={40}
+                    onChange={(e) => setEditor({ ...editor, label: e.target.value, error: '' })}
+                    placeholder="Tên nút (ngắn gọn)"
+                    autoFocus
+                  />
+                  <textarea
+                    value={editor.text}
+                    maxLength={2000}
+                    onChange={(e) => setEditor({ ...editor, text: e.target.value, error: '' })}
+                    placeholder="Nội dung câu trả lời. Dùng {ten} để chèn tên khách."
+                  />
+                  {editor.error && <span className="msg-quick-error">{editor.error}</span>}
+                  <div className="msg-quick-editor-actions">
+                    <button type="submit" className="dash-btn">{editor.id ? 'Lưu thay đổi' : 'Thêm câu'}</button>
+                    <button type="button" className="dash-btn dash-btn-outline" onClick={() => setEditor(null)}>Hủy</button>
+                  </div>
+                </form>
+              )}
 
               <div className="msg-thread-input">
                 <textarea

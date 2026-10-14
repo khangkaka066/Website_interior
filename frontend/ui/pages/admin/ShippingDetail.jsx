@@ -26,6 +26,8 @@ export default function ShippingDetail() {
   const [modal, setModal] = useState(null) // 'cancel' | 'update-status'
   const [nextStatus, setNextStatus] = useState('')
   const [location, setLocation] = useState('')
+  const [codeDraft, setCodeDraft] = useState(null) // null = không sửa mã vận đơn của hãng
+  const [codeError, setCodeError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -55,6 +57,17 @@ export default function ShippingDetail() {
     await api.post(`/shipping/${id}/cancel`, { note })
     setModal(null)
     await load()
+  }
+
+  async function saveCarrierCode() {
+    setCodeError('')
+    try {
+      await api.patch(`/shipping/${id}/carrier-code`, { carrierCode: codeDraft })
+      setCodeDraft(null)
+      await load()
+    } catch (err) {
+      setCodeError(err.message)
+    }
   }
 
   function handleCopyTracking() {
@@ -123,7 +136,27 @@ export default function ShippingDetail() {
         <div className="dash-card">
           <h3 className="form-card-title">Thông tin vận đơn</h3>
           <div style={{ fontSize: '13px', lineHeight: '1.9' }}>
-            <div><strong>Order ID:</strong> {shipment.order.orderNumber}</div>
+            <div><strong>Mã đơn:</strong> {shipment.order.orderNumber}</div>
+            <div>
+              <strong>Mã vận đơn của hãng:</strong>{' '}
+              {codeDraft === null ? (
+                <>
+                  {shipment.carrierCode || <span style={{ color: 'var(--dash-muted)' }}>chưa có (khách đang thấy mã đơn)</span>}{' '}
+                  <button type="button" className="dash-btn dash-btn-ghost" style={{ fontSize: '11px', padding: '2px 8px' }} onClick={() => setCodeDraft(shipment.carrierCode || '')}>
+                    {shipment.carrierCode ? 'Sửa' : 'Nhập mã'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input value={codeDraft} maxLength={60} autoFocus placeholder="Mã vận đơn in trên phiếu của hãng" style={{ width: '220px', fontSize: '13px', padding: '4px 8px' }}
+                    onChange={(e) => setCodeDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') saveCarrierCode(); if (e.key === 'Escape') setCodeDraft(null) }} />{' '}
+                  <button type="button" className="dash-btn" style={{ fontSize: '11px', padding: '4px 10px' }} onClick={saveCarrierCode}>Lưu</button>{' '}
+                  <button type="button" className="dash-btn dash-btn-ghost" style={{ fontSize: '11px', padding: '4px 10px' }} onClick={() => { setCodeDraft(null); setCodeError('') }}>Hủy</button>
+                  {codeError && <div style={{ color: '#c0392b' }}>{codeError}</div>}
+                </>
+              )}
+            </div>
             <div><strong>Đơn vị vận chuyển:</strong> {shipment.carrier.name}</div>
             <div><strong>Người gửi:</strong> {shipment.senderName}</div>
             <div><strong>Khối lượng:</strong> {shipment.weightGrams}g</div>

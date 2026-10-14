@@ -16,6 +16,7 @@ export default function CreateShipmentModal({ order, onClose, onCreated }) {
     goodsType: 'Hàng tiêu dùng',
     shippingFee: order.shippingFee ?? 0, // lấy đúng phí khách đã trả (có thể là 0), không đặt số mặc định
     codAmount: order.paymentMethod === 'COD' ? order.total : 0,
+    carrierCode: '',
     note: '',
   })
   const [submitting, setSubmitting] = useState(false)
@@ -52,6 +53,7 @@ export default function CreateShipmentModal({ order, onClose, onCreated }) {
         goodsType: form.goodsType,
         shippingFee: Number(form.shippingFee),
         codAmount: Number(form.codAmount) || 0,
+        carrierCode: form.carrierCode.trim() || undefined,
         note: form.note,
       })
       onCreated(shipment)
@@ -120,6 +122,10 @@ export default function CreateShipmentModal({ order, onClose, onCreated }) {
           <div className="dash-form-field">
             <label>COD ({formatCurrency(order.total)} tổng đơn)</label>
             <input type="number" value={form.codAmount} onChange={(e) => update('codAmount', e.target.value)} />
+          </div>
+          <div className="dash-form-field full">
+            <label>Mã vận đơn của hãng (nếu đã có)</label>
+            <input value={form.carrierCode} maxLength={60} placeholder="Để trống nếu chưa có, nhập sau ở trang vận đơn" onChange={(e) => update('carrierCode', e.target.value)} />
           </div>
           <div className="dash-form-field full">
             <label>Ghi chú giao hàng</label>

@@ -3,6 +3,7 @@ import { toPlain } from '../utils/serialize.js'
 import { generateTrackingId } from '../utils/ids.js'
 import { canTransitionShipping, SHIPPING_TO_ORDER_STATUS } from '../constants/workflow.js'
 import { ShipmentError, cancelOnGoship } from '../lib/goshipShipments.js'
+import { normCode } from '../lib/orderCode.js'
 
 const SHIPMENT_INCLUDE = {
   carrier: true,
@@ -88,6 +89,7 @@ export async function listShipments(req, res) {
   if (search) {
     where.OR = [
       { trackingId: { contains: search, mode: 'insensitive' } },
+      { carrierCode: { contains: search, mode: 'insensitive' } },
       { recipientName: { contains: search, mode: 'insensitive' } },
       { order: { orderNumber: { contains: search, mode: 'insensitive' } } },
     ]
@@ -126,6 +128,25 @@ export async function getShipment(req, res) {
   res.json(toPlain(shipment))
 }
 
+const codeTaken = async (code, exceptId) =>
+  !!(await prisma.shipment.findFirst({ where: { carrierCode: code, ...(exceptId ? { id: { not: exceptId } } : {}) }, select: { id: true } }))
+
+// Nhân viên nhập / sửa mã vận đơn của hãng (vận đơn tạo thủ công, hoặc Goship chưa trả mã). Để trống = xóa mã (khách lại thấy mã ORD).
+export async function setCarrierCode(req, res) {
+  const code = normCode(req.body.carrierCode) || null
+  const shipment = await prisma.shipment.findUnique({ where: { id: req.params.id }, select: { id: true, orderId: true, carrierCode: true } })
+  if (!shipment) return res.status(404).json({ error: 'Không tìm thấy vận đơn.' })
+  if (code && (await codeTaken(code, shipment.id))) return res.status(409).json({ error: 'Mã vận đơn này đã được dùng cho đơn hàng khác.' })
+  const updated = await prisma.$transaction(async (tx) => {
+    const u = await tx.shipment.update({ where: { id: shipment.id }, data: { carrierCode: code }, include: SHIPMENT_INCLUDE })
+    await tx.activityLog.create({
+      data: { entityType: 'shipment', shipmentId: shipment.id, orderId: shipment.orderId, action: 'set_carrier_code', actor: 'admin', note: `Mã vận đơn của hãng: ${shipment.carrierCode || '(trống)'} → ${code || '(trống)'}` },
+    })
+    return u
+  })
+  res.json(toPlain(updated))
+}
+
 export async function createShipment(req, res) {
   const {
     orderId,
@@ -139,6 +160,7 @@ export async function createShipment(req, res) {
     shippingFee,
     codAmount = 0,
     note,
+    carrierCode,
   } = req.body || {}
 
   if (!orderId || !carrierId || !senderName || !weightGrams || !shippingFee) {
@@ -160,10 +182,14 @@ export async function createShipment(req, res) {
   const carrier = await prisma.shippingCarrier.findUnique({ where: { id: carrierId } })
   if (!carrier) return res.status(404).json({ error: 'Không tìm thấy đơn vị vận chuyển.' })
 
+  const code = normCode(carrierCode) || null
+  if (code && (await codeTaken(code))) return res.status(409).json({ error: 'Mã vận đơn này đã được dùng cho đơn hàng khác.' })
+
   const shipment = await prisma.$transaction(async (tx) => {
     const created = await tx.shipment.create({
       data: {
         trackingId: generateTrackingId(carrier.code),
+        carrierCode: code,
         orderId: order.id,
         carrierId: carrier.id,
         status: 'AWAITING_PICKUP',

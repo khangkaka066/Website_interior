@@ -152,3 +152,34 @@ export async function customerStream(req, res) {
 export function adminStream(req, res) {
   if (!openStream(req, res, ADMIN_CHANNEL)) return res.status(429).json({ error: 'Quá nhiều kết nối, vui lòng thử lại sau.' })
 }
+
+// --- Câu trả lời nhanh (dùng chung cho nhân viên có quyền "messages") ---------
+
+const MAX_QUICK_REPLIES = 50
+const quickReplyView = ({ id, label, text }) => ({ id, label, text })
+
+export async function listQuickReplies(req, res) {
+  const rows = await prisma.quickReply.findMany({ orderBy: [{ position: 'asc' }, { createdAt: 'asc' }] })
+  res.json({ items: rows.map(quickReplyView) })
+}
+
+export async function createQuickReply(req, res) {
+  if ((await prisma.quickReply.count()) >= MAX_QUICK_REPLIES) {
+    return res.status(400).json({ error: `Tối đa ${MAX_QUICK_REPLIES} câu trả lời nhanh, hãy xóa bớt câu cũ.` })
+  }
+  const last = await prisma.quickReply.aggregate({ _max: { position: true } })
+  const row = await prisma.quickReply.create({ data: { ...req.body, position: (last._max.position ?? 0) + 1 } })
+  res.status(201).json(quickReplyView(row))
+}
+
+export async function updateQuickReply(req, res) {
+  const row = await prisma.quickReply.update({ where: { id: req.params.id }, data: req.body }).catch((e) => (e.code === 'P2025' ? null : Promise.reject(e)))
+  if (!row) return res.status(404).json({ error: 'Không tìm thấy câu trả lời.' })
+  res.json(quickReplyView(row))
+}
+
+export async function deleteQuickReply(req, res) {
+  const { count } = await prisma.quickReply.deleteMany({ where: { id: req.params.id } })
+  if (!count) return res.status(404).json({ error: 'Không tìm thấy câu trả lời.' })
+  res.json({ ok: true })
+}

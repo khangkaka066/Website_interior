@@ -84,13 +84,13 @@ export default function TrackOrder() {
       <main>
         <div className="container track-order">
           <h1>Tra cứu đơn hàng</h1>
-          <p className="track-intro">Nhập mã đơn hàng (dạng ORD-12345) <strong>hoặc</strong> số điện thoại bạn đã dùng khi đặt hàng. Nhập cả hai để xem đầy đủ thông tin giao hàng.</p>
+          <p className="track-intro">Nhập mã đơn hàng (dạng ORD-12345) hoặc mã vận đơn <strong>hoặc</strong> số điện thoại bạn đã dùng khi đặt hàng. Nhập cả hai để xem đầy đủ thông tin giao hàng.</p>
 
           <form className="track-form" onSubmit={onSubmit}>
             <input
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value)}
-              placeholder="Mã đơn hàng, ví dụ ORD-12345"
+              placeholder="Mã đơn hoặc mã vận đơn, ví dụ ORD-12345"
               maxLength={30}
             />
             <input
@@ -122,7 +122,7 @@ export default function TrackOrder() {
                           <li key={o.orderNumber}>
                             <div>
                               <button type="button" className="btn-link" onClick={() => openFromList(o.orderNumber)}>
-                                {o.orderNumber}
+                                {o.code || o.orderNumber}
                               </button>
                               <small>
                                 {when(o.createdAt)} · {ORDER_STATUS[o.status]?.label || o.status}
@@ -143,7 +143,8 @@ export default function TrackOrder() {
             <div className="track-result">
               <div className="track-head">
                 <div>
-                  <h2>Đơn {order.orderNumber}</h2>
+                  <h2>Đơn {order.code || order.orderNumber}</h2>
+                  {order.code && order.code !== order.orderNumber && <span className="track-date">Mã đơn hàng: {order.orderNumber}</span>}
                   <span className="track-date">Đặt lúc {when(order.createdAt)}</span>
                 </div>
                 <div className="track-badges">

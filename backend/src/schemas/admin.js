@@ -141,6 +141,7 @@ export const createShipmentSchema = z.object({
   goodsType: optionalText('loại hàng', 100),
   shippingFee: num('phí vận chuyển', { min: 0 }),
   codAmount: num('tiền thu hộ').optional().default(0),
+  carrierCode: optionalText('mã vận đơn của hãng', 60),
   note: noteField,
 })
 
@@ -152,6 +153,7 @@ export const shipmentStatusSchema = z.object({
   location: optionalText('vị trí', 200),
   note: noteField,
 })
+export const carrierCodeSchema = z.object({ carrierCode: z.string('Mã vận đơn không hợp lệ.').trim().max(60, 'Mã vận đơn quá dài (tối đa 60 ký tự).') })
 export const noteOnlySchema = z.object({ note: noteField })
 
 // --- Đơn hàng -------------------------------------------------------------------

@@ -1,3 +1,4 @@
+import { normCode } from './orderCode.js'
 import { prisma } from './prisma.js'
 import { getSettings, COD_METHOD_ID } from './settingsStore.js'
 import { quoteShipping, resolveAddressIds } from './shippingRates.js'
@@ -202,6 +203,7 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
     const fee = num(created.fee) ?? option.fee
     const data = {
       trackingId: gcode,
+      carrierCode: normCode(created.tracking_number) || null, // ghi rõ cả khi rỗng: bản ghi dùng lại của vận đơn đã hủy phải bỏ mã cũ
       carrierId: carrier.id,
       status: local,
       senderName: g.origin.name,
@@ -330,6 +332,7 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
       }
     }
     if (p.fee !== null && p.fee > 0 && Number(shipment.shippingFee) !== p.fee) changes.shippingFee = p.fee // cước thực tế hãng tính
+    if (p.code && normCode(p.code) !== shipment.carrierCode) changes.carrierCode = normCode(p.code)
     if (p.code && !String(shipment.note || '').includes(p.code)) {
       changes.note = `${String(shipment.note || 'Goship').replace(/\s·\smã hãng:.*$/, '')} · mã hãng: ${p.code}`
     }

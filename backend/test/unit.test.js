@@ -10,6 +10,7 @@ import { keywordsSchema } from '../src/schemas/seo.js'
 import { RATE_LIMIT_WAITS } from '../src/lib/openrouterClient.js'
 import { startJob, getJob, currentJob, cancelJob, jobView, JobLimitError } from '../src/lib/seoJobs.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
+import { displayCode, normCode } from '../src/lib/orderCode.js'
 import { extractOrderNumber } from '../src/lib/paymentWebhook.js'
 import { orderCreatedEmail, orderStatusEmail, passwordResetEmail } from '../src/lib/emailTemplates.js'
 import { canTransitionOrder } from '../src/constants/workflow.js'
@@ -1162,5 +1163,23 @@ describe('cài đặt tạo vận đơn thật', () => {
     const r = shippingSchema.safeParse(old)
     assert.equal(r.success, true)
     assert.equal(r.data.goship.createShipments, false)
+  })
+})
+
+describe('mã đơn hiển thị: mã vận đơn của hãng thay ORD-xxxxx khi đã có', () => {
+  const order = (shipment) => ({ orderNumber: 'ORD-12345', shipment })
+  test('chưa có vận đơn hoặc chưa có mã hãng -> dùng mã đơn', () => {
+    assert.equal(displayCode(order(null)), 'ORD-12345')
+    assert.equal(displayCode(order({ status: 'AWAITING_PICKUP', carrierCode: null })), 'ORD-12345')
+  })
+  test('có mã hãng -> dùng mã hãng', () => {
+    assert.equal(displayCode(order({ status: 'IN_TRANSIT', carrierCode: 'GHN123' })), 'GHN123')
+  })
+  test('vận đơn đã hủy (NOT_CREATED) -> quay lại mã đơn', () => {
+    assert.equal(displayCode(order({ status: 'NOT_CREATED', carrierCode: 'GHN123' })), 'ORD-12345')
+  })
+  test('chuẩn hóa mã: bỏ khoảng trắng, viết hoa', () => {
+    assert.equal(normCode('  ghn123 '), 'GHN123')
+    assert.equal(normCode(null), '')
   })
 })

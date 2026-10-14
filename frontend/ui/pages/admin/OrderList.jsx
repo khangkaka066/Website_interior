@@ -55,6 +55,7 @@ export default function OrderList() {
   function handleExport() {
     const rows = data.items.map((o) => ({
       'Mã đơn': o.orderNumber,
+      'Mã vận đơn': o.shipment?.status !== 'NOT_CREATED' ? o.shipment?.carrierCode || '' : '',
       'Khách hàng': o.customer?.name,
       'Tổng tiền': o.total,
       'Thanh toán': paymentStatusLabel(o.paymentStatus),
@@ -148,8 +149,9 @@ export default function OrderList() {
                   <tr key={o.id}>
                     <td>
                       <a href="#" onClick={(e) => { e.preventDefault(); navigate(`/dashboard/orders/${o.id}`) }}>
-                        {o.orderNumber}
+                        {o.code || o.orderNumber}
                       </a>
+                      {o.code && o.code !== o.orderNumber && <div style={{ fontSize: '11px', color: 'var(--dash-muted)' }}>{o.orderNumber}</div>}
                     </td>
                     <td>{o.customer?.name}</td>
                     <td>{o.items?.length || 0} sản phẩm</td>

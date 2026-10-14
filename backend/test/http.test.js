@@ -44,7 +44,7 @@ describe('chung', () => {
 describe('yêu cầu đăng nhập', () => {
   for (const [method, path] of [
     ['GET', '/api/orders'], ['GET', '/api/orders/status-counts'], ['PATCH', '/api/orders/x/status'], ['GET', '/api/customers'], ['POST', '/api/customers'],
-    ['GET', '/api/shipping'], ['POST', '/api/campaigns'], ['GET', '/api/chat/conversations'], ['GET', '/api/chat/stream'],
+    ['GET', '/api/shipping'], ['POST', '/api/campaigns'], ['GET', '/api/chat/conversations'], ['GET', '/api/chat/stream'], ['GET', '/api/chat/quick-replies'], ['POST', '/api/chat/quick-replies'], ['DELETE', '/api/chat/quick-replies/x'],
     ['GET', '/api/settings'], ['PUT', '/api/settings/store'], ['GET', '/api/users'], ['GET', '/api/admin-products'],
     ['POST', '/api/admin-products/sync'], ['GET', '/api/analytics/overview'], ['GET', '/api/payments'],
     ['GET', '/api/posts'], ['POST', '/api/posts'], ['PATCH', '/api/posts/x'], ['DELETE', '/api/posts/x'],

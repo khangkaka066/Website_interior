@@ -1655,17 +1655,44 @@
 .msg-quick-chip button:hover {
   background: var(--dash-hover-bg);
 }
-.msg-quick-del {
+.msg-quick-chip .msg-quick-act {
   border-left: 1px solid var(--dash-border);
-  color: var(--dash-muted) !important;
-  padding: 4px 7px !important;
+  color: var(--dash-muted);
+  padding: 4px 7px;
+}
+.msg-quick-chip .msg-quick-act:last-child:hover {
+  color: #c0392b;
+}
+.msg-quick-error {
+  font-size: 12px;
+  color: #c0392b;
+  align-self: center;
+}
+.msg-quick-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 20px 0;
+  background: var(--dash-card-bg);
+}
+.msg-quick-editor input,
+.msg-quick-editor textarea {
+  border: 1px solid var(--dash-border);
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--dash-heading);
+}
+.msg-quick-editor textarea {
+  min-height: 64px;
+  resize: vertical;
+}
+.msg-quick-editor-actions {
+  display: flex;
+  gap: 8px;
 }
 .msg-quick-save {
   border: 1px dashed var(--dash-border);
-}
-.msg-quick-save:disabled {
-  opacity: 0.45;
-  cursor: default;
 }
 .msg-quick-replies + .msg-thread-input {
   border-top: none;

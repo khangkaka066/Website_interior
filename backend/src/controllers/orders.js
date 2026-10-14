@@ -7,6 +7,7 @@ import { getSettings, shippingFeeFor, COD_METHOD_ID } from '../lib/settingsStore
 import { quoteShipping, chooseShipping } from '../lib/shippingRates.js'
 import { sendMail } from '../lib/mailer.js'
 import { PAYOS_METHOD_ID, payosConfigured, createPaymentLink } from '../lib/payos.js'
+import { displayCode, findOrderByCode, normCode } from '../lib/orderCode.js'
 import { orderCreatedEmail, orderStatusEmail, NOTIFY_STATUSES } from '../lib/emailTemplates.js'
 import { invalidateUser } from '../lib/authCache.js'
 
@@ -73,6 +74,7 @@ export async function listOrders(req, res) {
   if (search) {
     where.OR = [
       { orderNumber: { contains: search, mode: 'insensitive' } },
+      { shipment: { carrierCode: { contains: search, mode: 'insensitive' } } },
       { recipientName: { contains: search, mode: 'insensitive' } },
       { recipientPhone: { contains: search } },
       { customer: { name: { contains: search, mode: 'insensitive' } } },
@@ -108,7 +110,7 @@ export async function listOrders(req, res) {
   ])
 
   res.json({
-    items: items.map(toPlain),
+    items: items.map((o) => toPlain({ ...o, code: displayCode(o) })),
     total,
     page: Number(page) || 1,
     pageSize: take,
@@ -140,6 +142,7 @@ export async function getOrder(req, res) {
 
   res.json({
     ...toPlain(order),
+    code: displayCode(order),
     customer: {
       ...toPlain(order.customer),
       previousOrderCount,
@@ -421,6 +424,7 @@ const maskName = (name) => String(name || '').split(/\s+/).filter(Boolean).map((
 export function publicOrderView(order, { masked = false } = {}) {
   return toPlain({
     orderNumber: order.orderNumber,
+    code: displayCode(order), // mã vận đơn của hãng nếu có, không thì mã đơn
     status: order.status,
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
@@ -448,6 +452,7 @@ export function publicOrderView(order, { masked = false } = {}) {
     shipment: order.shipment && {
       carrier: order.shipment.carrier?.name,
       trackingId: order.shipment.trackingId,
+      carrierCode: order.shipment.carrierCode,
       status: order.shipment.status,
       events: order.shipment.trackingEvents.map((t) => ({ status: t.status, note: t.note, location: t.location, createdAt: t.createdAt })),
     },
@@ -459,7 +464,7 @@ export function publicOrderView(order, { masked = false } = {}) {
 //  - chỉ mã đơn: trả đơn đó nhưng ẩn tên/địa chỉ nhận hàng (mã đơn chỉ có 5 chữ số nên không được coi là bí mật);
 //  - chỉ số điện thoại: trả danh sách đơn gần đây (mã, ngày, trạng thái, tổng tiền, tên sản phẩm), không kèm thông tin giao hàng.
 export async function trackOrder(req, res) {
-  const orderNumber = String(req.query.orderNumber || '').trim().toUpperCase()
+  const orderNumber = normCode(req.query.orderNumber) // mã đơn ORD-xxxxx hoặc mã vận đơn của hãng
   const phone = normPhone(req.query.phone)
   const hasPhone = phone.length >= 8
   const notFound = () => res.status(404).json({ error: 'Không tìm thấy đơn hàng với thông tin này.' })
@@ -467,7 +472,7 @@ export async function trackOrder(req, res) {
   res.set('Cache-Control', 'no-store')
 
   if (orderNumber) {
-    const order = await prisma.order.findUnique({ where: { orderNumber }, include: PUBLIC_ORDER_INCLUDE })
+    const order = await findOrderByCode(orderNumber, { include: PUBLIC_ORDER_INCLUDE })
     if (!order) return notFound()
     if (hasPhone) {
       if (!matchesPhone(order)) return notFound()
@@ -486,13 +491,14 @@ export async function trackOrder(req, res) {
        OR right(regexp_replace(c."phone", '\D', '', 'g'), 8) = ${tail}
     ORDER BY o."createdAt" DESC LIMIT 50`
   const found = ids.length
-    ? await prisma.order.findMany({ where: { id: { in: ids.map((r) => r.id) } }, include: { customer: true, items: true }, orderBy: { createdAt: 'desc' } })
+    ? await prisma.order.findMany({ where: { id: { in: ids.map((r) => r.id) } }, include: { customer: true, items: true, shipment: true }, orderBy: { createdAt: 'desc' } })
     : []
   const mine = found.filter(matchesPhone).slice(0, 20)
   if (!mine.length) return notFound()
   res.json({
     orders: mine.map((o) => toPlain({
         orderNumber: o.orderNumber,
+        code: displayCode(o),
         status: o.status,
         paymentStatus: o.paymentStatus,
         createdAt: o.createdAt,

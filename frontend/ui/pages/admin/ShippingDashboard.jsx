@@ -143,7 +143,7 @@ export default function ShippingDashboard() {
               <thead>
                 <tr>
                   <th>Tracking ID</th>
-                  <th>Order ID</th>
+                  <th>Mã đơn</th>
                   <th>Người nhận</th>
                   <th>Đơn vị vận chuyển</th>
                   <th>COD</th>
@@ -160,7 +160,7 @@ export default function ShippingDashboard() {
                         {s.trackingId}
                       </a>
                     </td>
-                    <td>{s.order?.orderNumber}</td>
+                    <td>{s.order?.orderNumber}{s.carrierCode && <div style={{ fontSize: '11px', color: 'var(--dash-muted)' }}>{s.carrierCode}</div>}</td>
                     <td>{s.recipientName}</td>
                     <td>{s.carrier?.name}</td>
                     <td>{s.codAmount ? formatCurrency(s.codAmount) : '—'}</td>

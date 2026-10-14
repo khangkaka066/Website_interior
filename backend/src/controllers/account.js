@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma.js'
 import { hashPassword, comparePassword, publicUser } from '../lib/auth.js'
 import { toPlain } from '../utils/serialize.js'
 import { PUBLIC_ORDER_INCLUDE, publicOrderView, normPhone } from './orders.js'
+import { displayCode, findOrderByCode, normCode } from '../lib/orderCode.js'
 import { invalidateUser } from '../lib/authCache.js'
 
 // Trang "Tài khoản của tôi": chỉ tài khoản khách (CUSTOMER) và chỉ dữ liệu của chính họ. Mọi truy vấn đều lọc theo
@@ -78,12 +79,13 @@ export async function listMyOrders(req, res) {
     where: { customerId: req.user.customerId },
     orderBy: { createdAt: 'desc' },
     take: 100,
-    include: { items: true },
+    include: { items: true, shipment: true },
   })
   res.json(
     toPlain(
       orders.map((o) => ({
         orderNumber: o.orderNumber,
+        code: displayCode(o),
         status: o.status,
         paymentStatus: o.paymentStatus,
         paymentMethod: o.paymentMethod,
@@ -97,10 +99,7 @@ export async function listMyOrders(req, res) {
 
 export async function getMyOrder(req, res) {
   const order = req.user.customerId
-    ? await prisma.order.findFirst({
-        where: { orderNumber: String(req.params.orderNumber).toUpperCase(), customerId: req.user.customerId },
-        include: PUBLIC_ORDER_INCLUDE,
-      })
+    ? await findOrderByCode(req.params.orderNumber, { include: PUBLIC_ORDER_INCLUDE }).then((o) => (o?.customerId === req.user.customerId ? o : null))
     : null
   if (!order) return res.status(404).json({ error: 'Không tìm thấy đơn hàng.' })
   res.set('Cache-Control', 'no-store')
@@ -109,12 +108,13 @@ export async function getMyOrder(req, res) {
 
 // Nhận lại đơn đã đặt khi chưa đăng nhập: chứng minh bằng đúng mã đơn + số điện thoại (như trang Tra cứu đơn hàng).
 export async function claimOrder(req, res) {
-  const orderNumber = req.body.orderNumber.toUpperCase()
+  const code = normCode(req.body.orderNumber) // mã đơn hoặc mã vận đơn của hãng
   const phoneIn = normPhone(req.body.phone)
   const notFound = () => res.status(404).json({ error: 'Không tìm thấy đơn hàng với mã đơn và số điện thoại này.' })
 
-  const order = await prisma.order.findUnique({ where: { orderNumber }, include: { customer: { include: { account: true } } } })
+  const order = await findOrderByCode(code, { include: { customer: { include: { account: true } } } })
   if (!order || ![order.recipientPhone, order.customer?.phone].some((p) => normPhone(p) === phoneIn)) return notFound()
+  const orderNumber = order.orderNumber
   if (order.customerId === req.user.customerId) return res.json({ ok: true, orderNumber })
 
   if (req.user.customerId) {
