@@ -265,6 +265,8 @@ model Shipment {
   trackingId String @unique
   // Mã vận đơn của hãng vận chuyển (GHN, GHTK...). Có thì hiển thị thay cho mã đơn ORD-xxxxx (xem lib/orderCode.js).
   carrierCode String?
+  // Mã phân loại của hãng (in lớn giữa tem giao hàng để kho hãng chia tuyến). Goship trả về khi tạo vận đơn.
+  sortingCode String?
 
   orderId String @unique
   order   Order  @relation(fields: [orderId], references: [id])

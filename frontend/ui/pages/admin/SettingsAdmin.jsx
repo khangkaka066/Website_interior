@@ -144,8 +144,8 @@ function PaymentTab({ data, onSaved }) {
           )}
           {m.bank && m.enabled && m.bank.bankCode && m.bank.accountNumber.length >= 6 && (
             <div className="set-qr-preview">
-              <span className="set-label">Xem thử mã QR khách sẽ thấy (đơn mẫu 100.000đ, mã ORD-10293). Bạn quét thử bằng app ngân hàng để kiểm tra đúng tài khoản.</span>
-              <TransferQr bank={m.bank} amount={100000} note={fillTransferNote(m.bank.transferNote, 'ORD-10293')} />
+              <span className="set-label">Xem thử mã QR khách sẽ thấy (đơn mẫu 100.000đ, mã 2611148M5W6ABM). Bạn quét thử bằng app ngân hàng để kiểm tra đúng tài khoản.</span>
+              <TransferQr bank={m.bank} amount={100000} note={fillTransferNote(m.bank.transferNote, '2611148M5W6ABM')} />
             </div>
           )}
         </div>

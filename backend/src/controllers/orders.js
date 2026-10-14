@@ -210,9 +210,9 @@ export async function createOrder(req, res) {
     if (campaign) campaignId = campaign.id
   }
 
-  let order
-  try {
-    order = await prisma.$transaction(async (tx) => {
+  // Mã đơn ngẫu nhiên có thể (rất hiếm) trùng một đơn khác: thử lại với mã mới, giao dịch cũ đã tự hoàn tác (kể cả tồn kho).
+  const placeOrder = () =>
+    prisma.$transaction(async (tx) => {
       // Trừ tồn kho và tạo đơn trong cùng một giao dịch: hết hàng giữa chừng thì không tạo đơn.
       const reserved = await reserveStock(tx, lines)
       return tx.order.create({
@@ -244,6 +244,18 @@ export async function createOrder(req, res) {
         include: ORDER_INCLUDE,
       })
     }, { timeout: 15000, maxWait: 10000 })
+
+  let order
+  try {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        order = await placeOrder()
+        break
+      } catch (err) {
+        const clash = err?.code === 'P2002' && String(err.meta?.target ?? '').includes('orderNumber')
+        if (!clash || attempt >= 4) throw err
+      }
+    }
   } catch (err) {
     if (err instanceof StockError) return res.status(400).json({ error: err.message })
     throw err

@@ -64,7 +64,7 @@ export function OrderList({ onOpen }) {
           <Notice>{claim.error}</Notice>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Mã đơn hàng">
-              <input className={input} value={claim.orderNumber} maxLength={30} required placeholder="ORD-12345"
+              <input className={input} value={claim.orderNumber} maxLength={30} required placeholder="2611148M5W6ABM"
                 onChange={(e) => setClaim((c) => ({ ...c, orderNumber: e.target.value }))} />
             </Field>
             <Field label="Số điện thoại đặt hàng">

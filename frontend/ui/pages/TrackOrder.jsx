@@ -84,13 +84,13 @@ export default function TrackOrder() {
       <main>
         <div className="container track-order">
           <h1>Tra cứu đơn hàng</h1>
-          <p className="track-intro">Nhập mã đơn hàng (dạng ORD-12345) hoặc mã vận đơn <strong>hoặc</strong> số điện thoại bạn đã dùng khi đặt hàng. Nhập cả hai để xem đầy đủ thông tin giao hàng.</p>
+          <p className="track-intro">Nhập mã đơn hàng (ví dụ 2611148M5W6ABM) hoặc mã vận đơn <strong>hoặc</strong> số điện thoại bạn đã dùng khi đặt hàng. Nhập cả hai để xem đầy đủ thông tin giao hàng.</p>
 
           <form className="track-form" onSubmit={onSubmit}>
             <input
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value)}
-              placeholder="Mã đơn hoặc mã vận đơn, ví dụ ORD-12345"
+              placeholder="Mã đơn hoặc mã vận đơn, ví dụ 2611148M5W6ABM"
               maxLength={30}
             />
             <input

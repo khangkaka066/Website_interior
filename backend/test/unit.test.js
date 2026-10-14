@@ -11,7 +11,8 @@ import { RATE_LIMIT_WAITS } from '../src/lib/openrouterClient.js'
 import { startJob, getJob, currentJob, cancelJob, jobView, JobLimitError } from '../src/lib/seoJobs.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { displayCode, normCode } from '../src/lib/orderCode.js'
-import { extractOrderNumber } from '../src/lib/paymentWebhook.js'
+import { extractOrderNumber, extractOrderNumbers } from '../src/lib/paymentWebhook.js'
+import { generateOrderNumber } from '../src/utils/ids.js'
 import { orderCreatedEmail, orderStatusEmail, passwordResetEmail } from '../src/lib/emailTemplates.js'
 import { canTransitionOrder } from '../src/constants/workflow.js'
 import { publishChat, openStream, customerChannel, ADMIN_CHANNEL, _stats } from '../src/lib/chatEvents.js'
@@ -475,6 +476,30 @@ describe('PayOS: chữ ký webhook', () => {
     assert.equal(verifyWebhookSignature({}, key), false)
     assert.equal(verifyWebhookSignature({ data }, key), false)
     assert.equal(verifyWebhookSignature(null, key), false)
+  })
+})
+
+describe('mã đơn mới dạng Shopee', () => {
+  test('6 số ngày (giờ VN) + 8 ký tự, không có I/O', () => {
+    // 2026-11-14 18:00 UTC = 01:00 ngày 15 giờ Việt Nam
+    assert.match(generateOrderNumber(new Date('2026-11-14T18:00:00Z')), /^261115[0-9A-HJ-NP-Z]{8}$/)
+    for (let i = 0; i < 200; i++) assert.match(generateOrderNumber(), /^\d{6}[0-9A-HJ-NP-Z]{8}$/)
+  })
+  test('không trùng trong 5000 mã sinh ra', () => {
+    assert.equal(new Set(Array.from({ length: 5000 }, () => generateOrderNumber())).size, 5000)
+  })
+  test('nhận mã trong nội dung chuyển khoản (hoa/thường, kèm chữ khác)', () => {
+    assert.equal(extractOrderNumber('CLEVINUM 2611148M5W6ABM'), '2611148M5W6ABM')
+    assert.equal(extractOrderNumber('clevinum 2611148m5w6abm cam on'), '2611148M5W6ABM')
+    assert.equal(extractOrderNumber('MBVCB.1234 chuyen tien 2611148M5W6ABM'), '2611148M5W6ABM')
+  })
+  test('không nhận chuỗi dài/ngắn hơn hoặc dính chữ số khác', () => {
+    assert.equal(extractOrderNumber('2611148M5W6ABMX'), null)
+    assert.equal(extractOrderNumber('2611148M5W6AB'), null)
+    assert.equal(extractOrderNumber('X2611148M5W6ABM'), null)
+  })
+  test('nội dung có nhiều mã giống nhau: trả đủ theo thứ tự để chọn mã có thật', () => {
+    assert.deepEqual(extractOrderNumbers('20261114123456 ck 2611148M5W6ABM ORD-12345'), ['20261114123456', '2611148M5W6ABM', 'ORD-12345'])
   })
 })
 

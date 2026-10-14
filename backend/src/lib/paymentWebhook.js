@@ -56,10 +56,18 @@ export function webhookStatus() {
 }
 
 // Ngân hàng có thể bỏ gạch ngang / đổi hoa thường: nhận cả "ORD-12345", "ord12345", "ORD 12345".
-export function extractOrderNumber(text) {
-  const m = /ORD[\s-]?(\d{5})/i.exec(String(text || ''))
-  return m ? `ORD-${m[1]}` : null
+// Mã đơn mới: 6 số ngày + 8 ký tự (2611148M5W6ABM), đứng riêng (không dính chữ/số khác). Mã cũ ORD-12345 của đơn đã đặt vẫn nhận.
+// Trả về MỌI mã có dạng giống mã đơn trong nội dung (theo thứ tự xuất hiện): nội dung có thể kèm số tham chiếu ngân hàng cùng dạng,
+// nên processTransaction chọn mã nào có thật trong database.
+export function extractOrderNumbers(text) {
+  const t = String(text || '')
+  const found = []
+  for (const m of t.matchAll(/ORD[\s-]?(\d{5})/gi)) found.push({ i: m.index, code: `ORD-${m[1]}` })
+  for (const m of t.matchAll(/(?<![0-9A-Za-z])(\d{6}[0-9A-Za-z]{8})(?![0-9A-Za-z])/g)) found.push({ i: m.index, code: m[1].toUpperCase() })
+  return [...new Set(found.sort((a, b) => a.i - b.i).map((f) => f.code))]
 }
+
+export const extractOrderNumber = (text) => extractOrderNumbers(text)[0] ?? null
 
 const money = (n) => Number(n).toLocaleString('vi-VN') + 'đ'
 
@@ -83,12 +91,14 @@ export async function processTransaction(provider, tx, db = prisma) {
     return { result: 'unmatched' }
   }
 
-  const orderNumber = extractOrderNumber(tx.content)
-  if (!orderNumber) return unmatched('nội dung không có mã đơn')
-  const order = await db.order.findUnique({
-    where: { orderNumber },
+  const candidates = extractOrderNumbers(tx.content)
+  if (!candidates.length) return unmatched('nội dung không có mã đơn')
+  const rows = await db.order.findMany({
+    where: { orderNumber: { in: candidates } },
     select: { id: true, orderNumber: true, status: true, paymentStatus: true, paymentMethod: true, total: true },
   })
+  const order = rows.sort((a, b) => candidates.indexOf(a.orderNumber) - candidates.indexOf(b.orderNumber))[0]
+  const orderNumber = order?.orderNumber ?? candidates[0]
   if (!order) return unmatched(`mã đơn ${orderNumber} không tồn tại`)
   if (order.paymentMethod === 'COD') return unmatched(`đơn ${orderNumber} chọn COD`)
   if (['CANCELLED', 'RETURNED'].includes(order.status)) return unmatched(`đơn ${orderNumber} đã hủy/trả hàng, cần hoàn tiền`)

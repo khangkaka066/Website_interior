@@ -184,7 +184,7 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
       if (!err.network) throw new ShipmentError(err.message, 502, 'GOSHIP_REJECTED')
       const found = await searchGoshipShipment(order.orderNumber).catch(() => null)
       if (!found) throw new ShipmentError('Không kết nối được Goship, chưa tạo vận đơn. Vui lòng thử lại.', 502, 'NETWORK')
-      created = { id: found.id ?? found.gcode, tracking_number: found.tracking_number ?? found.carrier_code, shipment_status: found.status_code ?? found.shipment_status, fee: found.fee, carrier: found.carrier_name ?? found.carrier, carrier_short_name: found.carrier_short_name }
+      created = { id: found.id ?? found.gcode, tracking_number: found.tracking_number ?? found.carrier_code, sorting_code: found.sorting_code, shipment_status: found.status_code ?? found.shipment_status, fee: found.fee, carrier: found.carrier_name ?? found.carrier, carrier_short_name: found.carrier_short_name }
     }
 
     const gcode = str(created.id)
@@ -203,6 +203,7 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
     const fee = num(created.fee) ?? option.fee
     const data = {
       trackingId: gcode,
+      sortingCode: str(created.sorting_code) || null,
       carrierCode: normCode(created.tracking_number) || null, // ghi rõ cả khi rỗng: bản ghi dùng lại của vận đơn đã hủy phải bỏ mã cũ
       carrierId: carrier.id,
       status: local,
