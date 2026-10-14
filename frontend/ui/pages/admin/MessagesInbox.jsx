@@ -3,10 +3,28 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
-import { formatDateTime } from '../../utils/format'
+import { formatDateTime, formatCurrency } from '../../utils/format'
 import { openEventStream } from '../../utils/eventStream'
 
 const FALLBACK_POLL_MS = 30000 // dự phòng; cập nhật chính đến qua luồng thời gian thực
+
+// Bỏ dấu + hạ chữ thường để tìm "rem" ra cả "Rèm".
+const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase()
+const productLink = (id) => `${window.location.origin}/products/${encodeURIComponent(id)}`
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
+    // Trình duyệt chặn clipboard (http, không phải localhost): dùng cách cũ.
+    const el = document.createElement('textarea')
+    el.value = text
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    el.remove()
+  }
+}
 
 export default function MessagesInbox() {
   const [conversations, setConversations] = useState([])
@@ -16,6 +34,32 @@ export default function MessagesInbox() {
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const scrollRef = useRef(null)
+  const draftRef = useRef(null)
+  const [products, setProducts] = useState([])
+  const [productQuery, setProductQuery] = useState('')
+  const [copiedId, setCopiedId] = useState(null)
+
+  useEffect(() => {
+    api.get('/shop/products').then(setProducts).catch(() => {})
+  }, [])
+
+  const shownProducts = (() => {
+    const q = fold(productQuery).trim()
+    const list = q ? products.filter((p) => fold(`${p.name} ${p.sku || ''} ${p.id}`).includes(q)) : products
+    return list.slice(0, 50)
+  })()
+
+  async function handleCopy(p) {
+    await copyText(productLink(p.id))
+    setCopiedId(p.id)
+    setTimeout(() => setCopiedId((cur) => (cur === p.id ? null : cur)), 1500)
+  }
+
+  // Chèn "Tên sản phẩm + link" vào ô trả lời để gửi luôn.
+  function handleInsert(p) {
+    setDraft((d) => `${d}${d && !d.endsWith('\n') ? '\n' : ''}${p.name}: ${productLink(p.id)}`)
+    draftRef.current?.focus()
+  }
 
   const loadConversations = useCallback(async () => {
     try {
@@ -137,6 +181,7 @@ export default function MessagesInbox() {
 
               <div className="msg-thread-input">
                 <textarea
+                  ref={draftRef}
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder="Nhập câu trả lời..."
@@ -154,6 +199,37 @@ export default function MessagesInbox() {
             </>
           )}
         </div>
+
+        <aside className="msg-products">
+          <div className="msg-products-head">
+            <strong>Link sản phẩm</strong>
+            <input
+              type="search"
+              value={productQuery}
+              onChange={(e) => setProductQuery(e.target.value)}
+              placeholder="Tìm tên / mã sản phẩm..."
+            />
+          </div>
+          <div className="msg-products-list">
+            {shownProducts.length === 0 ? (
+              <p className="dash-empty-state" style={{ padding: '16px' }}>{products.length ? 'Không có sản phẩm khớp.' : 'Đang tải...'}</p>
+            ) : (
+              shownProducts.map((p) => (
+                <div key={p.id} className="msg-product">
+                  {p.image ? <img src={p.image} alt="" loading="lazy" /> : <span className="msg-product-noimg" />}
+                  <div className="msg-product-info">
+                    <span className="msg-product-name" title={p.name}>{p.name}</span>
+                    <span className="msg-product-price">{formatCurrency(p.price)}</span>
+                    <div className="msg-product-actions">
+                      <button type="button" onClick={() => handleCopy(p)}>{copiedId === p.id ? 'Đã copy ✓' : 'Copy link'}</button>
+                      {active && <button type="button" onClick={() => handleInsert(p)}>Chèn vào chat</button>}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
       </div>
     </AdminLayout>
   )
