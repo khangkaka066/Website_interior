@@ -1630,6 +1630,47 @@
   border-color: var(--dash-primary);
 }
 
+/* Tin nhắn mẫu phía trên ô trả lời */
+.msg-quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 20px 0;
+  border-top: 1px solid var(--dash-border);
+  background: var(--dash-card-bg);
+}
+.msg-quick-chip {
+  display: inline-flex;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-card-bg);
+}
+.msg-quick-chip button,
+.msg-quick-save {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--dash-primary);
+  background: none;
+  cursor: pointer;
+}
+.msg-quick-chip button:hover {
+  background: var(--dash-hover-bg);
+}
+.msg-quick-del {
+  border-left: 1px solid var(--dash-border);
+  color: var(--dash-muted) !important;
+  padding: 4px 7px !important;
+}
+.msg-quick-save {
+  border: 1px dashed var(--dash-border);
+}
+.msg-quick-save:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.msg-quick-replies + .msg-thread-input {
+  border-top: none;
+}
+
 /* Cột link sản phẩm bên phải: nhân viên copy/chèn link gửi khách */
 .msg-products {
   display: flex;
