@@ -16,6 +16,7 @@ const VIEWS = {
   productDetail: lazy(() => import('./pages/admin/ProductDetail')),
   orderList: lazy(() => import('./pages/admin/OrderList')),
   orderDetail: lazy(() => import('./pages/admin/OrderDetail')),
+  orderPrint: lazy(() => import('./pages/admin/OrderPrint')),
   shippingDashboard: lazy(() => import('./pages/admin/ShippingDashboard')),
   carrierSettings: lazy(() => import('./pages/admin/CarrierSettings')),
   shippingDetail: lazy(() => import('./pages/admin/ShippingDetail')),

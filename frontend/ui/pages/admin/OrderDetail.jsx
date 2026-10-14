@@ -73,8 +73,9 @@ export default function OrderDetail() {
     await load()
   }
 
+  // Mở trang in riêng (chỉ có nội dung phiếu, không kèm menu/nút) ở tab mới.
   function handlePrintInvoice() {
-    window.print()
+    window.open(`/dashboard/orders/print?ids=${encodeURIComponent(id)}`, '_blank', 'noopener')
   }
 
   if (loading) {
@@ -134,7 +135,7 @@ export default function OrderDetail() {
               Xem vận đơn
             </button>
           )}
-          <button className="dash-btn dash-btn-ghost" onClick={handlePrintInvoice}>In hóa đơn</button>
+          <button className="dash-btn dash-btn-ghost" onClick={handlePrintInvoice}>In đơn</button>
           {canRefund && <button className="dash-btn dash-btn-ghost" onClick={() => setModal('refund')}>Hoàn tiền</button>}
           {canCancel && <button className="dash-btn dash-btn-ghost" onClick={() => setModal('cancel')}>Hủy đơn</button>}
         </div>

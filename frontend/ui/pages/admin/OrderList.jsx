@@ -20,6 +20,7 @@ export default function OrderList() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
+  const [selected, setSelected] = useState(() => new Set()) // id các đơn được chọn để in (giữ khi sang trang khác)
 
   const [data, setData] = useState({ items: [], total: 0 })
   const [loading, setLoading] = useState(true)
@@ -76,6 +77,16 @@ export default function OrderList() {
 
   const totalPages = Math.ceil(data.total / PAGE_SIZE)
 
+  const toggleOne = (id) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const pageIds = data.items.map((o) => o.id)
+  const allOnPage = pageIds.length > 0 && pageIds.every((id) => selected.has(id))
+  const toggleAll = () => setSelected((s) => { const n = new Set(s); pageIds.forEach((id) => (allOnPage ? n.delete(id) : n.add(id))); return n })
+  // In các đơn đã chọn; chưa chọn đơn nào thì in các đơn đang hiện trên trang này.
+  function handlePrint() {
+    const ids = selected.size ? [...selected] : pageIds
+    window.open(`/dashboard/orders/print?ids=${ids.map(encodeURIComponent).join(',')}`, '_blank', 'noopener')
+  }
+
   return (
     <AdminLayout activeNav="orders" pageTitle="Đơn hàng" headerActions={null}>
       <div className="dash-card-head" style={{ marginBottom: '12px' }}>
@@ -115,6 +126,9 @@ export default function OrderList() {
         <button className="dash-btn" onClick={handleExport} disabled={data.items.length === 0}>
           Export
         </button>
+        <button className="dash-btn" onClick={handlePrint} disabled={data.items.length === 0} title="Tích chọn các đơn rồi in; không chọn thì in các đơn đang hiện">
+          {selected.size ? `In ${selected.size} đơn đã chọn` : 'In đơn'}
+        </button>
       </div>
 
       {error && <div className="dash-card" style={{ padding: '16px', color: 'var(--discount-red, #d14343)' }}>{error}</div>}
@@ -133,7 +147,10 @@ export default function OrderList() {
             <table className="dash-table">
               <thead>
                 <tr>
-                  <th>Order ID</th>
+                  <th style={{ width: '32px' }}>
+                    <input type="checkbox" checked={allOnPage} onChange={toggleAll} aria-label="Chọn tất cả đơn trên trang" />
+                  </th>
+                  <th>Mã đơn</th>
                   <th>Khách hàng</th>
                   <th>Sản phẩm</th>
                   <th>Tổng tiền</th>
@@ -147,6 +164,9 @@ export default function OrderList() {
               <tbody>
                 {data.items.map((o) => (
                   <tr key={o.id}>
+                    <td>
+                      <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggleOne(o.id)} aria-label={`Chọn đơn ${o.orderNumber}`} />
+                    </td>
                     <td>
                       <a href="#" onClick={(e) => { e.preventDefault(); navigate(`/dashboard/orders/${o.id}`) }}>
                         {o.code || o.orderNumber}

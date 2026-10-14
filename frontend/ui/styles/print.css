@@ -1,0 +1,141 @@
+/* Phiếu in đơn hàng (trang /dashboard/orders/print). Màn hình: xem trước giống tờ giấy; in: chỉ còn phiếu, mỗi đơn một trang. */
+.print-page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 16px;
+  color: #111;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.print-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.print-error {
+  color: #c0392b;
+}
+.print-sheet {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 24px;
+  margin-bottom: 16px;
+  break-after: page;
+}
+.print-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #111;
+}
+.print-shop {
+  font-size: 18px;
+  font-weight: 700;
+}
+.print-code-box {
+  text-align: right;
+}
+.print-title {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.print-code {
+  font-size: 22px;
+  font-weight: 700;
+  word-break: break-all;
+}
+.print-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 14px 0;
+}
+.print-cols h4 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #555;
+}
+.print-strong {
+  font-weight: 700;
+}
+.print-muted {
+  color: #666;
+  font-size: 12px;
+}
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+.print-table th,
+.print-table td {
+  border-bottom: 1px solid #ccc;
+  padding: 6px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+.print-table th {
+  border-bottom: 1px solid #111;
+  font-size: 12px;
+}
+.print-table .print-num,
+.print-table th:nth-child(n + 4) {
+  text-align: right;
+}
+.print-totals {
+  margin: 12px 0 0 auto;
+  width: 280px;
+}
+.print-totals > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+.print-grand {
+  border-top: 1px solid #111;
+  font-weight: 700;
+  font-size: 15px;
+  margin-top: 4px;
+  padding-top: 4px !important;
+}
+.print-collect {
+  border: 2px solid #111;
+  font-weight: 700;
+  font-size: 15px;
+  margin-top: 8px;
+  padding: 6px 8px !important;
+}
+.print-foot {
+  margin-top: 20px;
+  text-align: center;
+  color: #555;
+  font-size: 12px;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  .print-toolbar {
+    display: none !important;
+  }
+  .print-page {
+    max-width: none;
+    padding: 0;
+  }
+  .print-sheet {
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+  .print-sheet:last-child {
+    break-after: auto;
+  }
+}
