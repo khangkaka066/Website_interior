@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import app from './app.js'
 import { loadProducts, startProductRefresh } from './lib/productStore.js'
+import { startOrderJobs } from './lib/orderFlow.js'
 
 const PORT = process.env.PORT || 4000
 
@@ -13,6 +14,7 @@ if (process.env.NODE_ENV === 'production' && (process.env.JWT_SECRET || '').leng
 // Nạp sản phẩm từ database trước khi nhận đơn; lỗi thì dùng danh sách tĩnh và thử lại định kỳ.
 await loadProducts().catch((err) => console.warn('Chưa nạp được sản phẩm từ database, dùng danh sách tĩnh:', err.message))
 startProductRefresh()
+startOrderJobs() // tự hủy đơn chưa thanh toán quá hạn, tự xác nhận đã nhận hàng
 
 app.listen(PORT, () => {
   console.log(`Clevinum backend listening on http://localhost:${PORT}`)

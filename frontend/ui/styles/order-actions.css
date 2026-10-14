@@ -1,0 +1,96 @@
+/* Thao tác của khách với đơn (hủy, đã nhận hàng, trả hàng, đánh giá) */
+.oa {
+  margin: 16px 0;
+}
+.oa-note {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  background: #faf3ea;
+  border-left: 3px solid var(--accent, #b5602f);
+  font-size: 13px;
+}
+.oa-error {
+  color: #c0392b;
+  font-size: 13px;
+  margin: 8px 0;
+}
+.oa-hint {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 10px;
+}
+.oa-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.oa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #e5d9cc;
+  background: #fff;
+}
+.oa-form h4 {
+  margin: 0;
+  font-size: 15px;
+}
+.oa-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.oa-form select,
+.oa-form textarea {
+  border: 1px solid #ccc;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+}
+.oa-review-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #ddd;
+}
+.oa-review-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+.oa-stars button {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 26px;
+  line-height: 1;
+  color: #ccc;
+  cursor: pointer;
+}
+.oa-stars button.on {
+  color: #f5a623;
+}
+.oa-stars-static {
+  color: #f5a623;
+  letter-spacing: 1px;
+}
+.oa .btn {
+  padding: 10px 22px;
+  cursor: pointer;
+}
+.oa .btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.oa .btn-outline {
+  background: transparent;
+  color: var(--accent, #b5602f);
+  border: 1px solid var(--accent, #b5602f);
+}
+.oa .btn-outline:hover {
+  background: #faf3ea;
+}

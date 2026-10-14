@@ -374,3 +374,18 @@
     break-after: auto;
   }
 }
+
+/* Loại giao hàng in nổi bật trên tem (shipper nhìn là biết đơn hỏa tốc) */
+.lbl-type {
+  display: inline-block;
+  margin-top: 1.5mm;
+  padding: 0.5mm 2mm;
+  border: 1.5px solid #000;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.lbl-type-express {
+  background: #000;
+  color: #fff;
+}

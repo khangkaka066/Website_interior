@@ -13,6 +13,12 @@ import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { displayCode, normCode } from '../src/lib/orderCode.js'
 import { extractOrderNumber, extractOrderNumbers } from '../src/lib/paymentWebhook.js'
 import { generateOrderNumber } from '../src/utils/ids.js'
+import { handleDueAt } from '../src/lib/orderFlow.js'
+import { classifyDelivery, isExpressService, isSameCity, deliveryTypeOf } from '../src/lib/deliveryType.js'
+import { publicOrderView } from '../src/controllers/orders.js'
+import { ordersSchema } from '../src/schemas/settings.js'
+import { reviewMyOrderSchema, cancelMyOrderSchema } from '../src/schemas/orders.js'
+import { bulkOrderStatusSchema } from '../src/schemas/admin.js'
 import { orderCreatedEmail, orderStatusEmail, passwordResetEmail } from '../src/lib/emailTemplates.js'
 import { canTransitionOrder } from '../src/constants/workflow.js'
 import { publishChat, openStream, customerChannel, ADMIN_CHANNEL, _stats } from '../src/lib/chatEvents.js'
@@ -977,12 +983,12 @@ describe('tính cước vận chuyển qua Goship', () => {
   test('chooseShipping: có báo giá thì bắt buộc chọn đúng lựa chọn, không thì phí cố định; client không tự đặt giá được', () => {
     const st = settings({ fee: 25000 })
     const ok = { status: 'ok', options: [{ id: 'a', carrier: 'GHTK', service: 'Nhanh', fee: 18000 }, { id: 'b', carrier: 'VTP', service: '', fee: 39000 }] }
-    assert.deepEqual(chooseShipping(st, 100000, ok, 'a'), { fee: 18000, label: 'GHTK – Nhanh (Goship)' })
-    assert.deepEqual(chooseShipping(st, 100000, ok, 'b'), { fee: 39000, label: 'VTP (Goship)' })
+    assert.deepEqual(chooseShipping(st, 100000, ok, 'a'), { fee: 18000, label: 'GHTK – Nhanh (Goship)', service: 'Nhanh', express: undefined })
+    assert.deepEqual(chooseShipping(st, 100000, ok, 'b'), { fee: 39000, label: 'VTP (Goship)', service: '', express: undefined })
     assert.equal(chooseShipping(st, 100000, ok, undefined).error, 'SHIPPING_CHANGED') // không chọn: không được hưởng phí cố định rẻ hơn
     assert.equal(chooseShipping(st, 100000, ok, 'zzz').error, 'SHIPPING_CHANGED') // mã không còn hiệu lực
     for (const status of ['disabled', 'incomplete', 'error']) {
-      assert.deepEqual(chooseShipping(st, 100000, { status, options: [] }, 'a'), { fee: 25000, label: null }, status)
+      assert.deepEqual(chooseShipping(st, 100000, { status, options: [] }, 'a'), { fee: 25000, label: null, service: null, express: false }, status)
     }
     assert.equal(chooseShipping(settings({ fee: 25000, freeShippingOver: 50000 }), 100000, { status: 'disabled', options: [] }).fee, 0)
   })
@@ -1206,5 +1212,92 @@ describe('mã đơn hiển thị: mã vận đơn của hãng thay ORD-xxxxx khi
   test('chuẩn hóa mã: bỏ khoảng trắng, viết hoa', () => {
     assert.equal(normCode('  ghn123 '), 'GHN123')
     assert.equal(normCode(null), '')
+  })
+})
+
+describe('vòng đời đơn kiểu Shopee', () => {
+  const rules = { handleHours: 48, intracityHandleHours: 24, expressHandleHours: 6, cancelAutoApproveHours: 24, unpaidCancelHours: 24, autoReceiveDays: 7, returnWindowDays: 7, expressKeywords: 'hỏa tốc, instant' }
+  test('hạn xử lý = giờ đặt + handleHours, chỉ cho đơn còn việc', () => {
+    const createdAt = new Date('2026-11-14T00:00:00Z')
+    assert.equal(handleDueAt({ status: 'PENDING_CONFIRMATION', createdAt }, rules).toISOString(), '2026-11-16T00:00:00.000Z')
+    assert.equal(handleDueAt({ status: 'SHIPPING', createdAt }, rules), null)
+    assert.equal(handleDueAt({ status: 'CANCELLED', createdAt }, rules), null)
+    assert.equal(handleDueAt({ status: 'PENDING_CONFIRMATION', createdAt }, { ...rules, handleHours: 0 }), null)
+  })
+
+  const base = { orderNumber: 'X', status: 'PENDING_CONFIRMATION', items: [{ id: 'i1', productId: 'p1', review: null }], statusEvents: [], recipientName: 'A B', cancelRequestedAt: null, receivedAt: null, returnRequest: null }
+  test('khách hủy ngay khi chờ xác nhận, gửi yêu cầu khi đã xác nhận, không hủy khi đang giao', () => {
+    assert.equal(publicOrderView(base).actions.cancel, 'now')
+    assert.equal(publicOrderView({ ...base, status: 'CONFIRMED' }).actions.cancel, 'request')
+    assert.equal(publicOrderView({ ...base, status: 'PROCESSING', cancelRequestedAt: new Date() }).actions.cancel, null)
+    assert.equal(publicOrderView({ ...base, status: 'SHIPPING' }).actions.cancel, null)
+  })
+  test('đã giao: được xác nhận nhận hàng, đánh giá; trả hàng theo canReturn', () => {
+    const a = publicOrderView({ ...base, status: 'DELIVERED' }, { canReturn: true }).actions
+    assert.deepEqual([a.received, a.review, a.return], [true, true, true])
+    const b = publicOrderView({ ...base, status: 'DELIVERED', receivedAt: new Date(), items: [{ id: 'i1', productId: 'p1', review: { rating: 5 } }] }).actions
+    assert.deepEqual([b.received, b.review, b.return], [false, false, false])
+  })
+  test('bản che thông tin (chỉ có mã đơn) không có thao tác nào', () => {
+    assert.deepEqual(publicOrderView({ ...base, status: 'DELIVERED' }, { masked: true }).actions, {})
+  })
+  test('cài đặt quy tắc đơn hàng: số nguyên không âm', () => {
+    assert.ok(ordersSchema.safeParse(rules).success)
+    assert.ok(ordersSchema.safeParse({ ...rules, unpaidCancelHours: 0 }).success) // 0 = tắt
+    assert.ok(!ordersSchema.safeParse({ ...rules, handleHours: -1 }).success)
+    assert.ok(!ordersSchema.safeParse({ ...rules, autoReceiveDays: 1.5 }).success)
+  })
+  test('đánh giá: 1-5 sao, tối thiểu 1 đánh giá; hủy cần lý do', () => {
+    const ok = { reviews: [{ orderItemId: 'a', rating: 5, comment: 'Đẹp' }] }
+    assert.ok(reviewMyOrderSchema.safeParse(ok).success)
+    assert.ok(!reviewMyOrderSchema.safeParse({ reviews: [{ orderItemId: 'a', rating: 0 }] }).success)
+    assert.ok(!reviewMyOrderSchema.safeParse({ reviews: [] }).success)
+    assert.ok(!cancelMyOrderSchema.safeParse({ orderNumber: 'X', phone: '0900000000' }).success)
+  })
+  test('chuyển hàng loạt chỉ sang Đã xác nhận / Đang xử lý', () => {
+    assert.ok(bulkOrderStatusSchema.safeParse({ ids: ['a'], status: 'CONFIRMED' }).success)
+    assert.ok(!bulkOrderStatusSchema.safeParse({ ids: ['a'], status: 'DELIVERED' }).success)
+    assert.ok(!bulkOrderStatusSchema.safeParse({ ids: [], status: 'CONFIRMED' }).success)
+  })
+})
+
+describe('loại đơn: hỏa tốc / nội thành / liên tỉnh', () => {
+  const settings = {
+    orders: { expressKeywords: 'hỏa tốc, hoả tốc, instant, trong ngày' },
+    shipping: { goship: { origin: { province: 'Hồ Chí Minh' } } },
+    store: { address: 'Phường Hiệp Bình, TP. Hồ Chí Minh' },
+  }
+  test('nhận ra dịch vụ hỏa tốc theo từ khóa, bỏ qua dấu và hoa thường, không nhầm tên hãng', () => {
+    assert.equal(isExpressService('Giao Hỏa Tốc', settings.orders.expressKeywords), true)
+    assert.equal(isExpressService('Giao hoa toc 2h', settings.orders.expressKeywords), true)
+    assert.equal(isExpressService('Instant', settings.orders.expressKeywords), true)
+    assert.equal(isExpressService('Giao tiết kiệm', settings.orders.expressKeywords), false)
+    assert.equal(isExpressService('', settings.orders.expressKeywords), false)
+    assert.equal(isExpressService('Hỏa tốc', ''), false) // chưa khai từ khóa thì không có hỏa tốc
+  })
+  test('nội thành = cùng tỉnh/thành với kho gửi, so khớp không phân biệt tiền tố và dấu', () => {
+    for (const p of ['Hồ Chí Minh', 'TP. Hồ Chí Minh', 'Thành phố Hồ Chí Minh', 'ho chi minh']) assert.equal(isSameCity(p, settings), true, p)
+    for (const p of ['Hà Nội', 'Tỉnh Bình Dương', '']) assert.equal(isSameCity(p, settings), false, p)
+  })
+  test('chưa chọn kho gửi thì so với địa chỉ cửa hàng', () => {
+    const noOrigin = { ...settings, shipping: { goship: { origin: { province: '' } } } }
+    assert.equal(isSameCity('Hồ Chí Minh', noOrigin), true)
+    assert.equal(isSameCity('Đà Nẵng', noOrigin), false)
+  })
+  test('phân loại: hỏa tốc thắng nội thành; còn lại theo tỉnh', () => {
+    assert.equal(classifyDelivery({ province: 'Hồ Chí Minh', service: 'Hỏa tốc' }, settings), 'EXPRESS')
+    assert.equal(classifyDelivery({ province: 'Hồ Chí Minh', service: 'Giao nhanh' }, settings), 'INTRACITY')
+    assert.equal(classifyDelivery({ province: 'Hà Nội', service: null }, settings), 'INTERPROVINCE')
+    assert.equal(deliveryTypeOf({ deliveryType: 'EXPRESS', province: 'Hà Nội' }, settings), 'EXPRESS') // đã lưu thì dùng giá trị đã lưu
+    assert.equal(deliveryTypeOf({ deliveryType: null, province: 'Hồ Chí Minh' }, settings), 'INTRACITY') // đơn cũ: suy ra từ địa chỉ
+  })
+  test('hạn xử lý theo loại đơn', () => {
+    const rules = { handleHours: 48, intracityHandleHours: 24, expressHandleHours: 6 }
+    const createdAt = new Date('2026-11-14T00:00:00Z')
+    const due = (type) => handleDueAt({ status: 'CONFIRMED', createdAt }, rules, type).toISOString()
+    assert.equal(due('EXPRESS'), '2026-11-14T06:00:00.000Z')
+    assert.equal(due('INTRACITY'), '2026-11-15T00:00:00.000Z')
+    assert.equal(due('INTERPROVINCE'), '2026-11-16T00:00:00.000Z')
+    assert.equal(handleDueAt({ status: 'CONFIRMED', createdAt }, { ...rules, expressHandleHours: 0 }, 'EXPRESS'), null) // 0 = không đếm loại này
   })
 })

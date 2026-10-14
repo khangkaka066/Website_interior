@@ -3,6 +3,7 @@ import { goshipConfigured } from '../lib/goship.js'
 import { verifyGoshipSignature } from '../lib/goshipSignature.js'
 import { ShipmentError, ratesForOrder, createShipmentForOrder, processGoshipWebhook } from '../lib/goshipShipments.js'
 import { toPlain } from '../utils/serialize.js'
+import { prisma } from '../lib/prisma.js'
 
 const fail = (res, err) => res.status(err.status || 400).json({ error: err.message, ...(err.code ? { code: err.code } : {}) })
 
@@ -23,6 +24,32 @@ export async function goshipRates(req, res) {
     if (err instanceof ShipmentError) return fail(res, err)
     throw err
   }
+}
+
+// Tạo vận đơn thật cho NHIỀU đơn: mỗi đơn lấy phương án RẺ NHẤT hiện có. Phát sinh cước thật nên cần confirm === true.
+// Mỗi đơn xử lý độc lập; đơn nào lỗi (địa chỉ không khớp, sai trạng thái, Goship từ chối...) thì báo riêng, không chặn các đơn còn lại.
+export async function goshipBulkCreate(req, res) {
+  const { orderIds } = req.body
+  const actor = req.user?.username || req.user?.email || 'admin'
+  const results = []
+  for (const orderId of orderIds) {
+    try {
+      const { options } = await ratesForOrder(orderId)
+      // Đơn hỏa tốc chỉ chọn trong các dịch vụ hỏa tốc (không giao chậm hơn lời hứa với khách); đơn thường tránh dịch vụ hỏa tốc đắt hơn.
+      const order = await prisma.order.findUnique({ where: { id: orderId }, select: { deliveryType: true } })
+      const pool = order?.deliveryType === 'EXPRESS' ? options.filter((o) => o.express) : options.filter((o) => !o.express)
+      const usable = pool.length ? pool : order?.deliveryType === 'EXPRESS' ? [] : options
+      if (!usable.length) throw new ShipmentError(order?.deliveryType === 'EXPRESS' ? 'Đơn hỏa tốc nhưng Goship không có dịch vụ hỏa tốc cho tuyến này, hãy chọn tay.' : 'Goship không có phương án vận chuyển cho đơn này.', 422, 'NO_RATES')
+      const cheapest = usable.reduce((a, b) => (b.fee < a.fee ? b : a))
+      const shipment = await createShipmentForOrder({ orderId, rateId: cheapest.id, actor })
+      console.log(`[goship] (hàng loạt) đã tạo vận đơn ${shipment.trackingId} cho đơn ${shipment.order?.orderNumber} (${actor})`)
+      results.push({ orderId, orderNumber: shipment.order?.orderNumber, ok: true, carrier: cheapest.carrier, fee: cheapest.fee })
+    } catch (err) {
+      if (!(err instanceof ShipmentError)) throw err
+      results.push({ orderId, ok: false, error: err.message })
+    }
+  }
+  res.json({ results, done: results.filter((r) => r.ok).length })
 }
 
 // TẠO VẬN ĐƠN THẬT (phát sinh cước). Cần admin xác nhận tường minh: body.confirm === true.

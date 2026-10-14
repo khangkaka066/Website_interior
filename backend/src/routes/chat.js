@@ -14,8 +14,9 @@ import {
   createQuickReply,
   updateQuickReply,
   deleteQuickReply,
+  myConversation,
 } from '../controllers/chat.js'
-import { requirePermission } from '../middleware/auth.js'
+import { requirePermission, requireAuth } from '../middleware/auth.js'
 import { chatLimiter } from '../middleware/security.js'
 import { validate } from '../middleware/validate.js'
 import { startConversationSchema, messageSchema, quickReplySchema } from '../schemas/chat.js'
@@ -27,6 +28,8 @@ const guard = requirePermission('messages')
 // for anonymous guests. Only the admin inbox list, read receipts and close
 // action expose other customers' data and need the "messages" permission.
 router.post('/conversations', chatLimiter, validate(startConversationSchema), asyncHandler(startConversation))
+// Cuộc trò chuyện của tài khoản đang đăng nhập: đặt trước các route '/conversations/:id/...'.
+router.get('/mine', requireAuth, chatLimiter, asyncHandler(myConversation))
 router.get('/conversations/:id/messages', asyncHandler(listMessages))
 router.get('/conversations/:id/stream', asyncHandler(customerStream))
 router.post('/conversations/:id/messages', chatLimiter, validate(messageSchema), asyncHandler(postCustomerMessage))

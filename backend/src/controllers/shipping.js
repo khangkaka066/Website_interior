@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma.js'
 import { toPlain } from '../utils/serialize.js'
 import { generateTrackingId } from '../utils/ids.js'
 import { canTransitionShipping, SHIPPING_TO_ORDER_STATUS } from '../constants/workflow.js'
-import { ShipmentError, cancelOnGoship } from '../lib/goshipShipments.js'
+import { ShipmentError, cancelShipmentById } from '../lib/goshipShipments.js'
 import { normCode } from '../lib/orderCode.js'
 
 const SHIPMENT_INCLUDE = {
@@ -284,36 +284,11 @@ export async function updateShipmentStatus(req, res) {
 }
 
 export async function cancelShipment(req, res) {
-  const { note } = req.body || {}
-  const shipment = await prisma.shipment.findUnique({ where: { id: req.params.id }, include: { carrier: true } })
-  if (!shipment) return res.status(404).json({ error: 'Không tìm thấy vận đơn.' })
-  if (['DELIVERED', 'RETURNED'].includes(shipment.status)) {
-    return res.status(400).json({ error: 'Không thể hủy vận đơn đã hoàn tất.' })
-  }
-
-  // Vận đơn Goship: hủy bên Goship trước. Goship không hủy được (ví dụ hãng đã lấy hàng) thì giữ nguyên, không đánh dấu hủy ở mình.
-  let remote = { cancelledRemote: false }
   try {
-    remote = await cancelOnGoship(shipment)
+    const updated = await cancelShipmentById(req.params.id, { actor: 'admin', note: req.body?.note })
+    res.json(toPlain(updated))
   } catch (err) {
     if (err instanceof ShipmentError) return res.status(err.status).json({ error: err.message, code: err.code })
     throw err
   }
-
-  const updated = await prisma.$transaction(async (tx) => {
-    const s = await tx.shipment.update({
-      where: { id: shipment.id },
-      data: {
-        status: 'NOT_CREATED',
-        trackingEvents: { create: { status: 'Đã hủy vận đơn', note: remote.cancelledRemote ? [note, 'Đã hủy bên Goship'].filter(Boolean).join(' · ') : note } },
-      },
-      include: SHIPMENT_INCLUDE,
-    })
-    await tx.activityLog.create({
-      data: { entityType: 'shipment', shipmentId: shipment.id, orderId: shipment.orderId, action: 'cancel_shipment', actor: 'admin', note },
-    })
-    return s
-  })
-
-  res.json(toPlain(updated))
 }

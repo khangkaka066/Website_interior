@@ -7,6 +7,7 @@ import QRCode from 'qrcode'
 import { api } from '../../../api'
 import { paymentStatusLabel } from '../../../constants/orderStatus'
 import { formatCurrency, formatDateTime } from '../../../utils/format'
+import { DELIVERY_LABEL } from '../../DeliveryBadge'
 import '../../../styles/print.css'
 
 const MAX_ORDERS = 50
@@ -64,6 +65,7 @@ function LabelSheet({ order, shop, skipped, onToggle }) {
         <div className="lbl-brand">
           <div className="lbl-shop">{shop.name}</div>
           <div className="lbl-carrier">{ship?.carrier?.name || 'Giao hàng'}</div>
+          {DELIVERY_LABEL[order.deliveryType] && <div className={`lbl-type lbl-type-${order.deliveryType.toLowerCase()}`}>{DELIVERY_LABEL[order.deliveryType].toUpperCase()}</div>}
         </div>
         <div className="lbl-codes">
           <Barcode value={code} height={38} width={1.3} fontSize={11} />
@@ -146,7 +148,7 @@ function Sheet({ order, shop, skipped, onToggle }) {
           {shop.hotline && <div>Hotline: {shop.hotline}</div>}
         </div>
         <div className="print-code-box">
-          <div className="print-title">PHIẾU ĐƠN HÀNG</div>
+          <div className="print-title">PHIẾU ĐƠN HÀNG{DELIVERY_LABEL[order.deliveryType] ? ` · ${DELIVERY_LABEL[order.deliveryType].toUpperCase()}` : ''}</div>
           <div className="print-code">{order.code || order.orderNumber}</div>
           {order.code && order.code !== order.orderNumber && <div>Mã đơn: {order.orderNumber}</div>}
           <div>Ngày đặt: {formatDateTime(order.createdAt)}</div>

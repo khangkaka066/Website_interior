@@ -1,0 +1,87 @@
+/* Đánh giá sản phẩm (trang chi tiết) */
+.pr {
+  padding-top: 32px;
+  padding-bottom: 48px;
+}
+.pr h2 {
+  font-size: 22px;
+  margin: 0 0 16px;
+}
+.pr-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 1px solid #e5d9cc;
+  border-bottom: 1px solid #e5d9cc;
+}
+.pr-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.pr-score strong {
+  font-size: 40px;
+  line-height: 1;
+  color: var(--accent, #b5602f);
+}
+.pr-stars {
+  color: #f5a623;
+  letter-spacing: 1px;
+}
+.pr-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 220px;
+  flex: 1;
+  max-width: 360px;
+}
+.pr-bars li {
+  display: grid;
+  grid-template-columns: 32px 1fr 28px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+.pr-bars i {
+  display: block;
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.pr-bars b {
+  display: block;
+  height: 100%;
+  background: #f5a623;
+}
+.pr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pr-list li {
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+}
+.pr-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+.pr-head small {
+  color: #888;
+}
+.pr-list p {
+  margin: 6px 0 0;
+  white-space: pre-line;
+}
+@media (max-width: 640px) {
+  .pr-summary {
+    gap: 16px;
+  }
+}

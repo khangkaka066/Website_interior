@@ -1,4 +1,5 @@
 import { api, setToken, getToken } from './api'
+import { AUTH_EVENT, chatScope, clearChatStorage } from './utils/chatStorage'
 
 const SESSION_KEY = 'clevinum_session'
 
@@ -14,9 +15,13 @@ function setSession(user) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(user))
 }
 
+const announce = () => window.dispatchEvent(new Event(AUTH_EVENT)) // khung chat đổi sang đúng tài khoản
+
 export function logout() {
+  clearChatStorage(chatScope()) // không để sót tin nhắn của tài khoản này trên máy (tính trước khi xóa phiên)
   sessionStorage.removeItem(SESSION_KEY)
   setToken(null)
+  announce()
 }
 
 export function isAdmin() {
@@ -30,6 +35,7 @@ export function isMainAdmin() {
 function persist({ token, user }) {
   setToken(token)
   setSession(user)
+  announce()
   return user
 }
 

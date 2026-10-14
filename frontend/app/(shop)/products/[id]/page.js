@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation'
 import ProductDetail from '@/ui/pages/ProductDetail'
 import { products as bundled } from '@/ui/data/shop'
-import { fetchProduct } from '@/lib/server'
+import { fetchProduct, fetchReviews } from '@/lib/server'
+import ProductReviews from '@/ui/components/ProductReviews'
 import { categories } from '@/ui/data/shop'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
@@ -58,6 +59,7 @@ export default async function ProductPage({ params }) {
   const product = await load(id)
   if (!product) notFound()
 
+  const reviews = await fetchReviews(product.id)
   const inStock = !product.variants?.length || product.variants.some((v) => v.stock > 0)
   const url = `${SITE_URL}/products/${product.id}`
   const category = categories.find((c) => c.id === product.categoryId)
@@ -75,6 +77,8 @@ export default async function ProductPage({ params }) {
       mpn: product.shopeeId || product.id,
       ...(category && { category: category.name }),
       brand: { '@type': 'Brand', name: 'CLEVINUM' },
+      // Chỉ khai báo khi có đánh giá thật của khách đã nhận hàng.
+      ...(reviews?.count > 0 && { aggregateRating: { '@type': 'AggregateRating', ratingValue: reviews.average, reviewCount: reviews.count, bestRating: 5, worstRating: 1 } }),
       offers: {
         '@type': product.priceMax ? 'AggregateOffer' : 'Offer',
         priceCurrency: 'VND',
@@ -101,6 +105,7 @@ export default async function ProductPage({ params }) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <ProductDetail initialProduct={product} />
+      <ProductReviews reviews={reviews} />
     </>
   )
 }

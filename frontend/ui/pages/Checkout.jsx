@@ -8,6 +8,7 @@ import { trackEvent, getAttribution } from '../analytics'
 import TransferQr from '../components/TransferQr'
 import { fillTransferNote } from '../utils/vietqr'
 import AddressFields from '../components/AddressFields'
+import DeliveryBadge from '../components/DeliveryBadge'
 import { useShippingQuote } from '../utils/useShippingQuote'
 
 // Ô nhập có nhãn của form thanh toán (đặt ngoài component để không bị dựng lại mỗi lần gõ).
@@ -193,6 +194,7 @@ export default function Checkout() {
                           <span className="checkout-ship-name">
                             {o.carrier}
                             {o.service ? ` – ${o.service}` : ''}
+                            {o.express && <DeliveryBadge type="EXPRESS" />}
                             {o.expected && <small>{o.expected}</small>}
                           </span>
                           <strong>{o.fee === 0 ? 'Miễn phí' : formatPrice(o.fee)}</strong>

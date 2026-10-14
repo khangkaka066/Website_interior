@@ -1,14 +1,15 @@
 import { prisma } from '../lib/prisma.js'
 import { toPlain } from '../utils/serialize.js'
 import { generateOrderNumber } from '../utils/ids.js'
-import { canTransitionOrder } from '../constants/workflow.js'
-import { getStorefrontProduct, reserveStock, releaseStock, loadProducts, StockError } from '../lib/productStore.js'
+import { getStorefrontProduct, reserveStock, loadProducts, StockError } from '../lib/productStore.js'
 import { getSettings, shippingFeeFor, COD_METHOD_ID } from '../lib/settingsStore.js'
 import { quoteShipping, chooseShipping } from '../lib/shippingRates.js'
 import { sendMail } from '../lib/mailer.js'
 import { PAYOS_METHOD_ID, payosConfigured, createPaymentLink } from '../lib/payos.js'
 import { displayCode, findOrderByCode, normCode } from '../lib/orderCode.js'
-import { orderCreatedEmail, orderStatusEmail, NOTIFY_STATUSES } from '../lib/emailTemplates.js'
+import { DELIVERY_TYPES, classifyDelivery, deliveryTypeOf } from '../lib/deliveryType.js'
+import { orderCreatedEmail } from '../lib/emailTemplates.js'
+import { ORDER_INCLUDE, OPEN_STATUSES, FlowError, applyTransition, approveCancel, rejectCancel, approveReturn, rejectReturn, handleDueAt, canRequestReturn } from '../lib/orderFlow.js'
 import { invalidateUser } from '../lib/authCache.js'
 
 // Đơn công khai: giá, phí ship, giảm giá do server quyết định, không tin client.
@@ -48,13 +49,6 @@ function priceLine(it) {
   }
 }
 
-const ORDER_INCLUDE = {
-  customer: true,
-  items: true,
-  statusEvents: { orderBy: { createdAt: 'asc' } },
-  shipment: { include: { carrier: true, trackingEvents: { orderBy: { createdAt: 'asc' } } } },
-  activityLogs: { orderBy: { createdAt: 'desc' } },
-}
 
 export async function listOrders(req, res) {
   const {
@@ -65,11 +59,14 @@ export async function listOrders(req, res) {
     carrierId,
     dateFrom,
     dateTo,
+    needsAction,
+    deliveryType,
     page = '1',
     pageSize = '10',
   } = req.query
 
   const where = {}
+  const and = []
 
   if (search) {
     where.OR = [
@@ -81,6 +78,18 @@ export async function listOrders(req, res) {
       { customer: { phone: { contains: search } } },
     ]
   }
+  // "Cần xử lý": đơn nhân viên còn việc (COD hoặc đã thanh toán, chưa bàn giao vận chuyển) hoặc khách đang chờ phản hồi yêu cầu hủy/trả hàng.
+  if (needsAction === '1') {
+    and.push({
+      OR: [
+        { status: { in: OPEN_STATUSES }, OR: [{ paymentMethod: COD_METHOD_ID }, { paymentStatus: 'PAID' }] },
+        { cancelRequestedAt: { not: null } },
+        { returnRequest: { status: 'REQUESTED' } },
+      ],
+    })
+  }
+  if (and.length) where.AND = and
+  if (DELIVERY_TYPES.includes(deliveryType)) where.deliveryType = deliveryType
   if (status) where.status = status
   if (paymentStatus) where.paymentStatus = paymentStatus
   if (paymentMethod) where.paymentMethod = paymentMethod
@@ -91,36 +100,55 @@ export async function listOrders(req, res) {
     if (dateTo) where.createdAt.lte = new Date(dateTo)
   }
 
+  const settings = await getSettings()
+  const rules = settings.orders
   const take = Math.max(1, Math.min(100, Number(pageSize) || 10))
   const skip = (Math.max(1, Number(page) || 1) - 1) * take
+  const include = {
+    customer: true,
+    items: true,
+    shipment: { include: { carrier: true } },
+    returnRequest: { select: { status: true } },
+  }
+  const view = (o) => {
+    const type = deliveryTypeOf(o, settings)
+    return toPlain({ ...o, code: displayCode(o), deliveryType: type, handleDueAt: handleDueAt(o, rules, type) })
+  }
+
+  if (needsAction === '1') {
+    // Mỗi loại đơn (hỏa tốc / nội thành / liên tỉnh) có hạn xử lý khác nhau nên xếp theo HẠN (gần quá hạn nhất lên đầu), không theo ngày đặt:
+    // lấy các đơn cần xử lý (giới hạn 500), sắp xếp và phân trang trong bộ nhớ.
+    const all = await prisma.order.findMany({ where, include, orderBy: { createdAt: 'asc' }, take: 500 })
+    const dueMs = (o) => handleDueAt(o, rules, deliveryTypeOf(o, settings))?.getTime() ?? Number.MAX_SAFE_INTEGER
+    all.sort((a, b) => dueMs(a) - dueMs(b) || a.createdAt - b.createdAt)
+    return res.json({ items: all.slice(skip, skip + take).map(view), total: all.length, page: Number(page) || 1, pageSize: take })
+  }
 
   const [items, total] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      include: {
-        customer: true,
-        items: true,
-        shipment: { include: { carrier: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take,
-      skip,
-    }),
+    prisma.order.findMany({ where, include, orderBy: { createdAt: 'desc' }, take, skip }),
     prisma.order.count({ where }),
   ])
 
-  res.json({
-    items: items.map((o) => toPlain({ ...o, code: displayCode(o) })),
-    total,
-    page: Number(page) || 1,
-    pageSize: take,
-  })
+  res.json({ items: items.map(view), total, page: Number(page) || 1, pageSize: take })
 }
 
 // Số đơn theo từng trạng thái trong một truy vấn (trang Tổng quan trước đây gọi riêng từng trạng thái).
 export async function orderStatusCounts(req, res) {
   const groups = await prisma.order.groupBy({ by: ['status'], _count: { _all: true } })
   res.json(Object.fromEntries(groups.map((g) => [g.status, g._count._all])))
+}
+
+// Các trường tính thêm khi trả đơn cho nhân viên: mã hiển thị, loại giao hàng và hạn xử lý theo loại.
+async function orderExtras(order) {
+  const settings = await getSettings()
+  const type = deliveryTypeOf(order, settings)
+  const hours = settings.orders.cancelAutoApproveHours
+  return {
+    code: displayCode(order),
+    deliveryType: type,
+    handleDueAt: handleDueAt(order, settings.orders, type),
+    cancelAutoApproveAt: order.cancelRequestedAt && hours ? new Date(new Date(order.cancelRequestedAt).getTime() + hours * 3600000) : null,
+  }
 }
 
 export async function getOrder(req, res) {
@@ -142,7 +170,7 @@ export async function getOrder(req, res) {
 
   res.json({
     ...toPlain(order),
-    code: displayCode(order),
+    ...(await orderExtras(order)),
     customer: {
       ...toPlain(order.customer),
       previousOrderCount,
@@ -218,6 +246,8 @@ export async function createOrder(req, res) {
       return tx.order.create({
         data: {
           stockReserved: reserved,
+          deliveryType: classifyDelivery({ province, service: shipping.service }, settings),
+          shippingService: shipping.service || null,
           orderNumber: generateOrderNumber(),
           customerId: dbCustomer.id,
           paymentMethod,
@@ -332,50 +362,25 @@ export async function payosRelink(req, res) {
   }
 }
 
-async function transitionOrderStatus(req, res, { to, note, actor = 'admin' }) {
-  const order = await prisma.order.findUnique({ where: { id: req.params.id } })
+const flowFail = (res, err) => res.status(err.status || 400).json({ error: err.message, ...(err.code ? { code: err.code } : {}) })
+
+// Chạy một thao tác vòng đời đơn của nhân viên: lỗi nghiệp vụ trả 4xx tiếng Việt, đơn sau khi xử lý trả về kèm hạn xử lý.
+async function adminAction(req, res, run) {
+  const order = await prisma.order.findUnique({ where: { id: req.params.id }, include: ORDER_INCLUDE })
   if (!order) return res.status(404).json({ error: 'Không tìm thấy đơn hàng.' })
-
-  if (!canTransitionOrder(order.status, to)) {
-    return res.status(400).json({
-      error: `Không thể chuyển trạng thái từ "${order.status}" sang "${to}".`,
-    })
+  try {
+    const updated = await run(order)
+    res.json(toPlain({ ...updated, ...(await orderExtras(updated)) }))
+  } catch (err) {
+    if (err instanceof FlowError) return flowFail(res, err)
+    throw err
   }
+}
 
-  let released = false
-  const updated = await prisma.$transaction(async (tx) => {
-    const u = await tx.order.update({
-      where: { id: order.id },
-      data: {
-        status: to,
-        statusEvents: { create: { status: to, note } },
-      },
-      include: ORDER_INCLUDE,
-    })
-    // Hủy đơn hoặc khách trả hàng: cộng lại tồn kho (chỉ khi đơn này đã trừ kho).
-    if ((to === 'CANCELLED' || to === 'RETURNED') && order.stockReserved) {
-      const items = await tx.orderItem.findMany({ where: { orderId: order.id } })
-      await releaseStock(tx, items.map((i) => ({ productId: i.productId, variant: i.variant, quantity: i.quantity })))
-      await tx.order.update({ where: { id: order.id }, data: { stockReserved: false } })
-      released = true
-    }
-    await tx.activityLog.create({
-      data: {
-        entityType: 'order',
-        orderId: order.id,
-        action: `status_${to.toLowerCase()}`,
-        actor,
-        note,
-      },
-    })
-    return u
-  })
+const actorOf = (req) => req.user?.username || req.user?.email || 'admin'
 
-  if (released) await loadProducts()
-  if (NOTIFY_STATUSES.includes(to) && updated.customer?.email) {
-    orderStatusEmail(updated, to).then((m) => m && sendMail({ to: updated.customer.email, ...m }))
-  }
-  res.json(toPlain(updated))
+function transitionOrderStatus(req, res, { to, note }) {
+  return adminAction(req, res, (order) => applyTransition(order, { to, note, actor: actorOf(req) }))
 }
 
 export async function updateOrderStatus(req, res) {
@@ -417,6 +422,39 @@ export async function refundOrder(req, res) {
   res.json(toPlain(updated))
 }
 
+// Nhân viên duyệt / từ chối yêu cầu của khách (hủy đơn, trả hàng).
+export const approveCancelRequest = (req, res) => adminAction(req, res, (o) => approveCancel(o, { note: req.body?.note, actor: actorOf(req) }))
+export const rejectCancelRequest = (req, res) => adminAction(req, res, (o) => rejectCancel(o, { note: req.body.note, actor: actorOf(req) }))
+export const approveReturnRequest = (req, res) => adminAction(req, res, (o) => approveReturn(o, { note: req.body?.note, actor: actorOf(req) }))
+export const rejectReturnRequest = (req, res) => adminAction(req, res, (o) => rejectReturn(o, { note: req.body.note, actor: actorOf(req) }))
+
+// Nhân viên ẩn / hiện đánh giá không phù hợp của một đơn.
+export async function setReviewHidden(req, res) {
+  const r = await prisma.review.updateMany({ where: { id: req.params.reviewId }, data: { hidden: req.body.hidden } })
+  if (!r.count) return res.status(404).json({ error: 'Không tìm thấy đánh giá.' })
+  res.json({ ok: true })
+}
+
+// Chuyển nhiều đơn sang "Đã xác nhận" / "Đang xử lý" cùng lúc. Mỗi đơn xử lý độc lập: đơn nào không hợp lệ thì báo riêng, không chặn các đơn khác.
+export async function bulkOrderStatus(req, res) {
+  const { ids, status } = req.body
+  const orders = await prisma.order.findMany({ where: { id: { in: ids } }, include: ORDER_INCLUDE })
+  const byId = new Map(orders.map((o) => [o.id, o]))
+  const results = []
+  for (const id of ids) {
+    const order = byId.get(id)
+    if (!order) { results.push({ id, ok: false, error: 'Không tìm thấy đơn hàng.' }); continue }
+    try {
+      await applyTransition(order, { to: status, note: status === 'CONFIRMED' ? 'Xác nhận đơn hàng' : 'Chuẩn bị hàng', actor: actorOf(req) })
+      results.push({ id, orderNumber: order.orderNumber, ok: true })
+    } catch (err) {
+      if (!(err instanceof FlowError)) throw err
+      results.push({ id, orderNumber: order.orderNumber, ok: false, error: err.message })
+    }
+  }
+  res.json({ results, done: results.filter((r) => r.ok).length })
+}
+
 // --- Khách tự tra cứu đơn (công khai) ------------------------------------------------------------
 // Cần cả mã đơn lẫn số điện thoại đặt hàng; sai một trong hai đều trả cùng một thông báo để không dò được mã đơn.
 // Chỉ trả những gì khách cần xem: không có ghi chú nội bộ, nhật ký hoạt động hay thông tin khách khác.
@@ -424,7 +462,8 @@ export async function refundOrder(req, res) {
 // Dạng đơn hàng gửi cho khách (tra cứu công khai và trang tài khoản): không có ghi chú nội bộ, nhật ký hoạt động.
 export const PUBLIC_ORDER_INCLUDE = {
   customer: true,
-  items: true,
+  items: { include: { review: true } },
+  returnRequest: true,
   statusEvents: { orderBy: { createdAt: 'asc' } },
   shipment: { include: { carrier: true, trackingEvents: { orderBy: { createdAt: 'asc' } } } },
 }
@@ -433,8 +472,28 @@ export const PUBLIC_ORDER_INCLUDE = {
 const maskName = (name) => String(name || '').split(/\s+/).filter(Boolean).map((w) => `${w[0]}***`).join(' ')
 
 // masked = khách chỉ cung cấp MỘT trong hai thông tin (mã đơn hoặc số điện thoại): ẩn tên và địa chỉ nhận hàng chi tiết, chỉ giữ tỉnh/thành.
-export function publicOrderView(order, { masked = false } = {}) {
+export function publicOrderView(order, { masked = false, canReturn = false, deliveryType = null, cancelAutoApproveHours = 0 } = {}) {
+  // Việc khách làm được với đơn này. Chỉ khi đã xác thực bằng số điện thoại (không phải bản che thông tin).
+  const actions = masked
+    ? {}
+    : {
+        cancel: order.status === 'PENDING_CONFIRMATION' ? 'now' : ['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && !order.cancelRequestedAt ? 'request' : null,
+        received: order.status === 'DELIVERED' && !order.receivedAt,
+        return: canReturn,
+        review: order.status === 'DELIVERED' && order.items.some((i) => i.productId && !i.review),
+      }
   return toPlain({
+    actions,
+    receivedAt: order.receivedAt,
+    deliveryType,
+    cancelRequest: {
+      pending: !!order.cancelRequestedAt,
+      reason: order.cancelRequestReason,
+      rejectedNote: order.cancelRejectedNote,
+      // Quá giờ này mà shop chưa phản hồi thì yêu cầu hủy tự được đồng ý.
+      autoApproveAt: order.cancelRequestedAt && cancelAutoApproveHours ? new Date(new Date(order.cancelRequestedAt).getTime() + cancelAutoApproveHours * 3600000) : null,
+    },
+    returnRequest: order.returnRequest && { status: order.returnRequest.status, reason: order.returnRequest.reason, adminNote: order.returnRequest.adminNote, createdAt: order.returnRequest.createdAt },
     orderNumber: order.orderNumber,
     code: displayCode(order), // mã vận đơn của hãng nếu có, không thì mã đơn
     status: order.status,
@@ -452,6 +511,8 @@ export function publicOrderView(order, { masked = false } = {}) {
     district: masked ? null : order.district,
     province: order.province,
     items: order.items.map((i) => ({
+      id: i.id,
+      review: i.review && { rating: i.review.rating, comment: i.review.comment },
       productId: i.productId,
       name: i.name,
       variant: i.variant,
@@ -471,6 +532,13 @@ export function publicOrderView(order, { masked = false } = {}) {
   })
 }
 
+// Đơn dạng khách xem, kèm việc khách làm được (hủy / đã nhận / trả hàng / đánh giá) theo quy tắc trong Cài đặt.
+export async function customerView(order, { masked = false } = {}) {
+  const settings = await getSettings()
+  const rules = settings.orders
+  return publicOrderView(order, { masked, canReturn: masked ? false : await canRequestReturn(order, rules), deliveryType: deliveryTypeOf(order, settings), cancelAutoApproveHours: rules.cancelAutoApproveHours })
+}
+
 // Tra cứu bằng mã đơn HOẶC số điện thoại (hoặc cả hai):
 //  - cả hai: trả đầy đủ thông tin giao hàng như trước;
 //  - chỉ mã đơn: trả đơn đó nhưng ẩn tên/địa chỉ nhận hàng (mã đơn chỉ có 5 chữ số nên không được coi là bí mật);
@@ -488,10 +556,10 @@ export async function trackOrder(req, res) {
     if (!order) return notFound()
     if (hasPhone) {
       if (!matchesPhone(order)) return notFound()
-      return res.json(publicOrderView(order))
+      return res.json(await customerView(order))
     }
     if (req.query.phone) return notFound() // có nhập số điện thoại nhưng quá ngắn: không coi như bỏ trống
-    return res.json(publicOrderView(order, { masked: true }))
+    return res.json(await customerView(order, { masked: true }))
   }
 
   if (!hasPhone) return notFound()

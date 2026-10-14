@@ -9,12 +9,27 @@ export async function startConversation(req, res) {
   const { name, phone } = req.body || {}
   if (!name) return res.status(400).json({ error: 'Vui lòng nhập tên của bạn.' })
 
+  // Đang đăng nhập bằng tài khoản khách đã có hồ sơ: gắn cuộc trò chuyện vào hồ sơ để đăng nhập lại (kể cả máy khác) lấy lại được lịch sử.
+  // customerId lấy từ phiên đăng nhập ở máy chủ, không nhận từ client.
+  const customerId = req.user?.role === 'CUSTOMER' && req.user.customerId ? req.user.customerId : null
   const conversation = await prisma.conversation.create({
-    data: { guestName: name, guestPhone: phone || null },
+    data: { guestName: name, guestPhone: phone || null, ...(customerId && { customerId }) },
   })
   publishChat(conversation.id, { type: 'conversation' }) // admin thấy cuộc trò chuyện mới ngay
   // `token` chỉ được trả đúng lúc này: trình duyệt giữ nó và gửi kèm (header X-Chat-Token) mỗi lần đọc / gửi tin.
   res.status(201).json({ ...toPlain(conversation), token: chatTokenFor(conversation.id) })
+}
+
+// Cuộc trò chuyện gần nhất của tài khoản đang đăng nhập (kèm token để mở lại ở trình duyệt này). Dữ liệu theo tài khoản ở máy chủ là nguồn đúng:
+// đổi tài khoản trên cùng trình duyệt thì khung chat nạp lại từ đây, không dùng dữ liệu của tài khoản trước.
+export async function myConversation(req, res) {
+  res.set('Cache-Control', 'no-store')
+  const customerId = req.user?.role === 'CUSTOMER' ? req.user.customerId : null
+  if (!customerId) return res.json({ conversation: null })
+  const conversation = await prisma.conversation.findFirst({ where: { customerId, status: 'OPEN' }, orderBy: { lastMessageAt: 'desc' } })
+  if (!conversation) return res.json({ conversation: null })
+  const messages = await prisma.message.findMany({ where: { conversationId: conversation.id }, orderBy: { createdAt: 'asc' } })
+  res.json({ conversation: toPlain(conversation), token: chatTokenFor(conversation.id), messages: toPlain(messages) })
 }
 
 // Lấy cuộc trò chuyện cho khách nếu mã và token khớp. Sai token và không tìm thấy trả cùng một lỗi 404

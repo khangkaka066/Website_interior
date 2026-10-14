@@ -12,12 +12,12 @@ import {
 } from '../controllers/shipping.js'
 import { listCarriers, createCarrier, updateCarrier } from '../controllers/carriers.js'
 import { checkGoship } from '../lib/goship.js'
-import { goshipConfig, goshipRates, goshipCreate, goshipWebhook } from '../controllers/goshipShipping.js'
+import { goshipConfig, goshipRates, goshipCreate, goshipBulkCreate, goshipWebhook } from '../controllers/goshipShipping.js'
 import { webhookLimiter } from '../middleware/security.js'
 import { validate } from '../middleware/validate.js'
 import { requirePermission } from '../middleware/auth.js'
 
-import { createShipmentSchema, shipmentStatusSchema, noteOnlySchema, createCarrierSchema, updateCarrierSchema, goshipCreateShipmentSchema, carrierCodeSchema } from '../schemas/admin.js'
+import { createShipmentSchema, shipmentStatusSchema, noteOnlySchema, createCarrierSchema, updateCarrierSchema, goshipCreateShipmentSchema, goshipBulkCreateSchema, carrierCodeSchema } from '../schemas/admin.js'
 
 const router = Router()
 const guard = requirePermission('shipping')
@@ -32,6 +32,7 @@ router.get('/goship/status', guard, asyncHandler(async (req, res) => {
 // Vận đơn Goship (đặt trước '/:id'). Tạo vận đơn là hành động THẬT, phát sinh cước.
 router.get('/goship/config', guard, asyncHandler(goshipConfig))
 router.get('/goship/orders/:orderId/rates', guard, asyncHandler(goshipRates))
+router.post('/goship/bulk-shipments', guard, validate(goshipBulkCreateSchema), asyncHandler(goshipBulkCreate))
 router.post('/goship/orders/:orderId/shipment', guard, validate(goshipCreateShipmentSchema), asyncHandler(goshipCreate))
 // Webhook công khai từ Goship: xác thực bằng chữ ký HMAC (Client Secret), không dùng đăng nhập.
 router.post('/goship/webhook', webhookLimiter, asyncHandler(goshipWebhook))

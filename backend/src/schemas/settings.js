@@ -48,6 +48,19 @@ export const paymentSchema = z
     }
   })
 
+const whole = (label, max) =>
+  z.number(`${label} không hợp lệ.`).int(`${label} phải là số nguyên.`).min(0, `${label} không được âm.`).max(max, `${label} quá lớn (tối đa ${max}).`)
+export const ordersSchema = z.object({
+  unpaidCancelHours: whole('Giờ tự hủy đơn chưa thanh toán', 720),
+  handleHours: whole('Hạn xử lý đơn liên tỉnh (giờ)', 720),
+  intracityHandleHours: whole('Hạn xử lý đơn nội thành (giờ)', 720),
+  expressHandleHours: whole('Hạn xử lý đơn hỏa tốc (giờ)', 720),
+  cancelAutoApproveHours: whole('Giờ tự đồng ý yêu cầu hủy', 720),
+  expressKeywords: optionalText('từ khóa hỏa tốc', 300).transform((v) => v ?? ''),
+  autoReceiveDays: whole('Số ngày tự xác nhận đã nhận hàng', 90),
+  returnWindowDays: whole('Số ngày được trả hàng', 90),
+})
+
 const money = (label) => z.number(`${label} không hợp lệ.`).int(`${label} phải là số nguyên.`).min(0, `${label} không được âm.`).max(10_000_000, `${label} quá lớn.`)
 const place = (label) => z.string(`${label} không hợp lệ.`).trim().max(100, `${label} quá dài.`)
 const phoneText = z

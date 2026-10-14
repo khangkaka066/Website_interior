@@ -44,11 +44,13 @@ describe('chung', () => {
 describe('yêu cầu đăng nhập', () => {
   for (const [method, path] of [
     ['GET', '/api/orders'], ['GET', '/api/orders/status-counts'], ['PATCH', '/api/orders/x/status'], ['GET', '/api/customers'], ['POST', '/api/customers'],
-    ['GET', '/api/shipping'], ['POST', '/api/campaigns'], ['GET', '/api/chat/conversations'], ['GET', '/api/chat/stream'], ['GET', '/api/chat/quick-replies'], ['POST', '/api/chat/quick-replies'], ['DELETE', '/api/chat/quick-replies/x'],
+    ['GET', '/api/shipping'], ['POST', '/api/campaigns'], ['GET', '/api/chat/conversations'], ['GET', '/api/chat/stream'], ['GET', '/api/chat/quick-replies'], ['GET', '/api/chat/mine'], ['POST', '/api/chat/quick-replies'], ['DELETE', '/api/chat/quick-replies/x'],
     ['GET', '/api/settings'], ['PUT', '/api/settings/store'], ['GET', '/api/users'], ['GET', '/api/admin-products'],
     ['POST', '/api/admin-products/sync'], ['GET', '/api/analytics/overview'], ['GET', '/api/payments'],
     ['GET', '/api/posts'], ['POST', '/api/posts'], ['PATCH', '/api/posts/x'], ['DELETE', '/api/posts/x'],
     ['GET', '/api/discounts'], ['GET', '/api/seo/status'], ['POST', '/api/seo/keywords'], ['GET', '/api/seo/jobs/x'], ['GET', '/api/seo/jobs/current'], ['POST', '/api/seo/jobs/x/cancel'], ['PUT', '/api/discounts'], ['POST', '/api/discounts/import'], ['GET', '/api/account/profile'], ['PATCH', '/api/account/profile'], ['POST', '/api/account/password'], ['GET', '/api/account/orders'],
+    ['POST', '/api/orders/bulk-status'], ['PATCH', '/api/orders/reviews/x'], ['POST', '/api/orders/x/cancel-request/approve'], ['POST', '/api/orders/x/cancel-request/reject'], ['POST', '/api/orders/x/return/approve'], ['POST', '/api/orders/x/return/reject'], ['POST', '/api/shipping/goship/bulk-shipments'], ['PUT', '/api/settings/orders'],
+    ['POST', '/api/account/orders/ORD-1/cancel'], ['POST', '/api/account/orders/ORD-1/received'], ['POST', '/api/account/orders/ORD-1/return'], ['POST', '/api/account/orders/ORD-1/reviews'],
     ['GET', '/api/account/orders/ORD-1'], ['POST', '/api/account/orders/claim'], ['GET', '/api/account/addresses'],
     ['POST', '/api/account/addresses'], ['PATCH', '/api/account/addresses/x'], ['DELETE', '/api/account/addresses/x'],
   ]) {
@@ -74,6 +76,9 @@ describe('kiểm tra đầu vào (400 trước khi chạm database)', () => {
     ['POST', '/api/auth/reset-password', { token: 'xyz', password: '12345678' }],
     ['POST', '/api/chat/conversations', {}],
     ['POST', '/api/orders/payos-link', {}],
+    ['POST', '/api/orders/self/cancel', { orderNumber: 'X', phone: '0900000000' }], // thiếu lý do
+    ['POST', '/api/orders/self/return', { orderNumber: 'X', phone: '0900000000' }],
+    ['POST', '/api/orders/self/reviews', { orderNumber: 'X', phone: '0900000000', reviews: [{ orderItemId: 'a', rating: 9 }] }], // sao ngoài 1-5
   ]
   for (const [method, path, body] of cases) {
     test(`${method} ${path}`, async () => {

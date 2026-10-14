@@ -39,6 +39,25 @@ export const createOrderSchema = z.object({
   utmCampaign: optionalText('utmCampaign', 100),
 })
 
+// Thao tác của khách với đơn của mình. orderNumber + phone dành cho khách chưa đăng nhập (đăng nhập thì mã đơn nằm trên đường dẫn).
+const ownerFields = { orderNumber: optionalText('mã đơn hàng', 30), phone: optionalText('số điện thoại', 20) }
+export const cancelMyOrderSchema = z.object({ ...ownerFields, reason: text('lý do hủy đơn', 300) })
+export const receiveMyOrderSchema = z.object({ ...ownerFields })
+export const returnMyOrderSchema = z.object({ ...ownerFields, reason: text('lý do trả hàng', 300), note: optionalText('ghi chú', 500) })
+export const reviewMyOrderSchema = z.object({
+  ...ownerFields,
+  reviews: z
+    .array(
+      z.object({
+        orderItemId: text('sản phẩm', 60),
+        rating: z.number('Vui lòng chọn số sao.').int('Số sao không hợp lệ.').min(1, 'Số sao từ 1 đến 5.').max(5, 'Số sao từ 1 đến 5.'),
+        comment: optionalText('nhận xét', 1000),
+      }),
+    )
+    .min(1, 'Chưa có đánh giá nào.')
+    .max(30, 'Quá nhiều đánh giá.'),
+})
+
 export const payosRelinkSchema = z.object({
   orderNumber: text('mã đơn hàng', 30),
   phone: phone(),

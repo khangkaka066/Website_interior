@@ -11,7 +11,7 @@
     "db:seed": "prisma db seed",
     "backup": "node scripts/backup.js",
     "test": "node --test --test-force-exit --test-timeout=8000 test/unit.test.js test/http.test.js",
-    "test:db": "RUN_DB_TESTS=1 node --test --test-force-exit test/db.test.js test/goship.db.test.js",
+    "test:db": "RUN_DB_TESTS=1 node --test --test-force-exit test/db.test.js test/goship.db.test.js test/orderflow.db.test.js",
     "restore:products": "node scripts/restore-products.js"
   },
   "dependencies": {

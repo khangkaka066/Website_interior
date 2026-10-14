@@ -157,6 +157,14 @@ export const carrierCodeSchema = z.object({ carrierCode: z.string('Mã vận đ�
 export const noteOnlySchema = z.object({ note: noteField })
 
 // --- Đơn hàng -------------------------------------------------------------------
+export const bulkOrderStatusSchema = z.object({
+  ids: z.array(text('đơn hàng', 60)).min(1, 'Chưa chọn đơn hàng nào.').max(100, 'Chọn tối đa 100 đơn mỗi lần.'),
+  status: z.enum(['CONFIRMED', 'PROCESSING'], 'Chỉ chuyển hàng loạt sang Đã xác nhận hoặc Đang xử lý.'),
+})
+export const optionalNoteSchema = z.object({ note: optionalText('ghi chú', 300) })
+export const requiredNoteSchema = z.object({ note: text('lý do', 300) })
+export const reviewHiddenSchema = z.object({ hidden: z.boolean('Giá trị không hợp lệ.') })
+
 export const orderStatusSchema = z.object({
   status: z.enum(
     ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT', 'SHIPPING', 'DELIVERED', 'CANCELLED', 'RETURNED'],
@@ -225,6 +233,10 @@ export const updatePostSchema = z.object({
 })
 
 // Tạo vận đơn THẬT qua Goship: bắt buộc chọn một lựa chọn cước và xác nhận tường minh.
+export const goshipBulkCreateSchema = z.object({
+  orderIds: z.array(text('đơn hàng', 60)).min(1, 'Chưa chọn đơn hàng nào.').max(30, 'Tạo vận đơn tối đa 30 đơn mỗi lần.'),
+  confirm: z.literal(true, 'Cần xác nhận đây là vận đơn thật.'),
+})
 export const goshipCreateShipmentSchema = z.object({
   rateId: z.string('Chưa chọn đơn vị vận chuyển.').trim().min(1, 'Chưa chọn đơn vị vận chuyển.').max(200, 'Mã lựa chọn không hợp lệ.'),
   confirm: z.literal(true, 'Cần xác nhận đây là vận đơn thật.'),

@@ -6,6 +6,8 @@ import { api } from '../api'
 import { ORDER_STATUS, PAYMENT_STATUS } from '../constants/orderStatus'
 import { SHIPPING_STATUS } from '../constants/shippingStatus'
 import { sized, IMG } from '../utils/image'
+import OrderActions, { StaticStars } from '../components/OrderActions'
+import DeliveryBadge from '../components/DeliveryBadge'
 
 const money = (n) => Number(n || 0).toLocaleString('vi-VN') + 'đ'
 // Đơn đã kết thúc (vào mục Lịch sử); còn lại là đơn đang xử lý.
@@ -23,6 +25,7 @@ export default function TrackOrder() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [paying, setPaying] = useState(false)
+  const [ownerPhone, setOwnerPhone] = useState('') // số điện thoại đã dùng để tra cứu đơn đang xem (dùng cho hủy / đã nhận / trả hàng / đánh giá)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -36,7 +39,10 @@ export default function TrackOrder() {
     try {
       const data = await api.get(`/orders/track?${new URLSearchParams(params)}`)
       if (data.orders) setList(data.orders)
-      else setOrder(data)
+      else {
+        setOrder(data)
+        setOwnerPhone(params.phone || '')
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -148,6 +154,7 @@ export default function TrackOrder() {
                   <span className="track-date">Đặt lúc {when(order.createdAt)}</span>
                 </div>
                 <div className="track-badges">
+                  <DeliveryBadge type={order.deliveryType} />
                   <span className={`status-badge ${status?.cls || ''}`}>{status?.label || order.status}</span>
                   <span className={`status-badge ${pay?.cls || ''}`}>{pay?.label || order.paymentStatus}</span>
                 </div>
@@ -161,6 +168,8 @@ export default function TrackOrder() {
                   </button>
                 </div>
               )}
+
+              {!order.masked && ownerPhone && <OrderActions order={order} owner={{ phone: ownerPhone }} onChange={setOrder} />}
 
               <h3>Tiến trình đơn hàng</h3>
               <ol className="track-timeline">
@@ -201,6 +210,7 @@ export default function TrackOrder() {
                     <div>
                       {i.productId ? <Link to={`/products/${i.productId}`}>{i.name}</Link> : i.name}
                       {i.variant && <small>{i.variant}</small>}
+                      {i.review && <small><StaticStars value={i.review.rating} /> Bạn đã đánh giá</small>}
                     </div>
                     <span>
                       {i.quantity} × {money(i.unitPrice)}

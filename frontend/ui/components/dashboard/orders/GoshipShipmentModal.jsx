@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../../../api'
+import DeliveryBadge from '../../DeliveryBadge'
 
 function money(n) {
   return Number(n || 0).toLocaleString('vi-VN') + 'đ'
@@ -22,11 +23,14 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
     try {
       const data = await api.get(`/shipping/goship/orders/${order.id}/rates`)
       setState({ loading: false, options: data.options, weightGrams: data.weightGrams, cod: data.cod, error: '', code: '' })
-      setRateId(data.options[0]?.id || '') // mặc định hãng rẻ nhất (danh sách đã xếp rẻ trước)
+      // Mặc định phương án rẻ nhất cùng loại với đơn: đơn hỏa tốc chọn dịch vụ hỏa tốc, đơn thường tránh dịch vụ hỏa tốc đắt hơn (danh sách đã xếp rẻ trước).
+      const wantExpress = order.deliveryType === 'EXPRESS'
+      const sameKind = data.options.filter((o) => !!o.express === wantExpress)
+      setRateId((sameKind[0] || (wantExpress ? null : data.options[0]))?.id || '')
     } catch (err) {
       setState({ loading: false, options: [], error: err.message, code: err.data?.code || '' })
     }
-  }, [order.id])
+  }, [order.id, order.deliveryType])
 
   useEffect(() => {
     load()
@@ -84,12 +88,15 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
               <label key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', border: `1px solid ${rateId === o.id ? 'var(--dash-accent, #b5602f)' : 'var(--dash-border)'}`, cursor: 'pointer' }}>
                 <input type="radio" name="goship-rate" checked={rateId === o.id} onChange={() => setRateId(o.id)} />
                 <span style={{ flex: 1 }}>
-                  <strong>{o.carrier}{o.service ? ` – ${o.service}` : ''}</strong>
+                  <strong>{o.carrier}{o.service ? ` – ${o.service}` : ''}</strong> {o.express && <DeliveryBadge type="EXPRESS" />}
                   {o.expected && <small style={{ display: 'block', color: 'var(--dash-muted)' }}>{o.expected}</small>}
                 </span>
                 <strong>{money(o.originalFee ?? o.fee)}</strong>
               </label>
             ))}
+            {order.deliveryType === 'EXPRESS' && !state.options.some((o) => o.express) && (
+              <p style={{ fontSize: '12px', color: 'var(--dash-danger)', margin: 0 }}>Khách đặt giao HỎA TỐC nhưng Goship hiện không có dịch vụ hỏa tốc cho tuyến này. Hãy liên hệ khách hoặc chọn dịch vụ khác.</p>
+            )}
             <p style={{ fontSize: '12px', color: 'var(--dash-muted)', margin: 0 }}>
               Cân nặng tính cước {state.weightGrams}g. Thu hộ COD: {money(state.cod)}. Cước hiển thị là cước shop trả cho Goship, khách đã trả phí vận chuyển trong tổng đơn.
             </p>

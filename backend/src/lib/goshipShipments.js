@@ -258,6 +258,28 @@ export async function cancelOnGoship(shipment) {
   }
 }
 
+// Hủy một vận đơn (cả bên Goship nếu là vận đơn Goship) và đánh dấu "chưa tạo vận đơn". Dùng chung cho nút của nhân viên và tác vụ tự hủy.
+export async function cancelShipmentById(shipmentId, { actor = 'admin', note } = {}, db = prisma) {
+  const shipment = await db.shipment.findUnique({ where: { id: shipmentId }, include: { carrier: true } })
+  if (!shipment) throw new ShipmentError('Không tìm thấy vận đơn.', 404, 'NOT_FOUND')
+  if (['DELIVERED', 'RETURNED'].includes(shipment.status)) throw new ShipmentError('Không thể hủy vận đơn đã hoàn tất.', 400, 'FINISHED')
+
+  // Vận đơn Goship: hủy bên Goship trước. Goship không hủy được (ví dụ hãng đã lấy hàng) thì giữ nguyên, không đánh dấu hủy ở mình.
+  const remote = await cancelOnGoship(shipment)
+  return inTx(db, async (tx) => {
+    const s = await tx.shipment.update({
+      where: { id: shipment.id },
+      data: {
+        status: 'NOT_CREATED',
+        trackingEvents: { create: { status: 'Đã hủy vận đơn', note: remote.cancelledRemote ? [note, 'Đã hủy bên Goship'].filter(Boolean).join(' · ') : note } },
+      },
+      include: { carrier: true, order: { include: { customer: true } }, trackingEvents: { orderBy: { createdAt: 'asc' } } },
+    })
+    await tx.activityLog.create({ data: { entityType: 'shipment', shipmentId: shipment.id, orderId: shipment.orderId, action: 'cancel_shipment', actor, note } })
+    return s
+  })
+}
+
 // ----------------------------------------------------------------------------------------------------------------
 // Webhook
 // ----------------------------------------------------------------------------------------------------------------

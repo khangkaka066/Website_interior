@@ -7,6 +7,8 @@ import { ORDER_STATUS, PAYMENT_STATUS } from '@/ui/constants/orderStatus'
 import { SHIPPING_STATUS } from '@/ui/constants/shippingStatus'
 import { Notice, Field, input, btnPrimary, btnGhost, money, when, fullAddress } from './ui'
 import { sized, IMG } from '@/ui/utils/image'
+import OrderActions, { StaticStars } from '@/ui/components/OrderActions'
+import DeliveryBadge from '@/ui/components/DeliveryBadge'
 
 // Màu nhãn trạng thái dùng Tailwind (CSS cũ `status-*` nằm trong ui/, không áp dụng cho vùng tw-reset).
 const TONE = {
@@ -26,7 +28,29 @@ function Badge({ def, fallback }) {
   )
 }
 
+// Các tab trạng thái kiểu Shopee. Mỗi đơn thuộc đúng một tab (xem tabOf); nhiều bước nội bộ của shop gộp lại cho khách dễ theo dõi.
+const TABS = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'unpaid', label: 'Chờ thanh toán' },
+  { id: 'pending', label: 'Chờ xác nhận' },
+  { id: 'toship', label: 'Chờ lấy hàng' },
+  { id: 'shipping', label: 'Đang giao' },
+  { id: 'delivered', label: 'Đã giao' },
+  { id: 'cancelled', label: 'Đã hủy' },
+  { id: 'returned', label: 'Trả hàng/Hoàn tiền' },
+]
+export function tabOf(o) {
+  if (o.status === 'CANCELLED') return 'cancelled'
+  if (o.status === 'RETURNED' || ['REQUESTED', 'APPROVED'].includes(o.returnStatus)) return 'returned'
+  if (o.paymentMethod !== 'COD' && o.paymentStatus === 'AWAITING_PAYMENT') return 'unpaid'
+  if (o.status === 'PENDING_CONFIRMATION') return 'pending'
+  if (['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(o.status)) return 'toship'
+  if (o.status === 'SHIPPING') return 'shipping'
+  return 'delivered'
+}
+
 export function OrderList({ onOpen }) {
+  const [tab, setTab] = useState('all')
   const [orders, setOrders] = useState(null)
   const [error, setError] = useState('')
   const [claim, setClaim] = useState({ open: false, orderNumber: '', phone: '', busy: false, error: '' })
@@ -85,7 +109,23 @@ export function OrderList({ onOpen }) {
             <Link href="/products" className={`${btnPrimary} mt-4 inline-block`}>Mua sắm ngay</Link>
           </div>
         )}
-        {orders?.map((o) => (
+        {orders && orders.length > 0 && (
+          <div className="-mx-1 flex gap-1 overflow-x-auto pb-1" role="tablist" aria-label="Lọc đơn hàng theo trạng thái">
+            {TABS.map((t) => {
+              const n = t.id === 'all' ? orders.length : orders.filter((o) => tabOf(o) === t.id).length
+              return (
+                <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}
+                  className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium ${tab === t.id ? 'bg-accent text-white' : 'bg-white text-muted hover:text-accent border border-line'}`}>
+                  {t.label}{t.id !== 'all' && n > 0 ? ` (${n})` : ''}
+                </button>
+              )
+            })}
+          </div>
+        )}
+        {orders && orders.length > 0 && !orders.some((o) => tab === 'all' || tabOf(o) === tab) && (
+          <p className="rounded-xl border border-line bg-white p-6 text-center text-sm text-muted">Chưa có đơn hàng nào ở mục này.</p>
+        )}
+        {orders?.filter((o) => tab === 'all' || tabOf(o) === tab).map((o) => (
           <button key={o.orderNumber} onClick={() => onOpen(o.orderNumber)}
             className="block w-full rounded-xl border border-line bg-white p-4 text-left hover:border-accent">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -95,6 +135,7 @@ export function OrderList({ onOpen }) {
                 <Badge def={PAYMENT_STATUS[o.paymentStatus]} fallback={o.paymentStatus} />
               </span>
             </div>
+            {o.cancelRequested && <p className="mt-1 text-xs font-medium text-amber-700">Đã gửi yêu cầu hủy, chờ shop phản hồi</p>}
             <p className="mt-2 line-clamp-1 text-sm text-muted">
               {o.items.map((i) => `${i.name}${i.variant ? ` (${i.variant})` : ''} ×${i.quantity}`).join(', ')}
             </p>
@@ -126,12 +167,15 @@ export function OrderDetail({ orderNumber, onBack }) {
         <div className="mt-4 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-xl font-bold">Đơn {order.code || order.orderNumber}</h2>
-            <span className="flex gap-2">
+            <span className="flex items-center gap-2">
+              <DeliveryBadge type={order.deliveryType} />
               <Badge def={ORDER_STATUS[order.status]} fallback={order.status} />
               <Badge def={PAYMENT_STATUS[order.paymentStatus]} fallback={order.paymentStatus} />
             </span>
           </div>
           <p className="text-sm text-muted">Đặt lúc {when(order.createdAt)}</p>
+
+          <OrderActions order={order} owner={{ account: true }} onChange={setOrder} />
 
           <ul className="divide-y divide-line rounded-xl border border-line bg-white">
             {order.items.map((i, idx) => (
@@ -140,6 +184,7 @@ export function OrderDetail({ orderNumber, onBack }) {
                 <div className="min-w-0 flex-1">
                   {i.productId ? <Link href={`/products/${i.productId}`} className="font-medium hover:text-accent">{i.name}</Link> : <span className="font-medium">{i.name}</span>}
                   <p className="text-sm text-muted">{i.variant ? `${i.variant} · ` : ''}{money(i.unitPrice)} × {i.quantity}</p>
+                  {i.review && <p className="text-xs text-muted"><StaticStars value={i.review.rating} /> Bạn đã đánh giá</p>}
                 </div>
                 <strong className="text-sm">{money(i.lineTotal)}</strong>
               </li>

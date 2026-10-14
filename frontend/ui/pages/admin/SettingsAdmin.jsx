@@ -15,6 +15,7 @@ const TABS = [
   { id: 'store', label: 'Cửa hàng' },
   { id: 'payment', label: 'Thanh toán' },
   { id: 'shipping', label: 'Vận chuyển' },
+  { id: 'orders', label: 'Quy tắc đơn hàng' },
   { id: 'content', label: 'Nội dung trang' },
   { id: 'accounts', label: 'Tài khoản & Phân quyền' },
 ]
@@ -87,6 +88,45 @@ function StoreTab({ data, onSaved }) {
         <Field label="Hotline *"><input className="dash-input" value={form.hotline} onChange={set('hotline')} maxLength={30} /></Field>
         <Field label="Email liên hệ"><input className="dash-input" value={form.email} onChange={set('email')} maxLength={120} /></Field>
         <Field label="Địa chỉ *"><input className="dash-input" value={form.address} onChange={set('address')} maxLength={200} /></Field>
+      </div>
+      <SaveBar state={state} dirty={dirty} />
+    </form>
+  )
+}
+
+// Các con số của vòng đời đơn (tự hủy đơn chưa thanh toán, hạn xử lý, tự xác nhận nhận hàng, thời hạn trả hàng). 0 = tắt.
+const ORDER_RULES = [
+  { key: 'unpaidCancelHours', label: 'Tự hủy đơn chưa thanh toán sau (giờ)', hint: 'Áp dụng cho đơn chuyển khoản / PayOS chưa trả tiền và chưa có vận đơn. Hủy xong tồn kho được trả lại. 0 = không tự hủy.' },
+  { key: 'handleHours', label: 'Hạn xử lý đơn liên tỉnh (giờ)', hint: 'Tính từ lúc khách đặt; trang Đơn hàng hiện đếm ngược và báo đơn quá hạn. Chỉ nhắc nhở, không tự hủy đơn. 0 = không đếm.' },
+  { key: 'intracityHandleHours', label: 'Hạn xử lý đơn nội thành (giờ)', hint: 'Nội thành = nhận hàng cùng tỉnh/thành với kho gửi (Cài đặt, Vận chuyển). 0 = không đếm.' },
+  { key: 'expressHandleHours', label: 'Hạn xử lý đơn hỏa tốc (giờ)', hint: 'Đơn khách chọn dịch vụ hỏa tốc. 0 = không đếm.' },
+  { key: 'cancelAutoApproveHours', label: 'Tự đồng ý yêu cầu hủy của khách sau (giờ)', hint: 'Khách xin hủy đơn đã xác nhận mà shop không phản hồi sau chừng này giờ thì hệ thống tự hủy đơn (và hủy vận đơn nếu có). 0 = chỉ nhân viên duyệt tay.' },
+  { key: 'autoReceiveDays', label: 'Tự xác nhận "đã nhận hàng" sau (ngày)', hint: 'Tính từ lúc đơn Đã giao. 0 = chỉ khách tự bấm xác nhận.' },
+  { key: 'returnWindowDays', label: 'Khách được yêu cầu trả hàng trong (ngày)', hint: 'Tính từ lúc đơn Đã giao. 0 = không nhận yêu cầu trả hàng trên website.' },
+]
+
+function OrdersTab({ data, onSaved }) {
+  const [form, setForm] = useState(() => ({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, String(data[r.key])])), expressKeywords: data.expressKeywords ?? '' }))
+  const [state, save] = useSave('orders', onSaved)
+  const dirty = ORDER_RULES.some((r) => form[r.key] !== String(data[r.key])) || form.expressKeywords !== (data.expressKeywords ?? '')
+  return (
+    <form
+      className="dash-card set-card"
+      onSubmit={(e) => {
+        e.preventDefault()
+        save({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, Number(form[r.key])])), expressKeywords: form.expressKeywords.trim() })
+      }}
+    >
+      <h3 className="form-card-title">Quy tắc đơn hàng</h3>
+      <div className="set-grid">
+        {ORDER_RULES.map((r) => (
+          <Field key={r.key} label={r.label} hint={r.hint}>
+            <input className="dash-input" type="number" min="0" step="1" value={form[r.key]} onChange={(e) => setForm({ ...form, [r.key]: e.target.value })} />
+          </Field>
+        ))}
+        <Field label="Dịch vụ hỏa tốc nhận biết bằng từ khóa" hint='Phương án vận chuyển khách chọn có tên chứa một trong các từ này (cách nhau bằng dấu phẩy, không phân biệt hoa thường và dấu) thì đơn là hỏa tốc. Ví dụ: hỏa tốc, instant, trong ngày.'>
+          <input className="dash-input" value={form.expressKeywords} maxLength={300} onChange={(e) => setForm({ ...form, expressKeywords: e.target.value })} />
+        </Field>
       </div>
       <SaveBar state={state} dirty={dirty} />
     </form>
@@ -398,6 +438,8 @@ export default function SettingsAdmin() {
         <StoreTab data={settings.store} onSaved={onSaved} />
       ) : tab === 'payment' ? (
         <PaymentTab data={settings.payment} onSaved={onSaved} />
+      ) : tab === 'orders' ? (
+        <OrdersTab data={settings.orders} onSaved={onSaved} />
       ) : tab === 'content' ? (
         <ContentTab data={settings.content} onSaved={onSaved} />
       ) : (

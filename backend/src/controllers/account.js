@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma.js'
 import { hashPassword, comparePassword, publicUser } from '../lib/auth.js'
 import { toPlain } from '../utils/serialize.js'
-import { PUBLIC_ORDER_INCLUDE, publicOrderView, normPhone } from './orders.js'
+import { PUBLIC_ORDER_INCLUDE, customerView, normPhone } from './orders.js'
 import { displayCode, findOrderByCode, normCode } from '../lib/orderCode.js'
 import { invalidateUser } from '../lib/authCache.js'
 
@@ -79,13 +79,16 @@ export async function listMyOrders(req, res) {
     where: { customerId: req.user.customerId },
     orderBy: { createdAt: 'desc' },
     take: 100,
-    include: { items: true, shipment: true },
+    include: { items: true, shipment: true, returnRequest: { select: { status: true } } },
   })
   res.json(
     toPlain(
       orders.map((o) => ({
         orderNumber: o.orderNumber,
         code: displayCode(o),
+        receivedAt: o.receivedAt,
+        cancelRequested: !!o.cancelRequestedAt,
+        returnStatus: o.returnRequest?.status ?? null,
         status: o.status,
         paymentStatus: o.paymentStatus,
         paymentMethod: o.paymentMethod,
@@ -103,7 +106,7 @@ export async function getMyOrder(req, res) {
     : null
   if (!order) return res.status(404).json({ error: 'Không tìm thấy đơn hàng.' })
   res.set('Cache-Control', 'no-store')
-  res.json(publicOrderView(order))
+  res.json(await customerView(order))
 }
 
 // Nhận lại đơn đã đặt khi chưa đăng nhập: chứng minh bằng đúng mã đơn + số điện thoại (như trang Tra cứu đơn hàng).

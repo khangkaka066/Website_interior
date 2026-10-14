@@ -53,6 +53,23 @@ export const DEFAULTS = {
       origin: { province: '', district: '', ward: '', street: '', name: '', phone: '' },
     },
   },
+  // Quy tắc vòng đời đơn hàng (kiểu Shopee). Số 0 = tắt quy tắc đó.
+  // unpaidCancelHours: tự hủy đơn chuyển khoản/PayOS chưa thanh toán sau chừng này giờ và trả lại tồn kho.
+  // handleHours: hạn nhân viên xử lý đơn kể từ lúc đặt (chỉ hiển thị đếm ngược, không tự hủy).
+  // autoReceiveDays: tự xác nhận "đã nhận hàng" sau chừng này ngày kể từ khi đơn Đã giao.
+  // returnWindowDays: khách được gửi yêu cầu trả hàng trong chừng này ngày kể từ khi Đã giao.
+  // handleHours (liên tỉnh) / intracityHandleHours / expressHandleHours: hạn xử lý theo loại đơn. cancelAutoApproveHours: tự đồng ý yêu cầu hủy của khách
+  // nếu nhân viên không phản hồi sau chừng này giờ (như Shopee). expressKeywords: tên dịch vụ chứa từ khóa nào thì là đơn hỏa tốc (cách nhau bằng dấu phẩy).
+  orders: {
+    unpaidCancelHours: 24,
+    handleHours: 48,
+    intracityHandleHours: 24,
+    expressHandleHours: 6,
+    cancelAutoApproveHours: 24,
+    autoReceiveDays: 7,
+    returnWindowDays: 7,
+    expressKeywords: 'hỏa tốc, hoả tốc, instant, trong ngày, siêu tốc, same day',
+  },
   // Giảm giá theo SKU (Dashboard > Giảm giá): [{ sku, percent }]. SKU của sản phẩm thì giảm mọi phân loại, SKU của phân loại thì chỉ giảm phân loại đó.
   discounts: { rules: [] },
   // Nội dung các trang Về chúng tôi / Liên hệ / FAQ (sửa ở Cài đặt > Nội dung trang).
@@ -102,6 +119,7 @@ function merge(saved) {
         origin: { ...DEFAULTS.shipping.goship.origin, ...(s.shipping?.goship?.origin || {}) },
       },
     },
+    orders: { ...DEFAULTS.orders, ...(s.orders || {}) },
     discounts: { rules: Array.isArray(s.discounts?.rules) ? s.discounts.rules : [] },
     content: {
       about: { ...DEFAULTS.content.about, ...(s.content?.about || {}) },

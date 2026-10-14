@@ -5,6 +5,7 @@ import { useParams, useNavigate } from '@/lib/router'
 import AdminLayout from '../../components/dashboard/AdminLayout'
 import StatusTimeline from '../../components/dashboard/StatusTimeline'
 import ConfirmModal from '../../components/dashboard/ConfirmModal'
+import DeliveryBadge from '../../components/DeliveryBadge'
 import CreateShipmentModal from '../../components/dashboard/orders/CreateShipmentModal'
 import GoshipShipmentModal from '../../components/dashboard/orders/GoshipShipmentModal'
 import PrintOrdersModal from '../../components/dashboard/orders/PrintOrdersModal'
@@ -17,7 +18,7 @@ import {
   paymentStatusLabel,
 } from '../../constants/orderStatus'
 import { shippingStatusLabel, SHIPPING_STATUS } from '../../constants/shippingStatus'
-import { formatCurrency, formatDateTime } from '../../utils/format'
+import { formatCurrency, formatDateTime, dueIn } from '../../utils/format'
 
 const TIMELINE_LABELS = {
   PENDING_CONFIRMATION: 'Đặt hàng',
@@ -34,7 +35,7 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [modal, setModal] = useState(null) // 'cancel' | 'confirm' | 'refund' | 'create-shipment' | 'goship-shipment' | 'print'
+  const [modal, setModal] = useState(null) // 'cancel' | 'confirm' | 'refund' | 'create-shipment' | 'goship-shipment' | 'print' | 'cancel-approve' | 'cancel-reject' | 'return-approve' | 'return-reject'
   const [goshipReady, setGoshipReady] = useState(false) // đã bật tạo vận đơn thật qua Goship ở Cài đặt
 
   useEffect(() => {
@@ -65,6 +66,18 @@ export default function OrderDetail() {
   async function handleCancelOrder(note) {
     await api.post(`/orders/${id}/cancel`, { note })
     setModal(null)
+    await load()
+  }
+
+  // Duyệt / từ chối yêu cầu hủy hoặc trả hàng của khách.
+  async function respond(path, note) {
+    await api.post(`/orders/${id}/${path}`, { note })
+    setModal(null)
+    await load()
+  }
+
+  async function toggleReviewHidden(review) {
+    await api.patch(`/orders/reviews/${review.id}`, { hidden: !review.hidden })
     await load()
   }
 
@@ -104,6 +117,9 @@ export default function OrderDetail() {
   const canCreateShipment = !order.shipment && ['PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status)
   const isCancelledOrReturned = ['CANCELLED', 'RETURNED'].includes(order.status)
 
+  const due = dueIn(order.handleDueAt)
+  const cancelAsk = !!order.cancelRequestedAt
+  const ret = order.returnRequest
   const timelineSteps = ORDER_TIMELINE_STEPS.map((key) => ({ key, label: TIMELINE_LABELS[key] }))
   const timelineEvents = order.statusEvents.filter((e) => ORDER_TIMELINE_STEPS.includes(e.status))
 
@@ -119,9 +135,11 @@ export default function OrderDetail() {
           {order.code && order.code !== order.orderNumber && (
             <span style={{ fontSize: '12px', color: 'var(--dash-muted)' }}>Mã đơn: {order.orderNumber}</span>
           )}
+          <DeliveryBadge type={order.deliveryType} />
           <span className={`order-status-badge ${ORDER_STATUS[order.status]?.cls || ''}`}>{orderStatusLabel(order.status)}</span>
           <span className={`order-status-badge ${PAYMENT_STATUS[order.paymentStatus]?.cls || ''}`}>{paymentStatusLabel(order.paymentStatus)}</span>
           <span style={{ fontSize: '12px', color: 'var(--dash-muted)' }}>Đặt lúc {formatDateTime(order.createdAt)}</span>
+          {due && <span style={{ fontSize: '12px', fontWeight: 600, color: due.overdue ? 'var(--dash-danger, #c0392b)' : due.soon ? '#b26a00' : 'var(--dash-muted)' }}>Hạn xử lý: {due.text}</span>}
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {canConfirm && <button className="dash-btn" onClick={handleConfirmOrder}>Xác nhận đơn</button>}
@@ -141,6 +159,47 @@ export default function OrderDetail() {
           {canCancel && <button className="dash-btn dash-btn-ghost" onClick={() => setModal('cancel')}>Hủy đơn</button>}
         </div>
       </div>
+
+      {cancelAsk && (
+        <div className="dash-card" style={{ marginBottom: '24px', borderLeft: '4px solid var(--dash-danger, #c0392b)' }}>
+          <h3 className="form-card-title">Khách yêu cầu hủy đơn</h3>
+          <p style={{ fontSize: '13px', margin: '0 0 12px' }}>Lý do: <strong>{order.cancelRequestReason || '—'}</strong>. Không phản hồi thì hệ thống tự đồng ý lúc {order.cancelAutoApproveAt ? formatDateTime(order.cancelAutoApproveAt) : '(đã tắt)'}. Đồng ý thì đơn chuyển sang Đã hủy và tồn kho được trả lại{order.paymentStatus === 'PAID' ? ' (đơn đã thanh toán, bạn cần bấm Hoàn tiền sau đó)' : ''}.{order.shipment && order.shipment.status !== 'NOT_CREATED' ? ' Đơn đã có vận đơn: hãy hủy vận đơn trước.' : ''}</p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="dash-btn" onClick={() => setModal('cancel-approve')}>Đồng ý hủy</button>
+            <button className="dash-btn dash-btn-ghost" onClick={() => setModal('cancel-reject')}>Từ chối</button>
+          </div>
+        </div>
+      )}
+
+      {!cancelAsk && order.cancelRejectedNote && (
+        <div className="dash-card" style={{ marginBottom: '24px', fontSize: '13px' }}>
+          Đã từ chối yêu cầu hủy của khách: <strong>{order.cancelRejectedNote}</strong>
+        </div>
+      )}
+
+      {ret && (
+        <div className="dash-card" style={{ marginBottom: '24px', borderLeft: ret.status === 'REQUESTED' ? '4px solid var(--dash-danger, #c0392b)' : undefined }}>
+          <h3 className="form-card-title">Yêu cầu trả hàng — {ret.status === 'REQUESTED' ? 'đang chờ duyệt' : ret.status === 'APPROVED' ? 'đã đồng ý' : 'đã từ chối'}</h3>
+          <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+            <div>Gửi lúc {formatDateTime(ret.createdAt)}. Lý do: <strong>{ret.reason}</strong></div>
+            {ret.note && <div>Ghi chú của khách: {ret.note}</div>}
+            {ret.adminNote && <div>Phản hồi của shop: {ret.adminNote}</div>}
+            {ret.status === 'APPROVED' && order.paymentStatus === 'PAID' && <div>Đơn đã thanh toán: bấm <strong>Hoàn tiền</strong> khi đã nhận lại hàng.</div>}
+          </div>
+          {ret.status === 'REQUESTED' && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+              <button className="dash-btn" onClick={() => setModal('return-approve')}>Đồng ý trả hàng</button>
+              <button className="dash-btn dash-btn-ghost" onClick={() => setModal('return-reject')}>Từ chối</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {order.status === 'DELIVERED' && (
+        <div className="dash-card" style={{ marginBottom: '24px', fontSize: '13px' }}>
+          {order.receivedAt ? <>Khách đã xác nhận nhận hàng lúc {formatDateTime(order.receivedAt)}.</> : <>Khách chưa xác nhận đã nhận hàng (hệ thống tự xác nhận theo quy tắc trong Cài đặt).</>}
+        </div>
+      )}
 
       {!isCancelledOrReturned && (
         <div className="dash-card" style={{ marginBottom: '24px' }}>
@@ -210,7 +269,17 @@ export default function OrderDetail() {
                     <img src={it.image} alt={it.name} style={{ width: '36px', height: '36px', objectFit: 'cover' }} />
                   ) : '—'}
                 </td>
-                <td>{it.name}</td>
+                <td>
+                  {it.name}
+                  {it.review && (
+                    <div style={{ fontSize: '12px', marginTop: '4px', opacity: it.review.hidden ? 0.5 : 1 }}>
+                      {'★'.repeat(it.review.rating)}{'☆'.repeat(5 - it.review.rating)} {it.review.comment || ''}{' '}
+                      <button type="button" className="dash-btn dash-btn-ghost" style={{ fontSize: '11px', padding: '1px 8px' }} onClick={() => toggleReviewHidden(it.review)}>
+                        {it.review.hidden ? 'Hiện đánh giá' : 'Ẩn đánh giá'}
+                      </button>
+                    </div>
+                  )}
+                </td>
                 <td>{it.sku || '—'}</td>
                 <td>{it.variant || '—'}</td>
                 <td>{it.quantity}</td>
@@ -296,6 +365,18 @@ export default function OrderDetail() {
           onConfirm={handleRefund}
           onClose={() => setModal(null)}
         />
+      )}
+      {modal === 'cancel-approve' && (
+        <ConfirmModal title="Đồng ý yêu cầu hủy" message={`Hủy đơn ${order.orderNumber} theo yêu cầu của khách?`} confirmLabel="Đồng ý hủy" onConfirm={(note) => respond('cancel-request/approve', note)} onClose={() => setModal(null)} />
+      )}
+      {modal === 'cancel-reject' && (
+        <ConfirmModal title="Từ chối yêu cầu hủy" message="Khách sẽ thấy lý do này trên trang theo dõi đơn." requireNote confirmLabel="Từ chối" onConfirm={(note) => respond('cancel-request/reject', note)} onClose={() => setModal(null)} />
+      )}
+      {modal === 'return-approve' && (
+        <ConfirmModal title="Đồng ý trả hàng" message={`Đơn ${order.orderNumber} chuyển sang Đã trả hàng và tồn kho được cộng lại. Hoàn tiền (nếu đã thanh toán) bạn bấm riêng.`} confirmLabel="Đồng ý trả hàng" onConfirm={(note) => respond('return/approve', note)} onClose={() => setModal(null)} />
+      )}
+      {modal === 'return-reject' && (
+        <ConfirmModal title="Từ chối trả hàng" message="Khách sẽ thấy lý do này trên trang theo dõi đơn." requireNote confirmLabel="Từ chối" onConfirm={(note) => respond('return/reject', note)} onClose={() => setModal(null)} />
       )}
       {modal === 'print' && <PrintOrdersModal ids={[order.id]} onClose={() => setModal(null)} />}
 

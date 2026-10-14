@@ -12,13 +12,20 @@ import {
   confirmOrder,
   cancelOrder,
   refundOrder,
+  bulkOrderStatus,
+  approveCancelRequest,
+  rejectCancelRequest,
+  approveReturnRequest,
+  rejectReturnRequest,
+  setReviewHidden,
 } from '../controllers/orders.js'
+import { cancelMyOrder, receiveMyOrder, returnMyOrder, reviewMyOrder } from '../controllers/customerOrders.js'
 import { requirePermission } from '../middleware/auth.js'
 import { orderLimiter, trackLimiter, quoteLimiter } from '../middleware/security.js'
 import { validate } from '../middleware/validate.js'
-import { createOrderSchema, payosRelinkSchema, shippingQuoteSchema } from '../schemas/orders.js'
+import { createOrderSchema, payosRelinkSchema, shippingQuoteSchema, cancelMyOrderSchema, receiveMyOrderSchema, returnMyOrderSchema, reviewMyOrderSchema } from '../schemas/orders.js'
 
-import { orderStatusSchema, noteOnlySchema } from '../schemas/admin.js'
+import { orderStatusSchema, noteOnlySchema, bulkOrderStatusSchema, optionalNoteSchema, requiredNoteSchema, reviewHiddenSchema } from '../schemas/admin.js'
 
 const router = Router()
 const guard = requirePermission('orders')
@@ -31,12 +38,24 @@ router.post('/shipping-quote', quoteLimiter, validate(shippingQuoteSchema), asyn
 router.get('/track', trackLimiter, asyncHandler(trackOrder))
 router.post('/payos-link', trackLimiter, validate(payosRelinkSchema), asyncHandler(payosRelink))
 
+// Khách chưa đăng nhập tự hủy / xác nhận đã nhận / trả hàng / đánh giá: cần mã đơn + số điện thoại. Đặt trước '/:id'.
+router.post('/self/cancel', trackLimiter, validate(cancelMyOrderSchema), asyncHandler(cancelMyOrder))
+router.post('/self/received', trackLimiter, validate(receiveMyOrderSchema), asyncHandler(receiveMyOrder))
+router.post('/self/return', trackLimiter, validate(returnMyOrderSchema), asyncHandler(returnMyOrder))
+router.post('/self/reviews', trackLimiter, validate(reviewMyOrderSchema), asyncHandler(reviewMyOrder))
+
 router.get('/', guard, asyncHandler(listOrders))
 router.get('/status-counts', guard, asyncHandler(orderStatusCounts))
+router.post('/bulk-status', guard, validate(bulkOrderStatusSchema), asyncHandler(bulkOrderStatus))
+router.patch('/reviews/:reviewId', guard, validate(reviewHiddenSchema), asyncHandler(setReviewHidden))
 router.get('/:id', guard, asyncHandler(getOrder))
 router.patch('/:id/status', guard, validate(orderStatusSchema), asyncHandler(updateOrderStatus))
 router.post('/:id/confirm', guard, validate(noteOnlySchema), asyncHandler(confirmOrder))
 router.post('/:id/cancel', guard, validate(noteOnlySchema), asyncHandler(cancelOrder))
 router.post('/:id/refund', guard, validate(noteOnlySchema), asyncHandler(refundOrder))
+router.post('/:id/cancel-request/approve', guard, validate(optionalNoteSchema), asyncHandler(approveCancelRequest))
+router.post('/:id/cancel-request/reject', guard, validate(requiredNoteSchema), asyncHandler(rejectCancelRequest))
+router.post('/:id/return/approve', guard, validate(optionalNoteSchema), asyncHandler(approveReturnRequest))
+router.post('/:id/return/reject', guard, validate(requiredNoteSchema), asyncHandler(rejectReturnRequest))
 
 export default router

@@ -13,6 +13,8 @@ async function get(path, revalidate) {
 // Danh sách sản phẩm đang bán, làm mới tối đa 30 giây một lần (admin nhập Excel/sửa giá xong khách thấy nhanh).
 export const fetchProducts = () => get('/api/shop/products', 30)
 export const fetchProduct = (id) => get(`/api/shop/products/${encodeURIComponent(id)}`, 30)
+// Đánh giá của khách đã nhận hàng (làm mới tối đa 60 giây một lần).
+export const fetchReviews = (id) => get(`/api/shop/products/${encodeURIComponent(id)}/reviews`, 60)
 // Tin tức: làm mới tối đa 10 giây một lần (bài mới đăng/gỡ xuống khách thấy nhanh).
 export const fetchPosts = () => get('/api/shop/posts', 10)
 export const fetchPost = (slug) => get(`/api/shop/posts/${encodeURIComponent(slug)}`, 10)

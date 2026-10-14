@@ -5,16 +5,20 @@ import { api } from '../api'
 import { useShopInfo } from '../useShopInfo'
 import { openEventStream } from '../utils/eventStream'
 import LinkifiedText from './LinkifiedText'
+import { AUTH_EVENT, chatScope, clearChatStorage, migrateLegacyChat, readChat, readSeen, writeChat, writeSeen } from '../utils/chatStorage'
 
-const STORAGE_KEY = 'clevinum_chat_conversation_id'
-const SEEN_KEY = 'clevinum_chat_last_seen'
-const TOKEN_KEY = 'clevinum_chat_token' // token bí mật của cuộc trò chuyện: có mã mà thiếu token thì máy chủ không cho đọc
+// Cuộc trò chuyện + token bí mật (có mã mà thiếu token thì máy chủ không cho đọc) lưu theo TÀI KHOẢN, xem utils/chatStorage.js.
 const FALLBACK_POLL_MS = 30000 // tin nhắn tới tức thì qua luồng thời gian thực; vòng tải lại này chỉ để dự phòng
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false)
-  const [conversationId, setConversationId] = useState(() => localStorage.getItem(STORAGE_KEY))
-  const [chatToken, setChatToken] = useState(() => localStorage.getItem(TOKEN_KEY))
+  const [scope, setScope] = useState(() => {
+    const s = chatScope()
+    migrateLegacyChat(s)
+    return s
+  })
+  const [conversationId, setConversationId] = useState(() => readChat(chatScope()).id)
+  const [chatToken, setChatToken] = useState(() => readChat(chatScope()).token)
   const [messages, setMessages] = useState([])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -24,6 +28,8 @@ export default function ChatWidget() {
   const [error, setError] = useState('')
   const [hasUnread, setHasUnread] = useState(false)
   const scrollRef = useRef(null)
+  const convRef = useRef(conversationId)
+  convRef.current = conversationId
   const { shopInfo, contact } = useShopInfo()
 
   const authOptions = useCallback(() => (chatToken ? { headers: { 'X-Chat-Token': chatToken } } : undefined), [chatToken])
@@ -32,33 +38,75 @@ export default function ChatWidget() {
     if (!conversationId) return
     try {
       const data = await api.get(`/chat/conversations/${conversationId}/messages`, authOptions())
+      if (convRef.current !== conversationId) return // đã đổi tài khoản / cuộc trò chuyện trong lúc chờ: bỏ kết quả cũ
       // Cuộc trò chuyện tạo trước khi có token: máy chủ cấp token ở lần vào này, lưu lại để dùng từ giờ.
       if (data.token) {
-        localStorage.setItem(TOKEN_KEY, data.token)
+        writeChat(scope, { id: conversationId, token: data.token })
         setChatToken(data.token)
       }
       setMessages(data.messages)
 
       const lastAdminMsg = [...data.messages].reverse().find((m) => m.sender === 'ADMIN')
-      const lastSeen = localStorage.getItem(SEEN_KEY)
+      const lastSeen = readSeen(scope)
       if (lastAdminMsg && lastAdminMsg.id !== lastSeen) {
         setHasUnread(!open)
       }
     } catch (err) {
       // Mã/token không còn hợp lệ (404): bỏ cuộc trò chuyện đã nhớ để khách bắt đầu cuộc mới thay vì kẹt ở khung trống.
       if (err.status === 404) {
-        localStorage.removeItem(STORAGE_KEY)
-        localStorage.removeItem(TOKEN_KEY)
+        clearChatStorage(scope)
         setConversationId(null)
         setChatToken(null)
         setMessages([])
       }
       // Lỗi khác (backend offline...): im lặng, khung chat chỉ đứng yên.
     }
-  }, [conversationId, open, authOptions])
+  }, [conversationId, open, authOptions, scope])
 
   const loadRef = useRef(load)
   loadRef.current = load
+
+  // Đăng nhập / đăng xuất (auth.js phát AUTH_EVENT): chuyển sang bộ dữ liệu chat của đúng tài khoản.
+  useEffect(() => {
+    const sync = () => setScope(chatScope())
+    window.addEventListener(AUTH_EVENT, sync)
+    return () => window.removeEventListener(AUTH_EVENT, sync)
+  }, [])
+
+  // Theo tài khoản: đổi tài khoản thì bỏ sạch những gì đang hiện của người trước. Tài khoản đã đăng nhập thì xóa dữ liệu chat của khách vãng lai trên máy
+  // (máy dùng chung, không để lại cho người sau) rồi lấy cuộc trò chuyện chuẩn của tài khoản từ máy chủ.
+  const scopeRef = useRef(scope)
+  useEffect(() => {
+    if (scopeRef.current !== scope) {
+      scopeRef.current = scope
+      const saved = readChat(scope)
+      setConversationId(saved.id)
+      setChatToken(saved.token)
+      setMessages([])
+      setHasUnread(false)
+      setOpen(false)
+      setDraft('')
+      setName('')
+      setPhone('')
+      setError('')
+    }
+    if (scope === 'guest') return undefined
+    clearChatStorage('guest')
+    let cancelled = false
+    api
+      .get('/chat/mine')
+      .then((data) => {
+        if (cancelled || !data.conversation) return
+        writeChat(scope, { id: data.conversation.id, token: data.token })
+        setConversationId(data.conversation.id)
+        setChatToken(data.token)
+        setMessages(data.messages)
+      })
+      .catch(() => {}) // máy chủ tắt: dùng dữ liệu đã lưu theo tài khoản
+    return () => {
+      cancelled = true
+    }
+  }, [scope])
 
   useEffect(() => {
     load()
@@ -81,10 +129,10 @@ export default function ChatWidget() {
   useEffect(() => {
     if (open && messages.length > 0) {
       const lastAdminMsg = [...messages].reverse().find((m) => m.sender === 'ADMIN')
-      if (lastAdminMsg) localStorage.setItem(SEEN_KEY, lastAdminMsg.id)
+      if (lastAdminMsg) writeSeen(scope, lastAdminMsg.id)
       setHasUnread(false)
     }
-  }, [open, messages])
+  }, [open, messages, scope])
 
   async function handleStart() {
     if (!name.trim()) {
@@ -95,8 +143,7 @@ export default function ChatWidget() {
     setError('')
     try {
       const conv = await api.post('/chat/conversations', { name: name.trim(), phone: phone.trim() })
-      localStorage.setItem(STORAGE_KEY, conv.id)
-      localStorage.setItem(TOKEN_KEY, conv.token)
+      writeChat(scope, { id: conv.id, token: conv.token })
       setChatToken(conv.token)
       setConversationId(conv.id)
     } catch (err) {
