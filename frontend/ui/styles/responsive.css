@@ -193,20 +193,17 @@ video {
   .hero-visual {
     height: 300px;
   }
-  .stack-card {
-    width: 150px;
-    height: 180px;
-  }
-  .card-front {
-    width: 140px;
-    height: 170px;
-  }
-  /* thu độ lệch 3D để 3 thẻ không tràn ra ngoài màn hình hẹp */
-  .card-back {
-    transform: rotateY(-20deg) rotateX(4deg) translate3d(-70px, -10px, -50px);
-  }
-  .card-front {
-    transform: rotateY(14deg) rotateX(-2deg) translate3d(70px, -24px, 50px);
+  /* thu kích thước và độ lệch 3D để 3 thẻ không tràn ra ngoài màn hình hẹp */
+  .hero-3d-stack {
+    --w: 150px;
+    --h: 180px;
+    --rb: -20deg;
+    --xb: -70px;
+    --zb: -50px;
+    --rf: 14deg;
+    --xf: 70px;
+    --yf: -24px;
+    --zf: 50px;
   }
 
   .section-title {
@@ -335,19 +332,17 @@ video {
   .hero-visual {
     height: 250px;
   }
-  .stack-card {
-    width: 120px;
-    height: 150px;
-  }
-  .card-front {
-    width: 112px;
-    height: 140px;
-  }
-  .card-back {
-    transform: rotateY(-20deg) rotateX(4deg) translate3d(-52px, -8px, -40px);
-  }
-  .card-front {
-    transform: rotateY(14deg) rotateX(-2deg) translate3d(52px, -20px, 40px);
+  .hero-3d-stack {
+    --w: 120px;
+    --h: 150px;
+    --rb: -20deg;
+    --xb: -52px;
+    --yb: -8px;
+    --zb: -40px;
+    --rf: 14deg;
+    --xf: 52px;
+    --yf: -20px;
+    --zf: 40px;
   }
   .section-title {
     font-size: 22px;
@@ -367,9 +362,15 @@ video {
   }
 }
 
-/* Người dùng bật "giảm chuyển động" trong hệ điều hành: tắt hiệu ứng nổi của thẻ hero */
+/* Người dùng bật "giảm chuyển động" trong hệ điều hành: tắt hiệu ứng nổi và đổi chỗ của thẻ hero (bấm vào ảnh thì đổi tức thì, không bay) */
 @media (prefers-reduced-motion: reduce) {
   .stack-card {
+    animation: none;
+  }
+  .stack-item {
+    transition: none;
+  }
+  .stack-item.is-leaving {
     animation: none;
   }
 }

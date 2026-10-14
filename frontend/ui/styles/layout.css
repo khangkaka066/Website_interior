@@ -383,37 +383,96 @@
   justify-content: center;
 }
 
-.stack-card {
+/* Ba thẻ ảnh tự đổi chỗ (xem HeroStack.jsx). Kích thước và độ lệch 3D lấy từ biến để các cỡ màn hình chỉ phải đổi biến. */
+.hero-3d-stack {
+  --w: 220px;
+  --h: 260px;
+  --rb: -24deg; /* góc nghiêng thẻ sau */
+  --xb: -90px;
+  --yb: -10px;
+  --zb: -60px;
+  --rf: 16deg; /* góc nghiêng thẻ trước */
+  --xf: 90px;
+  --yf: -30px;
+  --zf: 60px;
+  --move: 1.2s;
+  --ease: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Lớp bọc: giữ vị trí 3D, chuyển động đổi chỗ và bấm chọn. Ảnh bên trong có hiệu ứng nhấp nhô riêng nên không giật khi đổi chỗ. */
+.stack-item {
   position: absolute;
-  width: 220px;
-  height: 260px;
+  width: var(--w);
+  height: var(--h);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  /* z-index đổi đúng giữa đường đi để ảnh bay ra sau lướt dưới các ảnh khác chứ không xuyên qua. */
+  transition: transform var(--move) var(--ease), opacity var(--move) ease, scale var(--move) var(--ease), z-index 0s linear calc(var(--move) * 0.46);
+}
+
+.stack-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+}
+
+.stack-card {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border-radius: 0;
   background: #fff;
   padding: 10px;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-  transform-style: preserve-3d;
   animation: float-card 6s ease-in-out infinite;
+  user-select: none;
 }
-
-.card-back {
-  transform: rotateY(-24deg) rotateX(4deg) translate3d(-90px, -10px, -60px);
-  opacity: 0.85;
+.card-blue {
   animation-delay: -1.5s;
 }
-
-.card-mid {
-  transform: rotateY(-8deg) rotateX(2deg) translate3d(30px, 20px, 0);
-  z-index: 2;
+.card-brown {
   animation-delay: -3s;
 }
-
-.card-front {
-  width: 200px;
-  height: 240px;
-  transform: rotateY(16deg) rotateX(-2deg) translate3d(90px, -30px, 60px);
-  z-index: 3;
+.card-gold {
   animation-delay: -4.5s;
+}
+
+.slot-back {
+  transform: rotateY(var(--rb)) rotateX(4deg) translate3d(var(--xb), var(--yb), var(--zb));
+  opacity: 0.85;
+  scale: 1;
+  z-index: 1;
+}
+.slot-mid {
+  transform: rotateY(-8deg) rotateX(2deg) translate3d(30px, 20px, 0);
+  opacity: 1;
+  scale: 1;
+  z-index: 2;
+}
+.slot-front {
+  transform: rotateY(var(--rf)) rotateX(-2deg) translate3d(var(--xf), var(--yf), var(--zf));
+  opacity: 1;
+  scale: 0.91; /* thẻ trước nhỏ hơn một chút như thiết kế cũ (200x240 so với 220x260) */
+  z-index: 3;
+}
+
+/* Ảnh bay từ trước ra sau đi theo đường cong: nhấc lên và tiến về giữa rồi mới lùi ra sau. */
+.stack-item.is-leaving {
+  animation: stack-deal-back var(--move) var(--ease);
+}
+@keyframes stack-deal-back {
+  0% {
+    transform: rotateY(var(--rf)) rotateX(-2deg) translate3d(var(--xf), var(--yf), var(--zf));
+  }
+  40% {
+    transform: rotateY(3deg) rotateX(-6deg) translate3d(0, calc(var(--yf) - 56px), calc(var(--zf) + 60px));
+  }
+  100% {
+    transform: rotateY(var(--rb)) rotateX(4deg) translate3d(var(--xb), var(--yb), var(--zb));
+  }
 }
 
 @keyframes float-card {
