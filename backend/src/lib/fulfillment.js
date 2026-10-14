@@ -171,11 +171,12 @@ export async function workload(db = prisma, now = new Date()) {
     const due = handleDueAt(o, rules, deliveryTypeOf(o, settings))
     if (due && due.getTime() < now.getTime()) overdue++
   }
-  const [toPrepare, toPack, toHandover] = await Promise.all([
-    db.order.count({ where: { status: { in: ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING'] }, OR: [{ paymentMethod: COD_METHOD_ID }, { paymentStatus: 'PAID' }], shipment: null } }),
+  const [toConfirm, toPrepare, toPack, toHandover] = await Promise.all([
+    db.order.count({ where: { status: 'PENDING_CONFIRMATION', cancelRequestedAt: null } }),
+    db.order.count({ where: { status: { in: ['CONFIRMED', 'PROCESSING'] }, OR: [{ paymentMethod: COD_METHOD_ID }, { paymentStatus: 'PAID' }], shipment: null } }),
     db.order.count({ where: { status: { in: ['PROCESSING', 'AWAITING_SHIPMENT'] }, packedAt: null, shipment: { is: { status: { not: 'NOT_CREATED' } } } } }),
     db.shipment.count({ where: packedAndWaiting() }),
   ])
   const cutoff = cutoffToday(rules.pickupCutoff, now)
-  return { needsAction: open.length, overdue, toPrepare, toPack, toHandover, cutoffAt: cutoff, cutoffPassed: !!cutoff && cutoff.getTime() < now.getTime() }
+  return { needsAction: open.length, overdue, toConfirm, toPrepare, toPack, toHandover, cutoffAt: cutoff, cutoffPassed: !!cutoff && cutoff.getTime() < now.getTime() }
 }

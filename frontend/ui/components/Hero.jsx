@@ -1,6 +1,7 @@
 'use client'
 
 import { Link } from '@/lib/router'
+import HeroVideo from './HeroVideo'
 
 export default function Hero() {
   return (
@@ -36,6 +37,8 @@ export default function Hero() {
             <img className="hero-badge-logo" src="/images/brand/logo.png" alt="Curtain Premium Quality" />
           </div>
         </div>
+
+        <HeroVideo />
       </div>
     </section>
   )

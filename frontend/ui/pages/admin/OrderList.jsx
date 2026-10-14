@@ -181,7 +181,8 @@ export default function OrderList() {
             )
           })()}
           <span>Cần xử lý: <strong>{work.needsAction}</strong>{work.overdue > 0 && <> (<strong style={{ color: 'var(--dash-danger, #c0392b)' }}>{work.overdue} quá hạn</strong>)</>}</span>
-          <span>Chưa chuẩn bị: <strong>{work.toPrepare}</strong></span>
+          <span>Chờ xác nhận: <strong>{work.toConfirm}</strong></span>
+          <span>Chờ chuẩn bị hàng: <strong>{work.toPrepare}</strong></span>
           <span>Chờ đóng gói: <strong>{work.toPack}</strong></span>
           <span>Chờ bàn giao: <strong>{work.toHandover}</strong></span>
           <span style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
@@ -353,8 +354,8 @@ export default function OrderList() {
             {goshipReady ? (
               <>
                 <p style={{ fontSize: '13px', margin: 0 }}>
-                  Với mỗi đơn đã chọn, hệ thống sẽ <strong>xác nhận đơn, chuyển sang Đang xử lý và tạo vận đơn Goship</strong> (chọn phương án cước rẻ nhất; đơn hỏa tốc chỉ chọn dịch vụ hỏa tốc), rồi mở tem để bạn in và đi nhặt hàng.
-                  Đơn chuyển khoản chưa thanh toán sẽ bị bỏ qua. <strong>Đơn hỏa tốc sẽ điều shipper tới lấy ngay</strong> (và chỉ tạo khi đã xác định đúng vị trí giao; vị trí chưa chắc chắn thì mở từng đơn để kiểm tra bản đồ).
+                  Với mỗi đơn đã chọn, hệ thống sẽ <strong>chuyển sang Đang xử lý và tạo vận đơn Goship</strong> (chọn phương án cước rẻ nhất; đơn hỏa tốc chỉ chọn dịch vụ hỏa tốc), rồi mở tem để bạn in và đi nhặt hàng.
+                  Đơn phải <strong>đã được xác nhận</strong> (bấm "Xác nhận đơn" trước); đơn chưa xác nhận hoặc chuyển khoản chưa thanh toán sẽ bị bỏ qua và báo lý do. <strong>Đơn hỏa tốc sẽ điều shipper tới lấy ngay</strong> (và chỉ tạo khi đã xác định đúng vị trí giao; vị trí chưa chắc chắn thì mở từng đơn để kiểm tra bản đồ).
                 </p>
                 <PickupMethod value={pickup} onChange={setPickup} />
                 <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '14px', padding: '10px 12px', background: 'var(--dash-warn-bg, #fff4e5)', fontSize: '13px', cursor: 'pointer' }}>

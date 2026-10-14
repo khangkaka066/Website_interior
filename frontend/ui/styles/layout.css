@@ -2439,3 +2439,170 @@ label {
     transition: none;
   }
 }
+
+/* ---------- Video giới thiệu trong hero: khung viền vàng trang trí ---------- */
+@property --hv-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.hero-video {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  margin: 72px auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Viền vàng: dải màu hình nón quay chậm quanh khung (trình duyệt cũ không có @property thì đứng yên, vẫn đẹp). */
+.hv-frame {
+  --hv-gold-1: #f3d7a6;
+  --hv-gold-2: #e0a559;
+  --hv-gold-3: #b5602f;
+  position: relative;
+  width: 100%;
+  padding: 9px;
+  background: conic-gradient(from var(--hv-angle), var(--hv-gold-1), var(--hv-gold-2), var(--hv-gold-3), var(--hv-gold-2), var(--hv-gold-1), #fff0d4, var(--hv-gold-2), var(--hv-gold-3), var(--hv-gold-1));
+  animation: hv-spin 9s linear infinite;
+  box-shadow: 0 28px 60px rgba(143, 74, 36, 0.28), 0 0 0 1px rgba(185, 122, 63, 0.35), 0 0 48px rgba(224, 165, 89, 0.28);
+}
+
+/* Đường viền mảnh lệch ra ngoài tạo chiều sâu như khung tranh kép. */
+.hv-frame::before {
+  content: '';
+  position: absolute;
+  inset: -16px;
+  border: 1px solid rgba(185, 122, 63, 0.5);
+  pointer-events: none;
+}
+
+@keyframes hv-spin {
+  to {
+    --hv-angle: 360deg;
+  }
+}
+
+/* Lớp nền trắng như viền giấy ảnh (cùng kiểu thẻ ảnh rèm phía trên). */
+.hv-mat {
+  position: relative;
+  padding: 7px;
+  background: #fffdf9;
+  line-height: 0;
+}
+
+.hv-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #1c120a;
+  object-fit: cover;
+}
+
+/* Bốn góc trang trí hình chữ L. */
+.hv-corner {
+  position: absolute;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--hv-gold-3);
+  pointer-events: none;
+}
+.hv-tl {
+  top: -24px;
+  left: -24px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.hv-tr {
+  top: -24px;
+  right: -24px;
+  border-left: 0;
+  border-bottom: 0;
+}
+.hv-bl {
+  bottom: -24px;
+  left: -24px;
+  border-right: 0;
+  border-top: 0;
+}
+.hv-br {
+  bottom: -24px;
+  right: -24px;
+  border-left: 0;
+  border-top: 0;
+}
+
+/* Nút phát/tắt tiếng ở góc trên phải (góc dưới phải thường bị logo của video chiếm). */
+.hv-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  line-height: 1;
+}
+.hv-controls button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(28, 18, 10, 0.55);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.2s, transform 0.2s;
+}
+.hv-controls button:hover {
+  background: rgba(181, 96, 47, 0.9);
+  transform: scale(1.06);
+}
+.hv-controls button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .hero-video {
+    margin-top: 56px;
+    padding: 0 20px;
+    box-sizing: border-box;
+  }
+  .hv-frame {
+    padding: 6px;
+  }
+  .hv-frame::before {
+    inset: -10px;
+  }
+  .hv-mat {
+    padding: 4px;
+  }
+  .hv-corner {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+  }
+  .hv-tl { top: -16px; left: -16px; }
+  .hv-tr { top: -16px; right: -16px; }
+  .hv-bl { bottom: -16px; left: -16px; }
+  .hv-br { bottom: -16px; right: -16px; }
+  .hv-controls {
+    top: 10px;
+    right: 10px;
+  }
+  .hv-controls button {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* Giảm chuyển động: viền đứng yên. */
+@media (prefers-reduced-motion: reduce) {
+  .hv-frame {
+    animation: none;
+  }
+}
