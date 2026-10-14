@@ -247,7 +247,17 @@ export const goshipBulkCreateSchema = z.object({
   confirm: z.literal(true, 'Cần xác nhận đây là vận đơn thật.'),
   pickupMethod,
 })
+export const geocodeSchema = z.object({
+  addressLine: optionalText('số nhà, đường', 200),
+  ward: optionalText('phường/xã', 100),
+  district: optionalText('quận/huyện', 100),
+  province: text('tỉnh/thành phố', 100),
+})
 export const goshipCreateShipmentSchema = z.object({
+  // Hỏa tốc: tọa độ điểm giao do nhân viên kiểm tra trên bản đồ; dropConfirmed = đã xác nhận vị trí khi chỉ tra được tới cấp phường/quận.
+  dropLat: z.number('Vĩ độ không hợp lệ.').min(8, 'Vĩ độ phải nằm trong Việt Nam.').max(24.5, 'Vĩ độ phải nằm trong Việt Nam.').optional(),
+  dropLng: z.number('Kinh độ không hợp lệ.').min(102, 'Kinh độ phải nằm trong Việt Nam.').max(110, 'Kinh độ phải nằm trong Việt Nam.').optional(),
+  dropConfirmed: z.boolean().optional(),
   pickupMethod,
   rateId: z.string('Chưa chọn đơn vị vận chuyển.').trim().min(1, 'Chưa chọn đơn vị vận chuyển.').max(200, 'Mã lựa chọn không hợp lệ.'),
   confirm: z.literal(true, 'Cần xác nhận đây là vận đơn thật.'),

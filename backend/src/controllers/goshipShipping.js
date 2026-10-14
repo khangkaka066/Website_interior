@@ -1,5 +1,6 @@
 import { getSettings } from '../lib/settingsStore.js'
 import { goshipConfigured } from '../lib/goship.js'
+import { geocodeAddress, geocodeProvider } from '../lib/geocode.js'
 import { verifyGoshipSignature } from '../lib/goshipSignature.js'
 import { ShipmentError, ratesForOrder, createShipmentForOrder, processGoshipWebhook } from '../lib/goshipShipments.js'
 import { toPlain } from '../utils/serialize.js'
@@ -16,11 +17,23 @@ export async function goshipConfig(req, res) {
   res.json({ ready: goshipConfigured() && g.enabled && g.createShipments })
 }
 
+// Tìm tọa độ từ địa chỉ (nút "Tìm tọa độ từ địa chỉ kho" ở Cài đặt, và kiểm tra điểm giao của đơn hỏa tốc).
+export async function geocodeLookup(req, res) {
+  const { addressLine, ward, district, province } = req.body
+  const found = await geocodeAddress({ addressLine, ward, district, province })
+  res.set('Cache-Control', 'no-store')
+  if (!found) return res.status(404).json({ error: 'Không tìm được tọa độ cho địa chỉ này. Hãy mở Google Maps, bấm chuột phải vào vị trí và sao chép tọa độ.' })
+  res.json({ ...found, provider: geocodeProvider() })
+}
+
 // Cước các hãng cho một đơn (admin chọn hãng trước khi tạo vận đơn thật).
 export async function goshipRates(req, res) {
   try {
     res.set('Cache-Control', 'no-store')
-    res.json(await ratesForOrder(req.params.orderId))
+    const lat = Number(req.query.dropLat)
+    const lng = Number(req.query.dropLng)
+    const drop = req.query.dropLat && req.query.dropLng && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null // tọa độ nhân viên nhập tay (hỏa tốc)
+    res.json(await ratesForOrder(req.params.orderId, undefined, undefined, { drop, persist: false }))
   } catch (err) {
     if (err instanceof ShipmentError) return fail(res, err)
     throw err
@@ -65,10 +78,10 @@ export async function goshipBulkCreate(req, res) {
 
 // TẠO VẬN ĐƠN THẬT (phát sinh cước). Cần admin xác nhận tường minh: body.confirm === true.
 export async function goshipCreate(req, res) {
-  const { rateId, confirm, pickupMethod } = req.body
+  const { rateId, confirm, pickupMethod, dropLat, dropLng, dropConfirmed } = req.body
   if (confirm !== true) return res.status(400).json({ error: 'Cần xác nhận đây là vận đơn thật.', code: 'CONFIRM_REQUIRED' })
   try {
-    const shipment = await createShipmentForOrder({ orderId: req.params.orderId, rateId, pickupMethod, actor: req.user?.username || req.user?.email || 'admin' })
+    const shipment = await createShipmentForOrder({ orderId: req.params.orderId, rateId, pickupMethod, dropConfirmed: dropConfirmed === true, drop: dropLat != null && dropLng != null ? { lat: dropLat, lng: dropLng } : null, actor: req.user?.username || req.user?.email || 'admin' })
     console.log(`[goship] đã tạo vận đơn ${shipment.trackingId} cho đơn ${shipment.order?.orderNumber} (${req.user?.username || 'admin'})`)
     res.status(201).json(toPlain(shipment))
   } catch (err) {

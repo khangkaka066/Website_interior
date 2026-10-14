@@ -171,6 +171,9 @@ model Order {
   shippingCarrier     String?
   packedAt            DateTime?
   packedBy            String?
+  // Tọa độ điểm giao (tự tìm từ địa chỉ, nhân viên sửa được): chỉ cần cho đơn hỏa tốc qua Goship (API hỏa tốc dùng tọa độ chứ không dùng mã tỉnh/quận/phường).
+  recipientLat        Float?
+  recipientLng        Float?
   // Tồn kho đã được trừ cho đơn này (đơn tạo trước khi có tính năng trừ kho thì false, để hủy đơn không cộng lại nhầm).
   stockReserved Boolean       @default(false)
 
@@ -322,6 +325,8 @@ model Shipment {
   sortingCode String?
   // Cách giao hàng cho hãng (chọn lúc "Chuẩn bị hàng"): PICKUP = hãng tới shop lấy; DROP_OFF = shop mang ra bưu cục. Goship API không có trường này nên chỉ lưu ở hệ thống mình.
   pickupMethod String?
+  // true = vận đơn hỏa tốc (API hỏa tốc của Goship: Ahamove, Grab): mã trạng thái, webhook và cách hủy khác vận đơn thường.
+  onDemand Boolean @default(false)
   // Biên bản bàn giao cho hãng chứa vận đơn này (null = chưa bàn giao).
   handoverId String?
   handover   Handover? @relation(fields: [handoverId], references: [id])

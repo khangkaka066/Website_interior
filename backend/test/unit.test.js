@@ -16,6 +16,8 @@ import { generateOrderNumber } from '../src/utils/ids.js'
 import { handleDueAt } from '../src/lib/orderFlow.js'
 import { orderWeightGrams } from '../src/lib/weight.js'
 import { cutoffToday } from '../src/lib/fulfillment.js'
+import { geocodeAddress, _clearGeocodeCache } from '../src/lib/geocode.js'
+import { toExpressOption, buildOndemandRatesBody, buildOndemandShipmentBody, mapOndemandStatus } from '../src/lib/ondemand.js'
 import { classifyDelivery, isExpressService, isSameCity, deliveryTypeOf } from '../src/lib/deliveryType.js'
 import { publicOrderView } from '../src/controllers/orders.js'
 import { ordersSchema } from '../src/schemas/settings.js'
@@ -1325,5 +1327,215 @@ describe('khối lượng tính cước và giờ chốt đơn', () => {
     assert.equal(cutoffToday('15:30', new Date('2026-11-14T20:00:00Z')).toISOString(), '2026-11-15T08:30:00.000Z')
     assert.equal(cutoffToday('', new Date()), null)
     assert.equal(cutoffToday('25:99', new Date()), null)
+  })
+})
+
+describe('giao hỏa tốc qua Goship (Ahamove, Grab)', () => {
+  const realFetch = globalThis.fetch
+  const row = (over = {}) => ({ _id: 'HAN-BIKE', description_vi_vn: 'Lấy hàng ngay, giao hỏa tốc', carrier: 1, carrier_name: 'Ahamove', total_fee: 32500, max_cod: 10000000, estimated_time: { pickup: '2026-11-14 10:00:00', dropoff: '2026-11-14 10:35:00' }, ...over })
+
+  test('phương án hỏa tốc: mã, giá, thời gian dự kiến, bỏ dòng hỏng và dòng vượt mức thu hộ', () => {
+    const o = toExpressOption(row())
+    assert.deepEqual([o.id, o.carrier, o.fee, o.express, o.onDemand, o.serviceId, o.carrierId], ['OD|HAN-BIKE|1', 'Ahamove', 32500, true, true, 'HAN-BIKE', 1])
+    assert.match(o.service, /^Hỏa tốc/)
+    assert.match(o.expected, /35 phút/)
+    assert.equal(toExpressOption(row({ _id: undefined })), null)
+    assert.equal(toExpressOption(row({ total_fee: 'x' })), null)
+    assert.equal(toExpressOption(row({ max_cod: 1000000 }), { cod: 2000000 }), null) // vượt mức thu hộ tối đa của dịch vụ
+    assert.ok(toExpressOption(row({ max_cod: 1000000 }), { cod: 500000 }))
+  })
+
+  test('nội dung gửi Goship: điểm lấy kind 1, điểm giao kind 2 kèm kiện hàng, thu hộ và khối lượng', () => {
+    const rates = buildOndemandRatesBody({ from: { lat: 10.8, lng: 106.7 }, to: { lat: 10.78, lng: 106.69 }, weightGrams: 1500, name: 'Đơn A' })
+    assert.deepEqual(rates.paths.map((p) => p.kind), [1, 2])
+    assert.equal(rates.paths[1].parcel.weight, 1500)
+    const settings = { shipping: { goship: { origin: { street: '47 Linh Đông', ward: 'Linh Đông', district: 'Thủ Đức', province: 'Hồ Chí Minh', name: 'Kho', phone: '0900000000' } } } }
+    const order = { orderNumber: 'N1', recipientName: 'A', recipientPhone: '0911111111', addressLine: '1 Nguyễn Huệ', ward: 'Bến Nghé', district: 'Quận 1', province: 'Hồ Chí Minh', subtotal: 100000 }
+    const b = buildOndemandShipmentBody({ order, settings, option: toExpressOption(row()), from: { lat: 10.8, lng: 106.7 }, to: { lat: 10.78, lng: 106.69 }, weightGrams: 1500, cod: 130000 })
+    assert.deepEqual([b.order_id, b.carrier, b.vehicle, b.service], ['N1', 1, 'BIKE', 'HAN-BIKE'])
+    assert.equal(b.paths[0].address, '47 Linh Đông, Linh Đông, Thủ Đức, Hồ Chí Minh')
+    assert.deepEqual([b.paths[1].parcel.cod_amount, b.paths[1].parcel.weight, b.paths[1].parcel.amount], [130000, 1500, 100000])
+  })
+
+  test('mã trạng thái hỏa tốc KHÁC đơn thường: 905 đang giao (hỏa tốc) nhưng đã giao (thường)', () => {
+    assert.equal(mapOndemandStatus(905).local, 'OUT_FOR_DELIVERY')
+    assert.equal(mapGoshipStatus(905).local, 'DELIVERED')
+    assert.equal(mapOndemandStatus(906).local, 'DELIVERED')
+    assert.equal(mapOndemandStatus(904).local, 'PICKED_UP')
+    assert.equal(mapOndemandStatus(911).cancel, true)
+    assert.equal(mapOndemandStatus(907).local, 'FAILED')
+    assert.deepEqual(mapOndemandStatus(12345), {})
+  })
+
+  test('webhook nhận biết đơn hỏa tốc qua cờ is_ondemand_shipment', () => {
+    assert.equal(normalizeWebhook({ gcode: 'G1', status: 905, is_ondemand_shipment: true }).onDemand, true)
+    assert.equal(normalizeWebhook({ gcode: 'G1', status: 905 }).onDemand, false)
+  })
+
+  describe('tìm tọa độ từ địa chỉ', () => {
+    let calls
+    const install = (handler) => {
+      calls = []
+      process.env.NOMINATIM_GAP_MS = '0'
+      _clearGeocodeCache()
+      globalThis.fetch = async (url) => {
+        calls.push(String(url))
+        return { ok: true, status: 200, json: async () => handler(String(url)) }
+      }
+    }
+    const restore = () => {
+      globalThis.fetch = realFetch
+      delete process.env.NOMINATIM_GAP_MS
+      delete process.env.GEOCODE_PROVIDER
+      _clearGeocodeCache()
+    }
+    const hcm = (lat = '10.7769', lon = '106.7009') => [{ lat, lon }]
+
+    test('có số nhà thì cấp "address"; chỉ tra được phường thì tụt xuống "ward"', async () => {
+      install((u) => (u.includes('S%E1%BB%91+') || u.includes('%C4%90%C6%B0%E1%BB%9Dng+Test') ? [] : hcm()))
+      try {
+        const full = await geocodeAddress({ addressLine: '10 Nguyễn Huệ', ward: 'Bến Nghé', district: 'Quận 1', province: 'Hồ Chí Minh' })
+        assert.deepEqual([full.level, full.lat, full.lng, full.source], ['address', 10.7769, 106.7009, 'nominatim'])
+        _clearGeocodeCache()
+        install((u) => (decodeURIComponent(u).includes('Đường Test') ? [] : hcm()))
+        const coarse = await geocodeAddress({ addressLine: 'Đường Test 5', ward: 'Bến Nghé', district: 'Quận 1', province: 'Hồ Chí Minh' })
+        assert.equal(coarse.level, 'ward')
+      } finally {
+        restore()
+      }
+    })
+
+    test('maxLevel=ward bỏ qua bước số nhà (báo cước cho khách); kết quả được nhớ, không tra lại', async () => {
+      install(() => hcm())
+      try {
+        const addr = { addressLine: '99 ABC', ward: 'Phường Z', district: 'Quận Y', province: 'Hồ Chí Minh' }
+        const a = await geocodeAddress(addr, { maxLevel: 'ward' })
+        const b = await geocodeAddress(addr, { maxLevel: 'ward' })
+        assert.equal(a.level, 'ward')
+        assert.equal(calls.length, 1)
+        assert.deepEqual([b.lat, b.lng], [a.lat, a.lng])
+        assert.ok(!decodeURIComponent(calls[0]).includes('99 ABC'))
+      } finally {
+        restore()
+      }
+    })
+
+    test('loại kết quả ngoài Việt Nam, không tìm thấy, hoặc lỗi mạng', async () => {
+      try {
+        install(() => hcm('51.5', '-0.12')) // Luân Đôn
+        assert.equal(await geocodeAddress({ ward: 'P1', district: 'Q1', province: 'Hồ Chí Minh' }), null)
+        install(() => [])
+        assert.equal(await geocodeAddress({ ward: 'P2', district: 'Q2', province: 'Hồ Chí Minh' }), null)
+        globalThis.fetch = async () => { throw new Error('offline') }
+        _clearGeocodeCache()
+        assert.equal(await geocodeAddress({ ward: 'P3', district: 'Q3', province: 'Hồ Chí Minh' }), null)
+      } finally {
+        restore()
+      }
+    })
+
+    test('chọn nguồn Goong khi có khóa', async () => {
+      install((u) => (u.includes('rsapi.goong.io') ? { results: [{ geometry: { location: { lat: 10.7, lng: 106.6 } } }] } : []))
+      process.env.GEOCODE_PROVIDER = 'goong'
+      process.env.GOONG_API_KEY = 'k'
+      try {
+        const r = await geocodeAddress({ ward: 'P9', district: 'Q9', province: 'Hồ Chí Minh' })
+        assert.deepEqual([r.source, r.lat, r.lng], ['goong', 10.7, 106.6])
+        assert.ok(calls[0].includes('api_key=k'))
+      } finally {
+        delete process.env.GOONG_API_KEY
+        restore()
+      }
+    })
+  })
+
+  describe('báo cước ở trang thanh toán', () => {
+    let odCalls
+    const lists = { '/cities': [{ id: 1, name: 'Hồ Chí Minh' }, { id: 2, name: 'Hà Nội' }], '/cities/1/districts': [{ id: 10, name: 'Quận 1' }], '/districts/10/wards': [{ id: 100, name: 'Phường Bến Nghé' }], '/cities/2/districts': [{ id: 20, name: 'Quận Hoàn Kiếm' }], '/districts/20/wards': [{ id: 200, name: 'Phường Hàng Bạc' }] }
+    const install = ({ odRows = [row()], odFail = false, geoRows = [{ lat: '10.77', lon: '106.70' }] } = {}) => {
+      odCalls = []
+      process.env.NOMINATIM_GAP_MS = '0'
+      process.env.GOSHIP_TOKEN = 't'
+      _resetGoshipCache()
+      _clearGeocodeCache()
+      globalThis.fetch = async (url, opts = {}) => {
+        const u = String(url)
+        if (u.startsWith('https://nominatim')) return { ok: true, status: 200, json: async () => geoRows }
+        const path = u.replace('https://api.goship.io/api/v2', '')
+        if (path === '/rates') return { ok: true, status: 200, json: async () => ({ code: 200, status: 'success', data: [{ id: 'n1', carrier_name: 'GHTK', service: 'Nhanh', total_fee: '18000', cod_fee: '0' }] }) }
+        if (path === '/ondemand-shipments/rates') {
+          odCalls.push(JSON.parse(opts.body))
+          return odFail ? { ok: false, status: 500, json: async () => ({}) } : { ok: true, status: 200, json: async () => ({ code: 200, status: 'success', data: odRows }) }
+        }
+        return { ok: true, status: 200, json: async () => ({ data: lists[path] || [] }) }
+      }
+    }
+    const done = () => {
+      globalThis.fetch = realFetch
+      delete process.env.GOSHIP_TOKEN
+      delete process.env.NOMINATIM_GAP_MS
+      _resetGoshipCache()
+      _clearGeocodeCache()
+    }
+    const cfg = (g = {}) => ({
+      store: { address: '' },
+      shipping: { fee: 25000, freeShippingOver: 0, goship: { enabled: true, defaultWeightGrams: 4000, expressEnabled: true, origin: { province: 'Hồ Chí Minh', district: 'Quận 1', ward: 'Phường Bến Nghé', lat: 10.78, lng: 106.69 }, ...g } },
+      orders: { expressKeywords: 'hỏa tốc' },
+    })
+    const hcmAddr = { province: 'Hồ Chí Minh', district: 'Quận 1', ward: 'Phường Bến Nghé' }
+
+    test('khách cùng thành phố với kho thấy thêm phương án hỏa tốc, xếp chung theo giá', async () => {
+      install()
+      try {
+        const q = await quoteShipping({ settings: cfg(), address: hcmAddr, subtotal: 100000, cod: 0, weightGrams: 1200 })
+        assert.equal(q.status, 'ok')
+        assert.deepEqual(q.options.map((o) => [o.carrier, o.fee, !!o.express]), [['GHTK', 18000, false], ['Ahamove', 32500, true]])
+        const body = odCalls[0]
+        assert.deepEqual(body.paths.map((p) => p.kind), [1, 2])
+        assert.deepEqual([body.paths[0].lat, body.paths[0].lng], [10.78, 106.69])
+        assert.equal(body.paths[1].parcel.weight, 1200)
+      } finally {
+        done()
+      }
+    })
+
+    test('khác thành phố, tắt hỏa tốc, thiếu tọa độ kho: không gọi API hỏa tốc', async () => {
+      install()
+      try {
+        const hn = { province: 'Hà Nội', district: 'Quận Hoàn Kiếm', ward: 'Phường Hàng Bạc' }
+        assert.ok((await quoteShipping({ settings: cfg(), address: hn, subtotal: 1, cod: 0 })).options.every((o) => !o.express))
+        assert.ok((await quoteShipping({ settings: cfg({ expressEnabled: false }), address: hcmAddr, subtotal: 1, cod: 0 })).options.every((o) => !o.express))
+        assert.ok((await quoteShipping({ settings: cfg({ origin: { province: 'Hồ Chí Minh', district: 'Quận 1', ward: 'Phường Bến Nghé', lat: null, lng: null } }), address: hcmAddr, subtotal: 1, cod: 0 })).options.every((o) => !o.express))
+        assert.equal(odCalls.length, 0)
+      } finally {
+        done()
+      }
+    })
+
+    test('lỗi tra tọa độ / Goship hỏa tốc lỗi / COD vượt mức: chỉ mất phương án hỏa tốc, phương án thường vẫn còn', async () => {
+      for (const [label, opts, cod] of [['không tra được địa chỉ', { geoRows: [] }, 0], ['API hỏa tốc lỗi', { odFail: true }, 0], ['COD vượt mức', { odRows: [row({ max_cod: 1000000 })] }, 5000000]]) {
+        install(opts)
+        try {
+          const q = await quoteShipping({ settings: cfg(), address: hcmAddr, subtotal: 100000, cod })
+          assert.equal(q.status, 'ok', label)
+          assert.deepEqual(q.options.map((o) => o.carrier), ['GHTK'], label)
+        } finally {
+          done()
+        }
+      }
+    })
+
+    test('chooseShipping nhận phương án hỏa tốc và báo express để đơn thành EXPRESS', async () => {
+      install()
+      try {
+        const st = cfg()
+        const q = await quoteShipping({ settings: st, address: hcmAddr, subtotal: 100000, cod: 0 })
+        const pick = q.options.find((o) => o.express)
+        const c = chooseShipping(st, 100000, q, pick.id)
+        assert.deepEqual([c.fee, c.express, c.carrier], [32500, true, 'Ahamove'])
+      } finally {
+        done()
+      }
+    })
   })
 })

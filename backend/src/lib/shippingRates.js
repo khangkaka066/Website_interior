@@ -1,7 +1,10 @@
 import { goshipConfigured, listCities, listDistricts, listWards, requestRates, GoshipError } from './goship.js'
 import { findByName } from './vnNames.js'
 import { shippingFeeFor } from './settingsStore.js'
-import { isExpressService } from './deliveryType.js'
+import { isExpressService, isSameCity } from './deliveryType.js'
+import { geocodeAddress } from './geocode.js'
+import { requestOndemandRates } from './goship.js'
+import { toExpressOption, buildOndemandRatesBody } from './ondemand.js'
 
 // Cước vận chuyển theo Goship cho trang thanh toán. Cân nặng cố định theo Cài đặt (mặc định 4000g cho cả đơn, bất kể số lượng).
 // Chỉ báo giá, không tạo vận đơn. Mọi trường hợp không tính được (tắt, thiếu địa chỉ, Goship lỗi) đều trả status khác 'ok'
@@ -35,6 +38,24 @@ function toOption(row, free, expressKeywords) {
   }
 }
 
+// Phương án HỎA TỐC (API hỏa tốc của Goship) cho khách cùng tỉnh/thành với kho. Giá phụ thuộc khoảng cách nên tính theo tọa độ PHƯỜNG/XÃ của khách
+// (không theo số nhà) để phí hiển thị ở trang thanh toán và phí chốt đơn luôn cùng một con số. Bất kỳ lỗi nào (chưa bật, thiếu tọa độ, không tra được
+// địa chỉ, Goship lỗi) đều chỉ làm mất phương án hỏa tốc, không ảnh hưởng các phương án thường.
+async function expressOptions({ settings, address, weightGrams, cod }) {
+  const g = settings.shipping.goship
+  const o = g.origin
+  if (!g.expressEnabled || o?.lat == null || o?.lng == null) return []
+  if (!isSameCity(address.province, settings) || !address.ward) return []
+  try {
+    const to = await geocodeAddress(address, { maxLevel: 'ward' })
+    if (!to) return []
+    const rows = await requestOndemandRates(buildOndemandRatesBody({ from: { lat: o.lat, lng: o.lng }, to, weightGrams: weightGrams || g.defaultWeightGrams }))
+    return rows.map((r) => toExpressOption(r, { cod })).filter(Boolean)
+  } catch {
+    return []
+  }
+}
+
 // cod: số tiền thu hộ (đ), 0 nếu khách chuyển khoản trước. subtotal: tiền hàng, cũng là giá trị khai giá.
 export async function quoteShipping({ settings, address, subtotal, cod, weightGrams }) {
   const g = settings.shipping.goship
@@ -44,6 +65,7 @@ export async function quoteShipping({ settings, address, subtotal, cod, weightGr
     if (!from) return { status: 'error', options: [], reason: 'origin' } // chưa chọn kho gửi hàng hoặc tên không khớp Goship
     const to = await resolveAddressIds(address)
     if (!to) return { status: 'incomplete', options: [] } // chưa chọn đủ tỉnh/quận/phường theo danh sách Goship
+    const express = expressOptions({ settings, address, weightGrams, cod })
     const rows = await requestRates({
       address_from: from,
       address_to: to,
@@ -51,7 +73,9 @@ export async function quoteShipping({ settings, address, subtotal, cod, weightGr
       parcel: { cod: String(Math.max(0, Math.round(cod))), amount: String(Math.max(0, Math.round(subtotal))), weight: String(weightGrams || g.defaultWeightGrams), width: '1', height: '1', length: '1' },
     })
     const free = settings.shipping.freeShippingOver > 0 && subtotal >= settings.shipping.freeShippingOver
-    const options = rows.map((r) => toOption(r, free, settings.orders?.expressKeywords)).filter(Boolean).sort((a, b) => a.fee - b.fee || a.carrier.localeCompare(b.carrier, 'vi')).slice(0, 12)
+    const options = [...rows.map((r) => toOption(r, free, settings.orders?.expressKeywords)).filter(Boolean), ...(await express)]
+      .sort((a, b) => a.fee - b.fee || a.carrier.localeCompare(b.carrier, 'vi'))
+      .slice(0, 12)
     return options.length ? { status: 'ok', options } : { status: 'error', options: [], reason: 'empty' }
   } catch (err) {
     if (!(err instanceof GoshipError)) throw err

@@ -219,7 +219,9 @@ function PaymentTab({ data, onSaved }) {
 function ShippingTab({ data, onSaved }) {
   const goship = data.goship || { enabled: false, createShipments: false, defaultWeightGrams: 4000, origin: { province: '', district: '', ward: '', street: '', name: '', phone: '' } }
   const [form, setForm] = useState({ fee: String(data.fee), freeShippingOver: String(data.freeShippingOver) })
-  const [gs, setGs] = useState({ enabled: goship.enabled, createShipments: Boolean(goship.createShipments), weight: String(goship.defaultWeightGrams), origin: { street: '', name: '', phone: '', ...goship.origin } })
+  const [gs, setGs] = useState({ enabled: goship.enabled, createShipments: Boolean(goship.createShipments), expressEnabled: Boolean(goship.expressEnabled), weight: String(goship.defaultWeightGrams), origin: { street: '', name: '', phone: '', lat: null, lng: null, ...goship.origin } })
+  const [geo, setGeo] = useState({ busy: false, msg: '', error: '' })
+  const coord = (v) => (v === null || v === undefined || v === '' ? '' : String(v))
   const [state, save] = useSave('shipping', onSaved)
   const num = (v) => (v === '' ? NaN : Number(v))
   const o = goship.origin
@@ -232,10 +234,24 @@ function ShippingTab({ data, onSaved }) {
     gs.origin.district !== o.district ||
     gs.origin.ward !== o.ward ||
     gs.createShipments !== Boolean(goship.createShipments) ||
+    gs.expressEnabled !== Boolean(goship.expressEnabled) ||
+    (gs.origin.lat ?? null) !== (o.lat ?? null) ||
+    (gs.origin.lng ?? null) !== (o.lng ?? null) ||
     (gs.origin.street || '') !== (o.street || '') ||
     (gs.origin.name || '') !== (o.name || '') ||
     (gs.origin.phone || '') !== (o.phone || '')
   const digits = (k) => (e) => setForm({ ...form, [k]: e.target.value.replace(/[^\d]/g, '') })
+  // Tìm tọa độ kho từ địa chỉ đã nhập (cần cho giao hỏa tốc); nhân viên nên mở bản đồ kiểm tra lại.
+  async function findOriginCoords() {
+    setGeo({ busy: true, msg: '', error: '' })
+    try {
+      const r = await api.post('/shipping/geocode', { addressLine: gs.origin.street, ward: gs.origin.ward, district: gs.origin.district, province: gs.origin.province })
+      setGs((g) => ({ ...g, origin: { ...g.origin, lat: r.lat, lng: r.lng } }))
+      setGeo({ busy: false, error: '', msg: r.level === 'address' ? 'Đã tìm được tọa độ theo địa chỉ. Hãy mở bản đồ kiểm tra.' : `Chỉ tìm được tới cấp ${r.level === 'ward' ? 'phường/xã' : 'quận/huyện'}, chưa đủ chính xác. Hãy mở bản đồ, chọn đúng vị trí kho và sao chép tọa độ vào.` })
+    } catch (err) {
+      setGeo({ busy: false, msg: '', error: err.message })
+    }
+  }
   return (
     <>
       <form
@@ -245,7 +261,7 @@ function ShippingTab({ data, onSaved }) {
           save({
             fee: num(form.fee),
             freeShippingOver: num(form.freeShippingOver),
-            goship: { enabled: gs.enabled, createShipments: gs.createShipments, defaultWeightGrams: num(gs.weight), origin: gs.origin },
+            goship: { enabled: gs.enabled, createShipments: gs.createShipments, expressEnabled: gs.expressEnabled, defaultWeightGrams: num(gs.weight), origin: gs.origin },
           })
         }}
       >
@@ -294,6 +310,35 @@ function ShippingTab({ data, onSaved }) {
             <input className="dash-input" inputMode="tel" value={gs.origin.phone || ''} onChange={(e) => setGs((g) => ({ ...g, origin: { ...g.origin, phone: e.target.value } }))} maxLength={20} />
           </Field>
         </div>
+
+        <h4 style={{ margin: '16px 0 8px', fontSize: '13px' }}>Tọa độ kho (cho giao hỏa tốc)</h4>
+        <div className="set-grid">
+          <Field label="Vĩ độ (lat)" hint="Ví dụ 10.8231">
+            <input className="dash-input" inputMode="decimal" value={coord(gs.origin.lat)} onChange={(e) => setGs((g) => ({ ...g, origin: { ...g.origin, lat: e.target.value === '' ? null : Number(e.target.value.replace(',', '.')) } }))} />
+          </Field>
+          <Field label="Kinh độ (lng)" hint="Ví dụ 106.6297">
+            <input className="dash-input" inputMode="decimal" value={coord(gs.origin.lng)} onChange={(e) => setGs((g) => ({ ...g, origin: { ...g.origin, lng: e.target.value === '' ? null : Number(e.target.value.replace(',', '.')) } }))} />
+          </Field>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', margin: '8px 0' }}>
+          <button type="button" className="set-save" disabled={geo.busy || !gs.origin.province} onClick={findOriginCoords}>{geo.busy ? 'Đang tìm…' : 'Tìm tọa độ từ địa chỉ kho'}</button>
+          {gs.origin.lat != null && gs.origin.lng != null && (
+            <a href={`https://www.google.com/maps?q=${gs.origin.lat},${gs.origin.lng}`} target="_blank" rel="noopener noreferrer">Mở bản đồ kiểm tra vị trí kho ↗</a>
+          )}
+          {geo.msg && <span className="set-ok">{geo.msg}</span>}
+          {geo.error && <span className="set-error">{geo.error}</span>}
+        </div>
+
+        <h3 className="form-card-title" style={{ marginTop: '24px' }}>Giao hỏa tốc (Ahamove, Grab)</h3>
+        <p className="set-hint">
+          Bật thì khách <strong>cùng tỉnh/thành với kho</strong> thấy thêm phương án <strong>Hỏa tốc</strong> ở trang thanh toán (cước tính theo khoảng cách tới phường/xã của khách).
+          Khi nhân viên bấm "Chuẩn bị hàng" cho đơn hỏa tốc, <strong>shipper được điều tới lấy hàng ngay</strong> (không đặt lịch hẹn được), nên hàng phải sẵn sàng trước.
+          Cần nhập tọa độ kho ở trên, bật "Tạo vận đơn thật" ở dưới, và đăng ký webhook hỏa tốc trên Goship (cùng địa chỉ webhook vận đơn thường).
+        </p>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0', cursor: 'pointer' }}>
+          <input type="checkbox" checked={gs.expressEnabled} onChange={(e) => setGs({ ...gs, expressEnabled: e.target.checked })} />
+          Bán giao hỏa tốc cho khách cùng tỉnh/thành
+        </label>
 
         <h3 className="form-card-title" style={{ marginTop: '24px' }}>Tạo vận đơn thật qua Goship</h3>
         <p className="set-hint">

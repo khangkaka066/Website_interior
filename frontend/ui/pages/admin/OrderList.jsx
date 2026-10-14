@@ -354,7 +354,7 @@ export default function OrderList() {
               <>
                 <p style={{ fontSize: '13px', margin: 0 }}>
                   Với mỗi đơn đã chọn, hệ thống sẽ <strong>xác nhận đơn, chuyển sang Đang xử lý và tạo vận đơn Goship</strong> (chọn phương án cước rẻ nhất; đơn hỏa tốc chỉ chọn dịch vụ hỏa tốc), rồi mở tem để bạn in và đi nhặt hàng.
-                  Đơn chuyển khoản chưa thanh toán sẽ bị bỏ qua.
+                  Đơn chuyển khoản chưa thanh toán sẽ bị bỏ qua. <strong>Đơn hỏa tốc sẽ điều shipper tới lấy ngay</strong> (và chỉ tạo khi đã xác định đúng vị trí giao; vị trí chưa chắc chắn thì mở từng đơn để kiểm tra bản đồ).
                 </p>
                 <PickupMethod value={pickup} onChange={setPickup} />
                 <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '14px', padding: '10px 12px', background: 'var(--dash-warn-bg, #fff4e5)', fontSize: '13px', cursor: 'pointer' }}>

@@ -81,6 +81,7 @@ export const shippingSchema = z
       .object({
         enabled: z.boolean('Trạng thái Goship không hợp lệ.'),
         createShipments: z.boolean('Trạng thái tạo vận đơn không hợp lệ.').optional().default(false),
+        expressEnabled: z.boolean('Trạng thái giao hỏa tốc không hợp lệ.').optional().default(false),
         defaultWeightGrams: z.number('Cân nặng không hợp lệ.').int('Cân nặng phải là số nguyên (gram).').min(100, 'Cân nặng tối thiểu 100g.').max(100_000, 'Cân nặng tối đa 100.000g.'),
         origin: z.object({
           province: place('Tỉnh/thành kho gửi hàng'),
@@ -89,6 +90,9 @@ export const shippingSchema = z
           street: z.string('Địa chỉ kho gửi hàng không hợp lệ.').trim().max(200, 'Địa chỉ kho gửi hàng quá dài.').optional().default(''),
           name: place('Tên người gửi').optional().default(''),
           phone: phoneText.optional().default(''),
+          // Tọa độ kho: cần cho giao hỏa tốc (API hỏa tốc nhận tọa độ, không nhận mã phường/xã).
+          lat: z.number('Vĩ độ kho không hợp lệ.').min(8, 'Vĩ độ kho phải nằm trong Việt Nam (8 đến 24,5).').max(24.5, 'Vĩ độ kho phải nằm trong Việt Nam (8 đến 24,5).').nullable().optional().default(null),
+          lng: z.number('Kinh độ kho không hợp lệ.').min(102, 'Kinh độ kho phải nằm trong Việt Nam (102 đến 110).').max(110, 'Kinh độ kho phải nằm trong Việt Nam (102 đến 110).').nullable().optional().default(null),
         }),
       })
       .optional(),
@@ -101,6 +105,12 @@ export const shippingSchema = z
     }
     if (g?.createShipments && !g.enabled) {
       ctx.addIssue({ code: 'custom', message: 'Cần bật tính cước Goship trước khi cho phép tạo vận đơn thật.', path: ['goship', 'createShipments'] })
+    }
+    if (g?.expressEnabled && !(g.enabled && g.createShipments)) {
+      ctx.addIssue({ code: 'custom', message: 'Cần bật tính cước Goship và cho phép tạo vận đơn thật trước khi bán giao hỏa tốc.', path: ['goship', 'expressEnabled'] })
+    }
+    if (g?.expressEnabled && !(o?.lat != null && o?.lng != null)) {
+      ctx.addIssue({ code: 'custom', message: 'Nhập tọa độ kho gửi hàng (vĩ độ, kinh độ) trước khi bán giao hỏa tốc. Dùng nút "Tìm tọa độ từ địa chỉ kho".', path: ['goship', 'origin'] })
     }
     if (g?.createShipments && !(o?.street && o?.name && o?.phone)) {
       ctx.addIssue({ code: 'custom', message: 'Nhập đủ địa chỉ (số nhà, đường), tên và số điện thoại người gửi trước khi cho phép tạo vận đơn thật.', path: ['goship', 'origin'] })

@@ -3,7 +3,9 @@ import { orderWeightGrams } from './weight.js'
 import { prisma } from './prisma.js'
 import { getSettings, COD_METHOD_ID } from './settingsStore.js'
 import { quoteShipping, resolveAddressIds } from './shippingRates.js'
-import { createGoshipShipment, cancelGoshipShipment, searchGoshipShipment, goshipConfigured, GoshipError } from './goship.js'
+import { createGoshipShipment, cancelGoshipShipment, searchGoshipShipment, goshipConfigured, GoshipError, requestOndemandRates, createOndemandShipment, cancelOndemandShipment, getOndemandShipment } from './goship.js'
+import { geocodeAddress } from './geocode.js'
+import { toExpressOption, buildOndemandRatesBody, buildOndemandShipmentBody, mapOndemandStatus, fromApiOndemand } from './ondemand.js'
 import { SHIPPING_TO_ORDER_STATUS } from '../constants/workflow.js'
 
 // Tạo / hủy vận đơn THẬT qua Goship và đồng bộ trạng thái từ webhook. Mọi hàm đọc/ghi database nhận `db` (mặc định prisma)
@@ -113,11 +115,53 @@ const codFor = (order) => (order.paymentMethod === COD_METHOD_ID ? Math.round(Nu
 // Khối lượng tính cước của đơn: tổng khối lượng thật của sản phẩm nếu đủ dữ liệu, không thì cân nặng cố định trong Cài đặt.
 export const weightFor = (order, settings) => orderWeightGrams(order.items, settings.shipping.goship.defaultWeightGrams)
 
+// Điểm giao của đơn hỏa tốc. Thứ tự: tọa độ nhân viên nhập tay > tọa độ đã lưu (đã xác thực) > tự tra từ địa chỉ.
+// level: 'manual' | 'saved' | 'address' (tra được tới số nhà) | 'ward' | 'district' (chỉ tới phường / quận: KHÔNG đủ chính xác để điều shipper tự động).
+async function resolveDrop(order, db, override, persist = true) {
+  if (override && Number.isFinite(override.lat) && Number.isFinite(override.lng)) {
+    // Xem trước cước với tọa độ nhập tay thì chưa ghi vào đơn; chỉ ghi khi thật sự tạo vận đơn.
+    if (persist) await db.order.update({ where: { id: order.id }, data: { recipientLat: override.lat, recipientLng: override.lng } })
+    return { lat: override.lat, lng: override.lng, level: 'manual', source: 'manual' }
+  }
+  if (order.recipientLat != null && order.recipientLng != null) return { lat: order.recipientLat, lng: order.recipientLng, level: 'saved', source: 'saved' }
+  const found = await geocodeAddress({ addressLine: order.addressLine, ward: order.ward, district: order.district, province: order.province })
+  if (found?.level === 'address') await db.order.update({ where: { id: order.id }, data: { recipientLat: found.lat, recipientLng: found.lng } })
+  return found
+}
+
+const EXACT_LEVELS = ['manual', 'saved', 'address']
+export const isExactDrop = (drop) => !!drop && EXACT_LEVELS.includes(drop.level)
+
+async function expressRatesForOrder(order, settings, db, dropOverride, persist) {
+  const o = settings.shipping.goship.origin
+  if (o.lat == null || o.lng == null) throw new ShipmentError('Chưa nhập tọa độ kho gửi hàng ở Cài đặt, Vận chuyển nên chưa tạo được đơn hỏa tốc.', 422, 'ORIGIN_COORDS')
+  const drop = await resolveDrop(order, db, dropOverride, persist)
+  if (!drop) throw new ShipmentError('Không tìm được tọa độ của địa chỉ nhận hàng. Hãy mở bản đồ, lấy tọa độ chính xác và nhập tay.', 422, 'GEOCODE_FAILED')
+  let rows
+  try {
+    rows = await requestOndemandRates(buildOndemandRatesBody({ from: { lat: o.lat, lng: o.lng }, to: drop, weightGrams: weightFor(order, settings), name: `Đơn ${order.orderNumber}` }))
+  } catch (err) {
+    if (!(err instanceof GoshipError)) throw err
+    throw new ShipmentError(`Goship hỏa tốc: ${err.message}`, 502, 'QUOTE_FAILED')
+  }
+  const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
+  const options = rows
+    .map((r) => toExpressOption(r, { cod: codFor(order) }))
+    .filter(Boolean)
+    .sort((a, b) => a.fee - b.fee)
+    .map((o2) => ({ ...o2, preferred: !!order.shippingCarrier && same(o2.carrier, order.shippingCarrier) && same(o2.service, order.shippingService) }))
+  if (!options.length) throw new ShipmentError('Goship không có dịch vụ hỏa tốc cho tuyến này (hoặc số tiền thu hộ vượt mức tối đa của dịch vụ).', 422, 'NO_RATES')
+  const customerChoice = order.shippingCarrier ? { carrier: order.shippingCarrier, service: order.shippingService, fee: Number(order.shippingFee) } : null
+  return { options, customerChoice, express: true, drop, weightGrams: weightFor(order, settings), cod: codFor(order), subtotal: Number(order.subtotal) }
+}
+
 // Hỏi cước cho một đơn hàng cụ thể (để admin chọn hãng).
-export async function ratesForOrder(orderId, db = prisma, settingsIn) {
+export async function ratesForOrder(orderId, db = prisma, settingsIn, opts = {}) {
   const order = await loadOrderForShipment(db, orderId)
   const settings = settingsIn || (await getSettings())
   assertCreatable(order, settings)
+  // Đơn khách chọn giao HỎA TỐC: chỉ báo giá bằng API hỏa tốc (Ahamove, Grab), theo tọa độ.
+  if (order.deliveryType === 'EXPRESS' && settings.shipping.goship.expressEnabled) return expressRatesForOrder(order, settings, db, opts.drop, opts.persist !== false)
   const quote = await quoteShipping({
     settings,
     address: { province: order.province, district: order.district, ward: order.ward },
@@ -165,7 +209,22 @@ async function ensureGoshipCarrier(db) {
   })
 }
 
-export async function createShipmentForOrder({ orderId, rateId, actor = 'admin', settings: settingsIn, pickupMethod = null }, db = prisma) {
+// Lưu vận đơn vừa tạo bên Goship (dùng lại bản ghi của vận đơn đã hủy: mỗi đơn chỉ có một bản ghi), đưa đơn sang "Chờ giao hàng" và ghi nhật ký.
+function persistShipment(db, order, data, { note, local, fee, actor }) {
+  return inTx(db, async (tx) => {
+    const eventData = { status: LABEL[local] || local, note: `Đã tạo vận đơn thật qua ${note}` }
+    const shipment = order.shipment
+      ? await tx.shipment.update({ where: { id: order.shipment.id }, data: { ...data, trackingEvents: { create: eventData } } })
+      : await tx.shipment.create({ data: { ...data, orderId: order.id, trackingEvents: { create: eventData } } })
+    if (order.status !== 'AWAITING_SHIPMENT' && order.status !== 'SHIPPING') {
+      await tx.order.update({ where: { id: order.id }, data: { status: 'AWAITING_SHIPMENT', statusEvents: { create: { status: 'AWAITING_SHIPMENT', note: 'Đã tạo vận đơn qua Goship' } } } })
+    }
+    await tx.activityLog.create({ data: { entityType: 'shipment', shipmentId: shipment.id, orderId: order.id, action: 'create_shipment_goship', actor, note: `${note} · cước ${fee}đ` } })
+    return tx.shipment.findUniqueOrThrow({ where: { id: shipment.id }, include: { carrier: true, order: { include: { customer: true } }, trackingEvents: { orderBy: { createdAt: 'asc' } } } })
+  })
+}
+
+export async function createShipmentForOrder({ orderId, rateId, actor = 'admin', settings: settingsIn, pickupMethod = null, drop: dropOverride = null, dropConfirmed = false }, db = prisma) {
   if (creating.has(orderId)) throw new ShipmentError('Đang tạo vận đơn cho đơn này, vui lòng chờ.', 409, 'IN_PROGRESS')
   creating.add(orderId)
   try {
@@ -174,9 +233,10 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
     assertCreatable(order, settings)
 
     // Hỏi lại cước ngay bây giờ: mã lựa chọn chỉ có hiệu lực trong thời gian ngắn và giá có thể đã đổi.
-    const { options } = await ratesForOrder(orderId, db, settings)
+    const { options, drop } = await ratesForOrder(orderId, db, settings, { drop: dropOverride })
     const option = options.find((o) => o.id === rateId)
     if (!option) throw new ShipmentError('Cước vận chuyển đã thay đổi, vui lòng tải lại và chọn lại.', 409, 'RATE_CHANGED')
+    if (option.onDemand) return createOnDemandShipment({ db, order, settings, option, drop, dropConfirmed, actor })
 
     const g = settings.shipping.goship
     const from = await resolveAddressIds(g.origin)
@@ -215,6 +275,7 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
       sortingCode: str(created.sorting_code) || null,
       pickupMethod: pickupMethod || null, // ghi rõ cả khi rỗng: bản ghi dùng lại của vận đơn đã hủy phải bỏ lựa chọn cũ
       carrierCode: normCode(created.tracking_number) || null, // ghi rõ cả khi rỗng: bản ghi dùng lại của vận đơn đã hủy phải bỏ mã cũ
+      onDemand: false,
       carrierId: carrier.id,
       status: local,
       senderName: g.origin.name,
@@ -234,20 +295,64 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
       note,
     }
 
-    return await inTx(db, async (tx) => {
-      const eventData = { status: LABEL[local] || local, note: `Đã tạo vận đơn thật qua ${note}` }
-      const shipment = order.shipment
-        ? await tx.shipment.update({ where: { id: order.shipment.id }, data: { ...data, trackingEvents: { create: eventData } } }) // dùng lại bản ghi của vận đơn đã hủy (mỗi đơn chỉ có một bản ghi)
-        : await tx.shipment.create({ data: { ...data, orderId: order.id, trackingEvents: { create: eventData } } })
-      if (order.status !== 'AWAITING_SHIPMENT' && order.status !== 'SHIPPING') {
-        await tx.order.update({ where: { id: order.id }, data: { status: 'AWAITING_SHIPMENT', statusEvents: { create: { status: 'AWAITING_SHIPMENT', note: 'Đã tạo vận đơn qua Goship' } } } })
-      }
-      await tx.activityLog.create({ data: { entityType: 'shipment', shipmentId: shipment.id, orderId: order.id, action: 'create_shipment_goship', actor, note: `${note} · cước ${fee}đ` } })
-      return tx.shipment.findUniqueOrThrow({ where: { id: shipment.id }, include: { carrier: true, order: { include: { customer: true } }, trackingEvents: { orderBy: { createdAt: 'asc' } } } })
-    })
+    return persistShipment(db, order, data, { note, local, fee, actor })
   } finally {
     creating.delete(orderId)
   }
+}
+
+// Tạo đơn HỎA TỐC (Ahamove, Grab) qua API hỏa tốc của Goship. Shipper được điều tới lấy NGAY sau khi tạo, nên hàng phải sẵn sàng trước.
+// Điểm giao chỉ tra được tới phường/quận (không chính xác) thì bắt buộc nhân viên xác nhận đã kiểm tra vị trí trên bản đồ (dropConfirmed).
+async function createOnDemandShipment({ db, order, settings, option, drop, dropConfirmed, actor }) {
+  const g = settings.shipping.goship
+  if (!isExactDrop(drop) && !dropConfirmed) {
+    throw new ShipmentError('Vị trí giao hàng mới chỉ tìm được tới cấp phường/quận nên chưa đủ chính xác để điều shipper. Hãy kiểm tra trên bản đồ (hoặc nhập tọa độ chính xác) rồi xác nhận.', 409, 'APPROX_LOCATION')
+  }
+  const body = buildOndemandShipmentBody({ order, settings, option, from: { lat: g.origin.lat, lng: g.origin.lng }, to: drop, weightGrams: weightFor(order, settings), cod: codFor(order) })
+  let created
+  try {
+    created = await createOndemandShipment(body)
+  } catch (err) {
+    if (!(err instanceof GoshipError)) throw err
+    // Mất kết nối giữa chừng: Goship có thể đã tạo rồi. Tra theo mã đơn của mình để không điều shipper hai lần.
+    if (!err.network) throw new ShipmentError(err.message, 502, 'GOSHIP_REJECTED')
+    const found = await getOndemandShipment(order.orderNumber).catch(() => null)
+    if (!found) throw new ShipmentError('Không kết nối được Goship, chưa tạo đơn hỏa tốc. Vui lòng thử lại.', 502, 'NETWORK')
+    created = { id: found.id, code: found.code, status: found.status }
+  }
+  const gcode = str(created.id)
+  const status = Number(created.status)
+  if (!gcode || status === 1000 || created.error) {
+    if (gcode) await cancelOndemandShipment(gcode).catch(() => {}) // đã tạo dở bên Goship: hủy để không điều shipper
+    throw new ShipmentError(`Hãng hỏa tốc từ chối đơn${created.error_text || created.error ? `: ${str(created.error_text || created.error)}` : '.'}`, 422, 'CARRIER_ERROR')
+  }
+  const carrier = await ensureGoshipCarrier(db)
+  const note = `Goship Hỏa tốc · ${option.carrier}${created.code ? ` · mã hãng: ${created.code}` : ''}`
+  const data = {
+    trackingId: gcode,
+    sortingCode: null,
+    pickupMethod: 'PICKUP', // shipper tới lấy ngay: không có lựa chọn mang ra bưu cục
+    carrierCode: normCode(created.code) || null, // hãng thường chưa có mã ngay: webhook sẽ bổ sung
+    onDemand: true,
+    carrierId: carrier.id,
+    status: mapOndemandStatus(status).local || 'AWAITING_PICKUP',
+    senderName: g.origin.name,
+    recipientName: order.recipientName,
+    recipientPhone: order.recipientPhone,
+    addressLine: order.addressLine,
+    ward: order.ward,
+    district: order.district,
+    province: order.province,
+    weightGrams: weightFor(order, settings),
+    lengthCm: 1,
+    widthCm: 1,
+    heightCm: 1,
+    goodsType: null,
+    shippingFee: option.fee,
+    codAmount: codFor(order),
+    note,
+  }
+  return persistShipment(db, order, data, { note, local: data.status, fee: option.fee, actor })
 }
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -259,7 +364,8 @@ export async function cancelOnGoship(shipment) {
   if (shipment.carrier?.code !== GOSHIP_CARRIER_CODE) return { cancelledRemote: false }
   if (!goshipConfigured()) throw new ShipmentError('Chưa có GOSHIP_TOKEN nên không hủy được vận đơn bên Goship.', 503, 'GOSHIP_OFF')
   try {
-    await cancelGoshipShipment(shipment.trackingId)
+    if (shipment.onDemand) await cancelOndemandShipment(shipment.trackingId)
+    else await cancelGoshipShipment(shipment.trackingId)
     return { cancelledRemote: true }
   } catch (err) {
     if (!(err instanceof GoshipError)) throw err
@@ -308,6 +414,8 @@ export function normalizeWebhook(raw) {
     fee: num(p.fee),
     trackingUrl: str(p.tracking_url),
     carrierShortName: str(p.carrier_short_name),
+    // Webhook của đơn HỎA TỐC có mã trạng thái KHÁC đơn thường (905 = đang giao thay vì đã giao): phải tách theo cờ này.
+    onDemand: p.is_ondemand_shipment === true || p.is_ondemand_shipment === 'true' || p.is_ondemand_shipment === 1,
   }
 }
 
@@ -338,14 +446,17 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
   })
   if (!shipment) return { handled: false, reason: 'unknown_shipment' }
 
-  if (!verified) {
+  // Loại đơn lấy theo bản ghi của mình (đáng tin hơn nội dung gửi tới). Webhook nói khác loại với bản ghi thì không tin nội dung, hỏi lại API đúng loại.
+  const od = shipment.onDemand
+  const trusted = verified && p.onDemand === od
+  if (!trusted) {
     if (!goshipConfigured()) return { handled: false, reason: 'unverified_no_token' }
-    const remote = await searchGoshipShipment(shipment.trackingId).catch(() => null)
+    const remote = await (od ? getOndemandShipment(shipment.trackingId) : searchGoshipShipment(shipment.trackingId)).catch(() => null)
     if (!remote) return { handled: false, reason: 'unverified_not_found' }
-    p = fromApiShipment(remote, p)
+    p = od ? fromApiOndemand(remote, p) : fromApiShipment(remote, p)
   }
 
-  const info = mapGoshipStatus(p.status)
+  const info = od ? mapOndemandStatus(p.status) : mapGoshipStatus(p.status)
   const label = p.statusText || info.text || LABEL[info.local] || (p.status ? `Trạng thái ${p.status}` : '')
   if (!label) return { handled: false, reason: 'no_status' }
   const note = [p.message, p.description].filter(Boolean).join(' · ') || null
@@ -382,8 +493,8 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
       await tx.order.update({ where: { id: shipment.orderId }, data: { status: order, statusEvents: { create: { status: order, note: `Cập nhật từ vận chuyển (Goship): ${label}` } } } })
     }
     if (changes.status || order || !duplicate) {
-      await tx.activityLog.create({ data: { entityType: 'shipment', shipmentId: shipment.id, orderId: shipment.orderId, action: `goship_${p.status || 'event'}`, actor: 'goship', note: `${verified ? 'webhook' : 'đối chiếu API'}: ${label}` } })
+      await tx.activityLog.create({ data: { entityType: 'shipment', shipmentId: shipment.id, orderId: shipment.orderId, action: `goship_${p.status || 'event'}`, actor: 'goship', note: `${trusted ? 'webhook' : 'đối chiếu API'}: ${label}` } })
     }
-    return { handled: true, status: changes.status || shipment.status, orderStatus: order, duplicate: Boolean(duplicate), verified }
+    return { handled: true, status: changes.status || shipment.status, orderStatus: order, duplicate: Boolean(duplicate), verified: trusted }
   })
 }

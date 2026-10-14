@@ -48,9 +48,11 @@ export const DEFAULTS = {
       enabled: false,
       // createShipments: cho phép admin tạo vận đơn THẬT qua Goship (phát sinh cước). Mặc định tắt.
       createShipments: false,
+      // expressEnabled: bán giao HỎA TỐC (API hỏa tốc của Goship: Ahamove, Grab) cho khách cùng tỉnh/thành với kho. Cần tọa độ kho (origin.lat/lng).
+      expressEnabled: false,
       defaultWeightGrams: 4000,
       // origin: kho gửi hàng. province/district/ward dùng để tính cước; street/name/phone là thông tin người gửi trên vận đơn.
-      origin: { province: '', district: '', ward: '', street: '', name: '', phone: '' },
+      origin: { province: '', district: '', ward: '', street: '', name: '', phone: '', lat: null, lng: null },
     },
   },
   // Quy tắc vòng đời đơn hàng (kiểu Shopee). Số 0 = tắt quy tắc đó.

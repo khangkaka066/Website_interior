@@ -18,13 +18,17 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [pickup, setPickup] = usePickupMethod()
+  // Hỏa tốc: tọa độ điểm giao nhân viên nhập tay (thay cho tọa độ tự tra), và xác nhận đã kiểm tra vị trí trên bản đồ.
+  const [manual, setManual] = useState({ lat: '', lng: '', active: null })
+  const [locationOk, setLocationOk] = useState(false)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (override) => {
     setState((s) => ({ ...s, loading: true, error: '' }))
     setError('')
     try {
-      const data = await api.get(`/shipping/goship/orders/${order.id}/rates`)
-      setState({ loading: false, options: data.options, weightGrams: data.weightGrams, cod: data.cod, customerChoice: data.customerChoice, error: '', code: '' })
+      const q = override ? `?dropLat=${override.lat}&dropLng=${override.lng}` : ''
+      const data = await api.get(`/shipping/goship/orders/${order.id}/rates${q}`)
+      setState({ loading: false, options: data.options, weightGrams: data.weightGrams, cod: data.cod, customerChoice: data.customerChoice, express: !!data.express, drop: data.drop, error: '', code: '' })
       // Mặc định phương án rẻ nhất cùng loại với đơn: đơn hỏa tốc chọn dịch vụ hỏa tốc, đơn thường tránh dịch vụ hỏa tốc đắt hơn (danh sách đã xếp rẻ trước).
       // Khách đã chọn hãng nào lúc đặt hàng thì ưu tiên đúng hãng + gói đó.
       const wantExpress = order.deliveryType === 'EXPRESS'
@@ -39,14 +43,24 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
     load()
   }, [load])
 
+  const exact = !state.express || ['manual', 'saved', 'address'].includes(state.drop?.level)
+  const applyManual = () => {
+    const lat = Number(String(manual.lat).replace(',', '.'))
+    const lng = Number(String(manual.lng).replace(',', '.'))
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return setError('Nhập vĩ độ và kinh độ hợp lệ (ví dụ 10.7769 và 106.7009).')
+    setManual((m) => ({ ...m, active: { lat, lng } }))
+    setLocationOk(false)
+    load({ lat, lng })
+  }
+
   const picked = state.options.find((o) => o.id === rateId)
 
   async function handleCreate() {
-    if (!picked || !confirmed) return
+    if (!picked || !confirmed || (state.express && !exact && !locationOk)) return
     setSubmitting(true)
     setError('')
     try {
-      const shipment = await api.post(`/shipping/goship/orders/${order.id}/shipment`, { rateId: picked.id, confirm: true, pickupMethod: pickup })
+      const shipment = await api.post(`/shipping/goship/orders/${order.id}/shipment`, { rateId: picked.id, confirm: true, pickupMethod: pickup, ...(state.express ? { dropConfirmed: locationOk, ...(manual.active ? { dropLat: manual.active.lat, dropLng: manual.active.lng } : {}) } : {}) })
       onCreated(shipment)
     } catch (err) {
       setSubmitting(false)
@@ -112,13 +126,39 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
           </div>
         )}
 
-        {!state.loading && !state.error && <PickupMethod value={pickup} onChange={setPickup} disabled={submitting} />}
+        {state.express && (
+          <div style={{ marginTop: '12px', padding: '10px 12px', background: 'var(--dash-warn-bg, #fff4e5)', fontSize: '13px' }}>
+            <strong>Đơn HỎA TỐC.</strong> Ngay khi bấm tạo, Goship điều <strong>shipper xe máy tới lấy hàng ngay</strong> (không hẹn giờ được). Hãy chắc chắn hàng đã nhặt và đóng gói xong, người nhận đã sẵn sàng.
+          </div>
+        )}
+        {state.express && state.drop && (
+          <div style={{ marginTop: '12px', fontSize: '13px' }}>
+            <div>
+              <strong>Điểm giao (tọa độ):</strong> {Number(state.drop.lat).toFixed(5)}, {Number(state.drop.lng).toFixed(5)} ·{' '}
+              {state.drop.level === 'manual' ? 'do nhân viên nhập' : state.drop.level === 'saved' ? 'đã kiểm tra trước đó' : state.drop.level === 'address' ? 'tra theo địa chỉ có số nhà' : state.drop.level === 'ward' ? 'CHỈ tới cấp phường/xã' : 'CHỈ tới cấp quận/huyện'}{' '}
+              <a href={`https://www.google.com/maps?q=${state.drop.lat},${state.drop.lng}`} target="_blank" rel="noopener noreferrer">Mở bản đồ kiểm tra ↗</a>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
+              <span>Sai vị trí? Nhập tọa độ đúng:</span>
+              <input className="dash-input" style={{ width: '120px' }} placeholder="Vĩ độ" value={manual.lat} onChange={(e) => setManual({ ...manual, lat: e.target.value })} />
+              <input className="dash-input" style={{ width: '120px' }} placeholder="Kinh độ" value={manual.lng} onChange={(e) => setManual({ ...manual, lng: e.target.value })} />
+              <button type="button" className="dash-btn dash-btn-ghost" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={applyManual} disabled={submitting}>Dùng tọa độ này</button>
+            </div>
+            {!exact && (
+              <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '10px', color: 'var(--dash-danger, #c0392b)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={locationOk} onChange={(e) => setLocationOk(e.target.checked)} style={{ marginTop: '3px' }} />
+                <span>Vị trí mới tìm được tới cấp phường/quận nên có thể lệch. Tôi đã kiểm tra trên bản đồ (hoặc nhập tọa độ chính xác) và xác nhận điều shipper tới đúng nơi.</span>
+              </label>
+            )}
+          </div>
+        )}
+        {!state.loading && !state.error && !state.express && <PickupMethod value={pickup} onChange={setPickup} disabled={submitting} />}
 
         {picked && (
           <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '16px', padding: '10px 12px', background: 'var(--dash-warn-bg, #fff4e5)', fontSize: '13px', cursor: 'pointer' }}>
             <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} style={{ marginTop: '3px' }} />
             <span>
-              Tôi hiểu đây là <strong>vận đơn thật</strong> qua <strong>{picked.carrier}</strong>, cước khoảng <strong>{money(picked.originalFee ?? picked.fee)}</strong> do shop trả. Cách giao hàng: <strong>{PICKUP_LABEL[pickup]}</strong>.
+              Tôi hiểu đây là <strong>vận đơn thật</strong> qua <strong>{picked.carrier}</strong>, cước khoảng <strong>{money(picked.originalFee ?? picked.fee)}</strong> do shop trả. {state.express ? <>Shipper được điều tới lấy <strong>ngay</strong>.</> : <>Cách giao hàng: <strong>{PICKUP_LABEL[pickup]}</strong>.</>}
               Chỉ hủy được khi hãng chưa lấy hàng.
             </span>
           </label>
@@ -133,8 +173,8 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
             </button>
           )}
           <button className="dash-btn dash-btn-ghost" onClick={onClose} disabled={submitting}>Hủy</button>
-          <button className="dash-btn" onClick={handleCreate} disabled={!picked || !confirmed || submitting}>
-            {submitting ? 'Đang chuẩn bị…' : 'Chuẩn bị hàng và in tem'}
+          <button className="dash-btn" onClick={handleCreate} disabled={!picked || !confirmed || submitting || (state.express && !exact && !locationOk)}>
+            {submitting ? 'Đang chuẩn bị…' : state.express ? 'Điều shipper và in tem' : 'Chuẩn bị hàng và in tem'}
           </button>
         </div>
       </div>

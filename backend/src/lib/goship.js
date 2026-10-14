@@ -161,3 +161,41 @@ export function _resetGoshipCache() {
   cache.clear()
   inflight.clear()
 }
+
+// ---- Đơn giao hỏa tốc (https://doc.goship.io/api/ondemand-shipment): Ahamove, Grab. Dùng tọa độ thay cho mã tỉnh/quận/phường. ----
+// Cũng PHÁT SINH CƯỚC THẬT khi tạo. Hỏa tốc LUÔN điều shipper tới lấy ngay sau khi tạo (không có lịch hẹn lấy hàng).
+
+// Báo cước hỏa tốc: body { paths: [{ lat, lng, kind: 1 }, { lat, lng, kind: 2, parcel }], services? }.
+export async function requestOndemandRates(body) {
+  const { res, json } = await goshipCall('POST', '/ondemand-shipments/rates', body)
+  if (!res.ok || !Array.isArray(json?.data)) {
+    const detail = json?.data?.errors ? Object.values(json.data.errors).flat().join('; ') : ''
+    throw new GoshipError(detail || json?.message || `Goship hỏa tốc trả lỗi (HTTP ${res.status}).`, 502)
+  }
+  return json.data
+}
+
+export async function createOndemandShipment(body) {
+  const { res, json } = await goshipCall('POST', '/ondemand-shipments', body)
+  if (!res.ok || !json || json.status === 'error') {
+    const detail = json?.data?.errors ? Object.values(json.data.errors).flat().join('; ') : ''
+    throw new GoshipError(detail || json?.message || `Goship từ chối tạo đơn hỏa tốc (HTTP ${res.status}).`, 502)
+  }
+  return json.data && !Array.isArray(json.data) && typeof json.data === 'object' ? json.data : json
+}
+
+export async function cancelOndemandShipment(id) {
+  if (!isGoshipCode(id)) throw new GoshipError('Mã đơn hỏa tốc Goship không hợp lệ.', 400)
+  const { res, json } = await goshipCall('DELETE', `/ondemand-shipments/${encodeURIComponent(id)}`)
+  if (res.ok && (json?.code === 200 || json?.status === 'success')) return true
+  throw new GoshipError(json?.message || (typeof json?.data === 'string' ? json.data : '') || `Goship không hủy được đơn hỏa tốc (HTTP ${res.status}).`, res.status === 404 || json?.code === 404 ? 404 : 502)
+}
+
+// Tra đơn hỏa tốc theo mã Goship / mã đơn của mình / mã hãng.
+export async function getOndemandShipment(code) {
+  if (!isGoshipCode(code)) return null
+  const { res, json } = await goshipCall('GET', `/ondemand-shipments/${encodeURIComponent(code)}`)
+  if (!res.ok || !json) throw new GoshipError(`Goship không tra cứu được đơn hỏa tốc (HTTP ${res.status}).`, 502)
+  const d = json.data
+  return Array.isArray(d) ? d[0] || null : d && typeof d === 'object' ? d : null
+}

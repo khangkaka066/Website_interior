@@ -251,7 +251,7 @@ export async function createOrder(req, res) {
       return tx.order.create({
         data: {
           stockReserved: reserved,
-          deliveryType: classifyDelivery({ province, service: shipping.service }, settings),
+          deliveryType: shipping.express ? 'EXPRESS' : classifyDelivery({ province, service: shipping.service }, settings),
           shippingService: shipping.service || null,
           shippingCarrier: shipping.carrier || null,
           orderNumber: generateOrderNumber(),
