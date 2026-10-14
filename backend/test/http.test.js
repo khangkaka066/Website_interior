@@ -49,7 +49,7 @@ describe('yêu cầu đăng nhập', () => {
     ['POST', '/api/admin-products/sync'], ['GET', '/api/analytics/overview'], ['GET', '/api/payments'],
     ['GET', '/api/posts'], ['POST', '/api/posts'], ['PATCH', '/api/posts/x'], ['DELETE', '/api/posts/x'],
     ['GET', '/api/discounts'], ['GET', '/api/seo/status'], ['POST', '/api/seo/keywords'], ['GET', '/api/seo/jobs/x'], ['GET', '/api/seo/jobs/current'], ['POST', '/api/seo/jobs/x/cancel'], ['PUT', '/api/discounts'], ['POST', '/api/discounts/import'], ['GET', '/api/account/profile'], ['PATCH', '/api/account/profile'], ['POST', '/api/account/password'], ['GET', '/api/account/orders'],
-    ['POST', '/api/orders/bulk-status'], ['PATCH', '/api/orders/reviews/x'], ['POST', '/api/orders/x/cancel-request/approve'], ['POST', '/api/orders/x/cancel-request/reject'], ['POST', '/api/orders/x/return/approve'], ['POST', '/api/orders/x/return/reject'], ['POST', '/api/shipping/goship/bulk-shipments'], ['PUT', '/api/settings/orders'],
+    ['POST', '/api/orders/bulk-status'], ['GET', '/api/orders/workload'], ['GET', '/api/orders/pack-queue'], ['POST', '/api/orders/scan-pack'], ['GET', '/api/shipping/handovers'], ['POST', '/api/shipping/handovers'], ['GET', '/api/shipping/handovers/x'], ['POST', '/api/orders/x/prepare'], ['PATCH', '/api/orders/reviews/x'], ['POST', '/api/orders/x/cancel-request/approve'], ['POST', '/api/orders/x/cancel-request/reject'], ['POST', '/api/orders/x/return/approve'], ['POST', '/api/orders/x/return/reject'], ['POST', '/api/shipping/goship/bulk-shipments'], ['PUT', '/api/settings/orders'],
     ['POST', '/api/account/orders/ORD-1/cancel'], ['POST', '/api/account/orders/ORD-1/received'], ['POST', '/api/account/orders/ORD-1/return'], ['POST', '/api/account/orders/ORD-1/reviews'],
     ['GET', '/api/account/orders/ORD-1'], ['POST', '/api/account/orders/claim'], ['GET', '/api/account/addresses'],
     ['POST', '/api/account/addresses'], ['PATCH', '/api/account/addresses/x'], ['DELETE', '/api/account/addresses/x'],
@@ -141,6 +141,22 @@ describe('công khai', () => {
     const opts = json(await call('/api/shop/payment-options'))
     assert.ok(opts.methods.some((m) => m.id === 'COD'))
     assert.ok(!opts.methods.some((m) => m.id === 'PAYOS'), 'PayOS ẩn khi chưa có khóa')
+  })
+  test('PayOS đã bật: khách chỉ thấy COD và Chuyển khoản (chạy bằng PayOS, không ghi tên PayOS, ẩn chuyển khoản thủ công)', async () => {
+    const keys = ['PAYOS_CLIENT_ID', 'PAYOS_API_KEY', 'PAYOS_CHECKSUM_KEY']
+    const saved = keys.map((k) => process.env[k])
+    keys.forEach((k) => (process.env[k] = 'test'))
+    try {
+      const opts = json(await call('/api/shop/payment-options'))
+      assert.ok(opts.methods.some((m) => m.id === 'COD'))
+      assert.ok(opts.methods.some((m) => m.id === 'PAYOS'))
+      assert.ok(!opts.methods.some((m) => m.id === 'Chuyển khoản'), 'chuyển khoản thủ công bị ẩn khi đã có PayOS')
+      const payos = opts.methods.find((m) => m.id === 'PAYOS')
+      assert.equal(payos.label, 'Chuyển khoản ngân hàng')
+      assert.ok(!/payos/i.test(payos.label + payos.description))
+    } finally {
+      keys.forEach((k, i) => (saved[i] === undefined ? delete process.env[k] : (process.env[k] = saved[i])))
+    }
   })
   test('sản phẩm: danh sách và 404 khi không có', async () => {
     const list = json(await call('/api/shop/products'))

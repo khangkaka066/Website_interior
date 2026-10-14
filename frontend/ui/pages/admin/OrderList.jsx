@@ -7,7 +7,7 @@ import { api } from '../../api'
 import PrintOrdersModal from '../../components/dashboard/orders/PrintOrdersModal'
 import { ORDER_STATUS, PAYMENT_STATUS, orderStatusLabel, paymentStatusLabel } from '../../constants/orderStatus'
 import { formatCurrency, formatDate, dueIn } from '../../utils/format'
-import ConfirmModal from '../../components/dashboard/ConfirmModal'
+import PickupMethod, { usePickupMethod, PICKUP_LABEL } from '../../components/dashboard/orders/PickupMethod'
 import DeliveryBadge, { DELIVERY_LABEL } from '../../components/DeliveryBadge'
 
 const PAGE_SIZE = 10
@@ -17,12 +17,13 @@ function DueCell({ order }) {
   const due = dueIn(order.handleDueAt)
   const cancelAsk = !!order.cancelRequestedAt
   const returnAsk = order.returnRequest?.status === 'REQUESTED'
-  if (!due && !cancelAsk && !returnAsk) return <span>—</span>
+  if (!due && !cancelAsk && !returnAsk && !order.pickupOverdue) return <span>—</span>
   return (
     <div style={{ fontSize: '12px', lineHeight: 1.5 }}>
       {due && <div style={{ color: due.overdue ? 'var(--dash-danger, #c0392b)' : due.soon ? '#b26a00' : 'inherit', fontWeight: due.overdue || due.soon ? 600 : 400 }}>{due.text}</div>}
       {cancelAsk && <span className="order-status-badge status-cancelled">Khách xin hủy</span>}
       {returnAsk && <span className="order-status-badge status-cancelled">Khách xin trả hàng</span>}
+      {order.pickupOverdue && <span className="order-status-badge status-cancelled" title="Hãng chưa lấy hàng quá thời gian cho phép">Hãng chưa lấy hàng</span>}
     </div>
   )
 }
@@ -43,7 +44,11 @@ export default function OrderList() {
   const [bulkMsg, setBulkMsg] = useState(null) // { ok, text, failed: [...] } sau khi chạy thao tác hàng loạt
   const [bulkBusy, setBulkBusy] = useState(false)
   const [goshipReady, setGoshipReady] = useState(false)
-  const [confirmShip, setConfirmShip] = useState(false)
+  const [work, setWork] = useState(null) // khối lượng việc + giờ chốt đơn hôm nay
+  const [now, setNow] = useState(() => Date.now())
+  const [prepareOpen, setPrepareOpen] = useState(false) // khung "Chuẩn bị hàng" hàng loạt
+  const [pickup, setPickup] = usePickupMethod()
+  const [feeOk, setFeeOk] = useState(false)
   const [printIds, setPrintIds] = useState(null) // mở khung xem trước phiếu in khi có giá trị
   const [selected, setSelected] = useState(() => new Set()) // id các đơn được chọn để in (giữ khi sang trang khác)
 
@@ -106,6 +111,16 @@ export default function OrderList() {
   const totalPages = Math.ceil(data.total / PAGE_SIZE)
 
   useEffect(() => {
+    const load = () => api.get('/orders/workload').then(setWork).catch(() => {})
+    load()
+    const t = setInterval(() => {
+      setNow(Date.now())
+      if (document.visibilityState === 'visible') load()
+    }, 60000)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
     api.get('/shipping/goship/config').then((c) => setGoshipReady(Boolean(c.ready))).catch(() => setGoshipReady(false))
   }, [])
 
@@ -126,7 +141,19 @@ export default function OrderList() {
     }
   }
   const bulkStatus = (status, label) => runBulk(label, (ids) => api.post('/orders/bulk-status', { ids, status }))
-  const bulkShip = () => runBulk('Tạo vận đơn Goship', (ids) => api.post('/shipping/goship/bulk-shipments', { orderIds: ids, confirm: true }))
+  // "Chuẩn bị hàng" hàng loạt như Shopee: xác nhận, sang Đang xử lý, tạo vận đơn Goship (cước rẻ nhất) rồi mở tem các đơn thành công để in.
+  // Chưa bật tạo vận đơn thật thì chỉ chuyển các đơn sang Đang xử lý.
+  async function bulkPrepare() {
+    setPrepareOpen(false)
+    if (!goshipReady) return bulkStatus('PROCESSING', 'Chuẩn bị hàng')
+    const okIds = []
+    await runBulk('Chuẩn bị hàng và tạo vận đơn', async (ids) => {
+      const res = await api.post('/shipping/goship/bulk-shipments', { orderIds: ids, confirm: true, pickupMethod: pickup })
+      okIds.push(...res.results.filter((r) => r.ok).map((r) => r.orderId))
+      return res
+    })
+    if (okIds.length) setPrintIds(okIds)
+  }
 
   const toggleOne = (id) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const pageIds = data.items.map((o) => o.id)
@@ -142,6 +169,27 @@ export default function OrderList() {
       <div className="dash-card-head" style={{ marginBottom: '12px' }}>
         <span className="dash-tag">{data.total} đơn hàng</span>
       </div>
+
+      {work && (
+        <div className="dash-card" style={{ padding: '12px 16px', marginBottom: '12px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', fontSize: '13px' }}>
+          {work.cutoffAt && (() => {
+            const left = dueIn(work.cutoffAt, now)
+            return (
+              <span style={{ fontWeight: 600, color: left.overdue ? 'var(--dash-muted)' : left.soon ? '#b26a00' : 'inherit' }}>
+                ⏰ Chốt đơn lấy hàng hôm nay lúc {new Date(work.cutoffAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}: {left.overdue ? 'đã qua giờ chốt, đơn xử lý bây giờ sẽ được lấy vào ngày làm việc kế tiếp' : left.text}
+              </span>
+            )
+          })()}
+          <span>Cần xử lý: <strong>{work.needsAction}</strong>{work.overdue > 0 && <> (<strong style={{ color: 'var(--dash-danger, #c0392b)' }}>{work.overdue} quá hạn</strong>)</>}</span>
+          <span>Chưa chuẩn bị: <strong>{work.toPrepare}</strong></span>
+          <span>Chờ đóng gói: <strong>{work.toPack}</strong></span>
+          <span>Chờ bàn giao: <strong>{work.toHandover}</strong></span>
+          <span style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+            <button className="dash-btn dash-btn-ghost" style={{ padding: '6px 14px', fontSize: '12px' }} onClick={() => navigate('/dashboard/orders/pack')}>Đóng gói (quét mã)</button>
+            <button className="dash-btn dash-btn-ghost" style={{ padding: '6px 14px', fontSize: '12px' }} onClick={() => navigate('/dashboard/shipping/handover')}>Bàn giao cho hãng</button>
+          </span>
+        </div>
+      )}
 
       <div className="dash-toolbar">
         <input
@@ -169,7 +217,8 @@ export default function OrderList() {
         <select value={paymentMethod} onChange={(e) => { setPaymentMethod(e.target.value); setPage(1) }} className="dash-select">
           <option value="">Phương thức TT</option>
           <option value="COD">COD</option>
-          <option value="Chuyển khoản">Chuyển khoản</option>
+          <option value="Chuyển khoản">Chuyển khoản (thủ công)</option>
+          <option value="PAYOS">Chuyển khoản (PayOS)</option>
         </select>
         <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} className="dash-input" />
         <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} className="dash-input" />
@@ -192,8 +241,7 @@ export default function OrderList() {
         <div className="dash-card" style={{ padding: '12px 16px', marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <strong style={{ fontSize: '13px' }}>Đã chọn {selected.size} đơn</strong>
           <button className="dash-btn" disabled={bulkBusy} onClick={() => bulkStatus('CONFIRMED', 'Xác nhận đơn')}>Xác nhận đơn</button>
-          <button className="dash-btn" disabled={bulkBusy} onClick={() => bulkStatus('PROCESSING', 'Chuẩn bị hàng')}>Chuẩn bị hàng</button>
-          {goshipReady && <button className="dash-btn" disabled={bulkBusy} onClick={() => setConfirmShip(true)}>Tạo vận đơn Goship</button>}
+          <button className="dash-btn" disabled={bulkBusy} onClick={() => { setFeeOk(false); setPrepareOpen(true) }}>Chuẩn bị hàng</button>
           <button className="dash-btn dash-btn-ghost" disabled={bulkBusy} onClick={handlePrint}>In đơn</button>
           <button className="dash-btn dash-btn-ghost" disabled={bulkBusy} onClick={() => setSelected(new Set())}>Bỏ chọn</button>
         </div>
@@ -295,14 +343,34 @@ export default function OrderList() {
         </>
       )}
 
-      {confirmShip && (
-        <ConfirmModal
-          title="Tạo vận đơn Goship hàng loạt"
-          message={`Tạo vận đơn THẬT cho ${selected.size} đơn đã chọn. Mỗi đơn lấy phương án có cước rẻ nhất hiện có và phát sinh cước thật trên Goship. Chỉ đơn đang ở "Đang xử lý" hoặc "Chờ giao hàng" mới tạo được.`}
-          confirmLabel="Tạo vận đơn"
-          onConfirm={async () => { setConfirmShip(false); await bulkShip() }}
-          onClose={() => setConfirmShip(false)}
-        />
+      {prepareOpen && (
+        <div className="dash-modal-overlay" onClick={() => setPrepareOpen(false)}>
+          <div className="dash-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="dash-modal-head">
+              <h3>Chuẩn bị hàng — {selected.size} đơn</h3>
+              <button className="dash-modal-close" onClick={() => setPrepareOpen(false)}>✕</button>
+            </div>
+            {goshipReady ? (
+              <>
+                <p style={{ fontSize: '13px', margin: 0 }}>
+                  Với mỗi đơn đã chọn, hệ thống sẽ <strong>xác nhận đơn, chuyển sang Đang xử lý và tạo vận đơn Goship</strong> (chọn phương án cước rẻ nhất; đơn hỏa tốc chỉ chọn dịch vụ hỏa tốc), rồi mở tem để bạn in và đi nhặt hàng.
+                  Đơn chuyển khoản chưa thanh toán sẽ bị bỏ qua.
+                </p>
+                <PickupMethod value={pickup} onChange={setPickup} />
+                <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '14px', padding: '10px 12px', background: 'var(--dash-warn-bg, #fff4e5)', fontSize: '13px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={feeOk} onChange={(e) => setFeeOk(e.target.checked)} style={{ marginTop: '3px' }} />
+                  <span>Tôi hiểu đây là <strong>vận đơn thật</strong> và phát sinh cước thật trên Goship. Cách giao hàng: <strong>{PICKUP_LABEL[pickup]}</strong>.</span>
+                </label>
+              </>
+            ) : (
+              <p style={{ fontSize: '13px' }}>Chưa bật tạo vận đơn thật qua Goship (Cài đặt, Vận chuyển), nên thao tác này chỉ chuyển các đơn sang <strong>Đang xử lý</strong>. Bạn tạo vận đơn thủ công ở chi tiết từng đơn.</p>
+            )}
+            <div className="dash-modal-actions">
+              <button className="dash-btn dash-btn-ghost" onClick={() => setPrepareOpen(false)}>Hủy</button>
+              <button className="dash-btn" disabled={goshipReady && !feeOk} onClick={bulkPrepare}>{goshipReady ? 'Chuẩn bị hàng và in tem' : 'Chuyển sang Đang xử lý'}</button>
+            </div>
+          </div>
+        </div>
       )}
       {printIds && <PrintOrdersModal ids={printIds} onClose={() => setPrintIds(null)} />}
     </AdminLayout>

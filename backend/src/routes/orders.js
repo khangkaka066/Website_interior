@@ -18,6 +18,10 @@ import {
   approveReturnRequest,
   rejectReturnRequest,
   setReviewHidden,
+  prepareOrder,
+  scanPackOrder,
+  packQueueOrders,
+  ordersWorkload,
 } from '../controllers/orders.js'
 import { cancelMyOrder, receiveMyOrder, returnMyOrder, reviewMyOrder } from '../controllers/customerOrders.js'
 import { requirePermission } from '../middleware/auth.js'
@@ -25,7 +29,7 @@ import { orderLimiter, trackLimiter, quoteLimiter } from '../middleware/security
 import { validate } from '../middleware/validate.js'
 import { createOrderSchema, payosRelinkSchema, shippingQuoteSchema, cancelMyOrderSchema, receiveMyOrderSchema, returnMyOrderSchema, reviewMyOrderSchema } from '../schemas/orders.js'
 
-import { orderStatusSchema, noteOnlySchema, bulkOrderStatusSchema, optionalNoteSchema, requiredNoteSchema, reviewHiddenSchema } from '../schemas/admin.js'
+import { orderStatusSchema, noteOnlySchema, bulkOrderStatusSchema, optionalNoteSchema, requiredNoteSchema, reviewHiddenSchema, scanPackSchema } from '../schemas/admin.js'
 
 const router = Router()
 const guard = requirePermission('orders')
@@ -46,10 +50,14 @@ router.post('/self/reviews', trackLimiter, validate(reviewMyOrderSchema), asyncH
 
 router.get('/', guard, asyncHandler(listOrders))
 router.get('/status-counts', guard, asyncHandler(orderStatusCounts))
+router.get('/workload', guard, asyncHandler(ordersWorkload))
+router.get('/pack-queue', guard, asyncHandler(packQueueOrders))
+router.post('/scan-pack', guard, validate(scanPackSchema), asyncHandler(scanPackOrder))
 router.post('/bulk-status', guard, validate(bulkOrderStatusSchema), asyncHandler(bulkOrderStatus))
 router.patch('/reviews/:reviewId', guard, validate(reviewHiddenSchema), asyncHandler(setReviewHidden))
 router.get('/:id', guard, asyncHandler(getOrder))
 router.patch('/:id/status', guard, validate(orderStatusSchema), asyncHandler(updateOrderStatus))
+router.post('/:id/prepare', guard, asyncHandler(prepareOrder))
 router.post('/:id/confirm', guard, validate(noteOnlySchema), asyncHandler(confirmOrder))
 router.post('/:id/cancel', guard, validate(noteOnlySchema), asyncHandler(cancelOrder))
 router.post('/:id/refund', guard, validate(noteOnlySchema), asyncHandler(refundOrder))

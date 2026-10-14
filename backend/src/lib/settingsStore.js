@@ -69,6 +69,14 @@ export const DEFAULTS = {
     autoReceiveDays: 7,
     returnWindowDays: 7,
     expressKeywords: 'hỏa tốc, hoả tốc, instant, trong ngày, siêu tốc, same day',
+    // Tự xác nhận đơn hợp lệ (đã thanh toán, hoặc COD không quá autoConfirmCodMax đồng; 0 = COD luôn do nhân viên xác nhận), sau autoConfirmDelayMinutes phút
+    // (để khách còn kịp hủy ngay). pickupCutoff: giờ chốt đơn để hãng lấy hàng trong ngày ("HH:MM", rỗng = không dùng).
+    // pickupAlertHours: cảnh báo khi hãng chưa lấy hàng sau chừng này giờ kể từ lúc tạo vận đơn.
+    autoConfirmEnabled: true,
+    autoConfirmCodMax: 0,
+    autoConfirmDelayMinutes: 10,
+    pickupCutoff: '15:30',
+    pickupAlertHours: 24,
   },
   // Giảm giá theo SKU (Dashboard > Giảm giá): [{ sku, percent }]. SKU của sản phẩm thì giảm mọi phân loại, SKU của phân loại thì chỉ giảm phân loại đó.
   discounts: { rules: [] },
@@ -156,12 +164,15 @@ export async function saveSettings(patch) {
 // Phần công khai cho trang thanh toán của khách (không lộ cấu hình nội bộ).
 export async function getPublicPaymentOptions() {
   const s = await getSettings()
+  // PayOS bật/tắt bằng biến môi trường (không nằm trong Cài đặt). Khi đã bật, "Chuyển khoản" của khách chạy bằng PayOS (tự xác nhận, không cần
+  // nhập tay) nên lựa chọn chuyển khoản thủ công bị ẩn: khách chỉ thấy COD và Chuyển khoản. Chưa bật PayOS thì vẫn dùng chuyển khoản thủ công như trước.
+  const viaPayos = payosConfigured()
   return {
     methods: [
       ...s.payment.methods
-        .filter((m) => m.enabled)
+        .filter((m) => m.enabled && !(viaPayos && m.id === BANK_METHOD_ID))
         .map(({ id, label, description, bank }) => ({ id, label, description, ...(bank ? { bank } : {}) })),
-      ...(payosConfigured() ? [PAYOS_PUBLIC_METHOD] : []), // PayOS bật/tắt bằng biến môi trường, không nằm trong Cài đặt
+      ...(viaPayos ? [PAYOS_PUBLIC_METHOD] : []),
     ],
     shipping: { fee: s.shipping.fee, freeShippingOver: s.shipping.freeShippingOver },
   }

@@ -16,6 +16,7 @@ suite('vòng đời đơn hàng với database (rollback)', () => {
     await import('dotenv/config')
     const { prisma } = await import('../src/lib/prisma.js')
     const F = await import('../src/lib/orderFlow.js')
+    const FU = await import('../src/lib/fulfillment.js')
     const rules = { unpaidCancelHours: 24, handleHours: 48, intracityHandleHours: 24, expressHandleHours: 6, cancelAutoApproveHours: 24, autoReceiveDays: 7, returnWindowDays: 7, expressKeywords: 'hỏa tốc' }
     const only = { orderNumber: { startsWith: 'ZZ-OF-' } }
     let seq = 0
@@ -168,9 +169,80 @@ suite('vòng đời đơn hàng với database (rollback)', () => {
           assert.equal((await load(legacy.id)).deliveryType, 'INTRACITY')
           assert.equal((await load(legacyFar.id)).deliveryType, 'INTERPROVINCE')
 
+          // --- 10) Chuẩn bị hàng (như Shopee): tự xác nhận + sang Đang xử lý; đơn chưa thanh toán / đang bị xin hủy thì chặn ---
+          const codOrder = await mk({ paymentMethod: 'COD' })
+          after = await F.advanceToProcessing(await load(codOrder.id), 'nv', tx)
+          assert.equal(after.status, 'PROCESSING')
+          const evs = (await load(codOrder.id)).statusEvents.map((e) => e.status)
+          assert.deepEqual(evs.slice(-2), ['CONFIRMED', 'PROCESSING'])
+          assert.equal((await F.advanceToProcessing(await load(codOrder.id), 'nv', tx)).status, 'PROCESSING') // gọi lại không lỗi
+          const paidTransfer = await mk({ paymentStatus: 'PAID', status: 'CONFIRMED' })
+          assert.equal((await F.advanceToProcessing(await load(paidTransfer.id), 'nv', tx)).status, 'PROCESSING')
+          await assert.rejects(F.advanceToProcessing(await load((await mk()).id), 'nv', tx), (e) => e instanceof F.FlowError && e.code === 'UNPAID')
+          await assert.rejects(F.advanceToProcessing(await load((await mk({ paymentMethod: 'COD', status: 'CONFIRMED', cancelRequestedAt: new Date() })).id), 'nv', tx), (e) => e.code === 'CANCEL_REQUESTED')
+          await rejectsFlow(F.advanceToProcessing(await load((await mk({ paymentMethod: 'COD', status: 'SHIPPING' })).id), 'nv', tx), /không chuẩn bị hàng được/)
+
+          // --- 11) Tự xác nhận đơn hợp lệ ---
+          const longAgo = new Date(Date.now() - 1 * HOUR)
+          const ac = { ...rules, autoConfirmEnabled: true, autoConfirmCodMax: 500000, autoConfirmDelayMinutes: 10 }
+          const okPaid = await mk({ paymentStatus: 'PAID', createdAt: longAgo, district: 'Quận 1' })
+          const okCod = await mk({ paymentMethod: 'COD', createdAt: longAgo, district: 'Quận 1', total: 100000 })
+          const bigCod = await mk({ paymentMethod: 'COD', createdAt: longAgo, district: 'Quận 1', total: 900000 })
+          const noDistrict = await mk({ paymentStatus: 'PAID', createdAt: longAgo })
+          const tooNew = await mk({ paymentStatus: 'PAID', district: 'Quận 1' })
+          const asking = await mk({ paymentStatus: 'PAID', createdAt: longAgo, district: 'Quận 1', cancelRequestedAt: new Date() })
+          const unpaidTransfer = await mk({ createdAt: longAgo, district: 'Quận 1' })
+          assert.equal(await F.autoConfirmOrders(tx, new Date(), { rules: { ...ac, autoConfirmEnabled: false }, where: only }), 0) // tắt
+          assert.equal(await F.autoConfirmOrders(tx, new Date(), { rules: ac, where: only }), 2)
+          assert.deepEqual([await st(okPaid), await st(okCod)], ['CONFIRMED', 'CONFIRMED'])
+          assert.deepEqual([await st(bigCod), await st(noDistrict), await st(tooNew), await st(asking), await st(unpaidTransfer)], Array(5).fill('PENDING_CONFIRMATION'))
+          assert.equal((await load(okPaid.id)).activityLogs.find((l) => l.action === 'status_confirmed').actor, 'system')
+
+          // --- 12) Quét mã vạch đóng gói, hàng đợi, biên bản bàn giao ---
+          const mkShip = (order, over = {}) => tx.shipment.create({ data: { trackingId: `ZZOF${Date.now()}-${++seq}`, orderId: order.id, carrierId: carrier.id, status: 'AWAITING_PICKUP', senderName: 's', recipientName: 'r', recipientPhone: '0900000092', addressLine: 'a', province: 'p', weightGrams: 500, shippingFee: 0, ...over } })
+          const noShip = await mk({ paymentMethod: 'COD', status: 'PROCESSING' })
+          await assert.rejects(FU.scanPack(noShip.orderNumber, 'nv', tx), (e) => e.code === 'NO_SHIPMENT')
+          await assert.rejects(FU.scanPack('KHONG-CO-MA-NAY', 'nv', tx), (e) => e.code === 'NOT_FOUND')
+          const pk = await mk({ paymentMethod: 'COD', status: 'AWAITING_SHIPMENT' })
+          await mkShip(pk, { carrierCode: 'ZZPACK001' })
+          const pk2 = await mk({ paymentMethod: 'COD', status: 'AWAITING_SHIPMENT' })
+          await mkShip(pk2, { carrierCode: 'ZZPACK002' })
+          const dead = await mk({ status: 'CANCELLED' })
+          await assert.rejects(FU.scanPack(dead.orderNumber, 'nv', tx), (e) => e.code === 'CANCELLED')
+          const q0 = await FU.packQueue(tx)
+          assert.ok(q0.waiting.some((x) => x.id === pk.id) && q0.waiting.some((x) => x.id === pk2.id))
+          let scan = await FU.scanPack('zzpack001', 'nv', tx) // quét bằng mã vận đơn của hãng, không phân biệt hoa thường
+          assert.equal(scan.already, false)
+          assert.equal(scan.order.code, 'ZZPACK001')
+          assert.equal((await FU.scanPack(pk.orderNumber, 'nv', tx)).already, true) // quét lại bằng mã đơn: không lỗi, báo đã quét
+          const q1 = await FU.packQueue(tx)
+          assert.ok(q1.packed.some((x) => x.id === pk.id) && !q1.waiting.some((x) => x.id === pk.id) && q1.waiting.some((x) => x.id === pk2.id))
+          assert.equal((await load(pk.id)).packedBy, 'nv')
+
+          // bàn giao: chỉ kiện đã đóng gói của đúng hãng
+          const groups = await FU.pendingHandovers(tx)
+          const mine = groups.find((g) => g.carrier.id === carrier.id)
+          assert.ok(mine && mine.shipments.length >= 1 && mine.shipments.every((x) => x.order.orderNumber !== pk2.orderNumber), 'kiện chưa quét không có trong danh sách bàn giao')
+          const ho = await FU.createHandover({ carrierId: carrier.id, actor: 'nv' }, tx)
+          assert.match(ho.code, /^BG-\d{6}-\d{3}$/)
+          assert.ok(ho.shipments.some((x) => x.order.orderNumber === pk.orderNumber))
+          assert.ok((await tx.shipment.findFirst({ where: { orderId: pk.id } })).handoverId === ho.id)
+          assert.ok(await tx.trackingEvent.findFirst({ where: { shipment: { orderId: pk.id }, status: 'Đã bàn giao cho hãng vận chuyển' } }))
+          await assert.rejects(FU.createHandover({ carrierId: carrier.id, actor: 'nv' }, tx), (e) => e.code === 'NOTHING') // không có gì mới để bàn giao
+          const detail = await FU.getHandover(ho.id, tx)
+          assert.equal(detail.shipments.length, ho.shipments.length)
+          assert.ok((await FU.listHandovers(tx)).some((h) => h.id === ho.id))
+          await FU.scanPack('ZZPACK002', 'nv', tx) // kiện thứ hai quét sau: vào biên bản kế tiếp
+          const ho2 = await FU.createHandover({ carrierId: carrier.id, shipmentIds: [(await tx.shipment.findFirst({ where: { orderId: pk2.id } })).id], actor: 'nv' }, tx)
+          assert.equal(ho2.shipments.length, 1)
+
+          // khối lượng việc
+          const wl = await FU.workload(tx)
+          assert.ok(['needsAction', 'overdue', 'toPrepare', 'toPack', 'toHandover'].every((k) => Number.isInteger(wl[k])))
+
           throw new Rollback() // hoàn tác toàn bộ dữ liệu thử
         },
-        { timeout: 60000, maxWait: 15000 },
+        { timeout: 280000, maxWait: 15000 },
       )
     } catch (err) {
       if (!(err instanceof Rollback)) throw err

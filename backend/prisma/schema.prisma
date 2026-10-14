@@ -167,6 +167,10 @@ model Order {
   // Cách giao: EXPRESS (hỏa tốc) | INTRACITY (nội thành) | INTERPROVINCE (liên tỉnh), chốt lúc đặt hàng; shippingService: dịch vụ vận chuyển khách đã chọn.
   deliveryType        String?
   shippingService     String?
+  // Hãng vận chuyển khách đã chọn lúc đặt hàng (để lúc chuẩn bị hàng dùng lại đúng hãng); packedAt/packedBy: đã đóng gói (quét mã vạch trên tem).
+  shippingCarrier     String?
+  packedAt            DateTime?
+  packedBy            String?
   // Tồn kho đã được trừ cho đơn này (đơn tạo trước khi có tính năng trừ kho thì false, để hủy đơn không cộng lại nhầm).
   stockReserved Boolean       @default(false)
 
@@ -303,6 +307,7 @@ model ShippingCarrier {
   serviceTypes Json? // ["Giao nhanh", "Giao tiết kiệm", ...]
 
   shipments Shipment[]
+  handovers Handover[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -315,6 +320,11 @@ model Shipment {
   carrierCode String?
   // Mã phân loại của hãng (in lớn giữa tem giao hàng để kho hãng chia tuyến). Goship trả về khi tạo vận đơn.
   sortingCode String?
+  // Cách giao hàng cho hãng (chọn lúc "Chuẩn bị hàng"): PICKUP = hãng tới shop lấy; DROP_OFF = shop mang ra bưu cục. Goship API không có trường này nên chỉ lưu ở hệ thống mình.
+  pickupMethod String?
+  // Biên bản bàn giao cho hãng chứa vận đơn này (null = chưa bàn giao).
+  handoverId String?
+  handover   Handover? @relation(fields: [handoverId], references: [id])
 
   orderId String @unique
   order   Order  @relation(fields: [orderId], references: [id])
@@ -351,10 +361,25 @@ model Shipment {
   @@index([status])
   @@index([carrierId])
   @@index([carrierCode])
+  @@index([handoverId])
 }
 
 // Timeline: Đã tạo vận đơn -> Đã lấy hàng -> Đã đến kho -> Đang trung chuyển
 // -> Đến kho giao hàng -> Đang giao -> Giao thành công
+// Biên bản bàn giao: một lần giao nhiều kiện cho một hãng (shipper tới lấy hoặc shop mang ra bưu cục), in ra để hai bên ký.
+model Handover {
+  id        String          @id @default(cuid())
+  code      String          @unique // BG-YYMMDD-xxx
+  carrierId String
+  carrier   ShippingCarrier @relation(fields: [carrierId], references: [id])
+  createdBy String
+  createdAt DateTime        @default(now())
+  shipments Shipment[]
+
+  @@index([carrierId])
+  @@index([createdAt])
+}
+
 model TrackingEvent {
   id         String   @id @default(cuid())
   shipmentId String

@@ -9,6 +9,8 @@ import DeliveryBadge from '../../components/DeliveryBadge'
 import CreateShipmentModal from '../../components/dashboard/orders/CreateShipmentModal'
 import GoshipShipmentModal from '../../components/dashboard/orders/GoshipShipmentModal'
 import PrintOrdersModal from '../../components/dashboard/orders/PrintOrdersModal'
+import { paymentMethodLabel } from '../../constants/paymentMethod'
+import { PICKUP_LABEL } from '../../components/dashboard/orders/PickupMethod'
 import { api } from '../../api'
 import {
   ORDER_STATUS,
@@ -36,6 +38,8 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modal, setModal] = useState(null) // 'cancel' | 'confirm' | 'refund' | 'create-shipment' | 'goship-shipment' | 'print' | 'cancel-approve' | 'cancel-reject' | 'return-approve' | 'return-reject'
+  const [actionError, setActionError] = useState('')
+  const [preparing, setPreparing] = useState(false)
   const [goshipReady, setGoshipReady] = useState(false) // đã bật tạo vận đơn thật qua Goship ở Cài đặt
 
   useEffect(() => {
@@ -57,6 +61,28 @@ export default function OrderDetail() {
   useEffect(() => {
     load()
   }, [load])
+
+  // "Chuẩn bị hàng" như Shopee: xác nhận + sang Đang xử lý, rồi chọn cách giao cho hãng và tạo vận đơn; xong thì mở luôn tem để in.
+  async function handlePrepare() {
+    setActionError('')
+    setPreparing(true)
+    try {
+      await api.post(`/orders/${id}/prepare`, {})
+      await load()
+      setModal(goshipReady ? 'goship-shipment' : 'create-shipment')
+    } catch (err) {
+      setActionError(err.message)
+    } finally {
+      setPreparing(false)
+    }
+  }
+
+  // Vận đơn vừa tạo: tải lại đơn rồi mở khung xem trước tem để in ngay.
+  async function afterShipmentCreated() {
+    setModal(null)
+    await load()
+    setModal('print')
+  }
 
   async function handleConfirmOrder() {
     await api.post(`/orders/${id}/confirm`, {})
@@ -114,7 +140,8 @@ export default function OrderDetail() {
   const canConfirm = order.status === 'PENDING_CONFIRMATION'
   const canCancel = !['CANCELLED', 'DELIVERED', 'RETURNED'].includes(order.status)
   const canRefund = order.paymentStatus === 'PAID'
-  const canCreateShipment = !order.shipment && ['PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status)
+  const hasActiveShipment = !!order.shipment && order.shipment.status !== 'NOT_CREATED'
+  const canPrepare = !hasActiveShipment && ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && !order.cancelRequestedAt
   const isCancelledOrReturned = ['CANCELLED', 'RETURNED'].includes(order.status)
 
   const due = dueIn(order.handleDueAt)
@@ -142,13 +169,8 @@ export default function OrderDetail() {
           {due && <span style={{ fontSize: '12px', fontWeight: 600, color: due.overdue ? 'var(--dash-danger, #c0392b)' : due.soon ? '#b26a00' : 'var(--dash-muted)' }}>Hạn xử lý: {due.text}</span>}
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {canConfirm && <button className="dash-btn" onClick={handleConfirmOrder}>Xác nhận đơn</button>}
-          {canCreateShipment && goshipReady && <button className="dash-btn" onClick={() => setModal('goship-shipment')}>Tạo vận đơn qua Goship</button>}
-          {canCreateShipment && (
-            <button className={goshipReady ? 'dash-btn dash-btn-ghost' : 'dash-btn'} onClick={() => setModal('create-shipment')}>
-              {goshipReady ? 'Tạo vận đơn thủ công' : 'Tạo vận đơn'}
-            </button>
-          )}
+          {canPrepare && <button className="dash-btn" onClick={handlePrepare} disabled={preparing}>{preparing ? 'Đang chuẩn bị…' : 'Chuẩn bị hàng'}</button>}
+          {canConfirm && <button className="dash-btn dash-btn-ghost" onClick={handleConfirmOrder}>Chỉ xác nhận đơn</button>}
           {order.shipment && (
             <button className="dash-btn dash-btn-ghost" onClick={() => navigate(`/dashboard/shipping/${order.shipment.id}`)}>
               Xem vận đơn
@@ -159,6 +181,10 @@ export default function OrderDetail() {
           {canCancel && <button className="dash-btn dash-btn-ghost" onClick={() => setModal('cancel')}>Hủy đơn</button>}
         </div>
       </div>
+
+      {actionError && (
+        <div className="dash-card" style={{ marginBottom: '16px', padding: '12px 16px', color: 'var(--dash-danger, #c0392b)', fontSize: '13px' }}>{actionError}</div>
+      )}
 
       {cancelAsk && (
         <div className="dash-card" style={{ marginBottom: '24px', borderLeft: '4px solid var(--dash-danger, #c0392b)' }}>
@@ -301,7 +327,7 @@ export default function OrderDetail() {
             <div><strong>Phí vận chuyển:</strong> {formatCurrency(order.shippingFee)}</div>
             <div><strong>Thuế:</strong> {formatCurrency(order.tax)}</div>
             <div style={{ fontWeight: 700, color: 'var(--dash-heading)' }}><strong>Tổng cộng:</strong> {formatCurrency(order.total)}</div>
-            <div><strong>Phương thức:</strong> {order.paymentMethod}</div>
+            <div><strong>Phương thức:</strong> {paymentMethodLabel(order.paymentMethod)}</div>
             <div><strong>Trạng thái TT:</strong> {paymentStatusLabel(order.paymentStatus)}</div>
             <div><strong>Mã giao dịch:</strong> {order.transactionId || '—'}</div>
           </div>
@@ -314,6 +340,7 @@ export default function OrderDetail() {
               <div><strong>Đơn vị:</strong> {order.shipment.carrier.name}</div>
               <div><strong>Mã vận đơn (hãng):</strong> {order.shipment.carrierCode || <span style={{ color: 'var(--dash-muted)' }}>chưa có — nhập ở trang vận đơn</span>}</div>
               <div><strong>Mã nội bộ:</strong> {order.shipment.trackingId}</div>
+              {order.shipment.pickupMethod && <div><strong>Giao cho hãng:</strong> {PICKUP_LABEL[order.shipment.pickupMethod]}</div>}
               <div><strong>Phí vận chuyển:</strong> {formatCurrency(order.shipment.shippingFee)}</div>
               <div>
                 <strong>Trạng thái:</strong>{' '}
@@ -385,20 +412,14 @@ export default function OrderDetail() {
           order={order}
           onClose={() => setModal(null)}
           onManual={() => setModal('create-shipment')}
-          onCreated={(shipment) => {
-            setModal(null)
-            navigate(`/dashboard/shipping/${shipment.id}`)
-          }}
+          onCreated={afterShipmentCreated}
         />
       )}
       {modal === 'create-shipment' && (
         <CreateShipmentModal
           order={order}
           onClose={() => setModal(null)}
-          onCreated={(shipment) => {
-            setModal(null)
-            navigate(`/dashboard/shipping/${shipment.id}`)
-          }}
+          onCreated={afterShipmentCreated}
         />
       )}
     </AdminLayout>

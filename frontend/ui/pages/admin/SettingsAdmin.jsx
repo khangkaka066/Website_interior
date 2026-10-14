@@ -101,20 +101,23 @@ const ORDER_RULES = [
   { key: 'intracityHandleHours', label: 'Hạn xử lý đơn nội thành (giờ)', hint: 'Nội thành = nhận hàng cùng tỉnh/thành với kho gửi (Cài đặt, Vận chuyển). 0 = không đếm.' },
   { key: 'expressHandleHours', label: 'Hạn xử lý đơn hỏa tốc (giờ)', hint: 'Đơn khách chọn dịch vụ hỏa tốc. 0 = không đếm.' },
   { key: 'cancelAutoApproveHours', label: 'Tự đồng ý yêu cầu hủy của khách sau (giờ)', hint: 'Khách xin hủy đơn đã xác nhận mà shop không phản hồi sau chừng này giờ thì hệ thống tự hủy đơn (và hủy vận đơn nếu có). 0 = chỉ nhân viên duyệt tay.' },
+  { key: 'autoConfirmDelayMinutes', label: 'Tự xác nhận đơn hợp lệ sau (phút)', hint: 'Đơn đã thanh toán (và COD không quá mức bên dưới) có địa chỉ đủ tỉnh + quận/huyện sẽ tự được xác nhận sau chừng này phút (để khách còn kịp hủy). Cần bật ô "Tự xác nhận" bên dưới.' },
+  { key: 'autoConfirmCodMax', label: 'Đơn COD tự xác nhận khi không quá (đồng)', hint: 'Đơn COD vượt mức này vẫn do nhân viên xác nhận. 0 = đơn COD luôn do nhân viên xác nhận (an toàn nhất vì COD dễ bị đặt khống).' },
+  { key: 'pickupAlertHours', label: 'Cảnh báo hãng chưa lấy hàng sau (giờ)', hint: 'Tính từ lúc tạo vận đơn; đơn quá hạn hiện huy hiệu "Hãng chưa lấy hàng" và cảnh báo ở trang Vận chuyển. 0 = tắt.' },
   { key: 'autoReceiveDays', label: 'Tự xác nhận "đã nhận hàng" sau (ngày)', hint: 'Tính từ lúc đơn Đã giao. 0 = chỉ khách tự bấm xác nhận.' },
   { key: 'returnWindowDays', label: 'Khách được yêu cầu trả hàng trong (ngày)', hint: 'Tính từ lúc đơn Đã giao. 0 = không nhận yêu cầu trả hàng trên website.' },
 ]
 
 function OrdersTab({ data, onSaved }) {
-  const [form, setForm] = useState(() => ({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, String(data[r.key])])), expressKeywords: data.expressKeywords ?? '' }))
+  const [form, setForm] = useState(() => ({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, String(data[r.key])])), expressKeywords: data.expressKeywords ?? '', pickupCutoff: data.pickupCutoff ?? '', autoConfirmEnabled: !!data.autoConfirmEnabled }))
   const [state, save] = useSave('orders', onSaved)
-  const dirty = ORDER_RULES.some((r) => form[r.key] !== String(data[r.key])) || form.expressKeywords !== (data.expressKeywords ?? '')
+  const dirty = ORDER_RULES.some((r) => form[r.key] !== String(data[r.key])) || form.expressKeywords !== (data.expressKeywords ?? '') || form.pickupCutoff !== (data.pickupCutoff ?? '') || form.autoConfirmEnabled !== !!data.autoConfirmEnabled
   return (
     <form
       className="dash-card set-card"
       onSubmit={(e) => {
         e.preventDefault()
-        save({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, Number(form[r.key])])), expressKeywords: form.expressKeywords.trim() })
+        save({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, Number(form[r.key])])), expressKeywords: form.expressKeywords.trim(), pickupCutoff: form.pickupCutoff.trim(), autoConfirmEnabled: form.autoConfirmEnabled })
       }}
     >
       <h3 className="form-card-title">Quy tắc đơn hàng</h3>
@@ -124,6 +127,15 @@ function OrdersTab({ data, onSaved }) {
             <input className="dash-input" type="number" min="0" step="1" value={form[r.key]} onChange={(e) => setForm({ ...form, [r.key]: e.target.value })} />
           </Field>
         ))}
+        <Field label="Tự xác nhận đơn hợp lệ" hint="Bật thì đơn hợp lệ không cần nhân viên bấm xác nhận từng đơn.">
+          <select className="dash-select" value={form.autoConfirmEnabled ? '1' : '0'} onChange={(e) => setForm({ ...form, autoConfirmEnabled: e.target.value === '1' })}>
+            <option value="1">Bật</option>
+            <option value="0">Tắt</option>
+          </select>
+        </Field>
+        <Field label="Giờ chốt đơn lấy hàng trong ngày (HH:MM)" hint="Hãng thường chỉ lấy trong ngày nếu đơn được chuẩn bị trước giờ này. Trang Đơn hàng hiện đếm ngược tới giờ chốt. Để trống nếu không dùng.">
+          <input className="dash-input" placeholder="15:30" maxLength={5} value={form.pickupCutoff} onChange={(e) => setForm({ ...form, pickupCutoff: e.target.value })} />
+        </Field>
         <Field label="Dịch vụ hỏa tốc nhận biết bằng từ khóa" hint='Phương án vận chuyển khách chọn có tên chứa một trong các từ này (cách nhau bằng dấu phẩy, không phân biệt hoa thường và dấu) thì đơn là hỏa tốc. Ví dụ: hỏa tốc, instant, trong ngày.'>
           <input className="dash-input" value={form.expressKeywords} maxLength={300} onChange={(e) => setForm({ ...form, expressKeywords: e.target.value })} />
         </Field>

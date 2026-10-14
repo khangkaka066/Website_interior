@@ -4,6 +4,7 @@ import { verifyGoshipSignature } from '../lib/goshipSignature.js'
 import { ShipmentError, ratesForOrder, createShipmentForOrder, processGoshipWebhook } from '../lib/goshipShipments.js'
 import { toPlain } from '../utils/serialize.js'
 import { prisma } from '../lib/prisma.js'
+import { ORDER_INCLUDE, FlowError, advanceToProcessing } from '../lib/orderFlow.js'
 
 const fail = (res, err) => res.status(err.status || 400).json({ error: err.message, ...(err.code ? { code: err.code } : {}) })
 
@@ -29,19 +30,29 @@ export async function goshipRates(req, res) {
 // Tạo vận đơn thật cho NHIỀU đơn: mỗi đơn lấy phương án RẺ NHẤT hiện có. Phát sinh cước thật nên cần confirm === true.
 // Mỗi đơn xử lý độc lập; đơn nào lỗi (địa chỉ không khớp, sai trạng thái, Goship từ chối...) thì báo riêng, không chặn các đơn còn lại.
 export async function goshipBulkCreate(req, res) {
-  const { orderIds } = req.body
+  const { orderIds, pickupMethod } = req.body
   const actor = req.user?.username || req.user?.email || 'admin'
   const results = []
   for (const orderId of orderIds) {
     try {
+      // "Chuẩn bị hàng": đưa đơn tới Đang xử lý (xác nhận trước nếu cần), rồi mới hỏi cước và tạo vận đơn.
+      const target = await prisma.order.findUnique({ where: { id: orderId }, include: ORDER_INCLUDE })
+      if (!target) throw new ShipmentError('Không tìm thấy đơn hàng.', 404, 'NOT_FOUND')
+      try {
+        await advanceToProcessing(target, actor)
+      } catch (err) {
+        if (err instanceof FlowError) throw new ShipmentError(err.message, err.status, 'ORDER_STATE')
+        throw err
+      }
       const { options } = await ratesForOrder(orderId)
       // Đơn hỏa tốc chỉ chọn trong các dịch vụ hỏa tốc (không giao chậm hơn lời hứa với khách); đơn thường tránh dịch vụ hỏa tốc đắt hơn.
       const order = await prisma.order.findUnique({ where: { id: orderId }, select: { deliveryType: true } })
       const pool = order?.deliveryType === 'EXPRESS' ? options.filter((o) => o.express) : options.filter((o) => !o.express)
       const usable = pool.length ? pool : order?.deliveryType === 'EXPRESS' ? [] : options
       if (!usable.length) throw new ShipmentError(order?.deliveryType === 'EXPRESS' ? 'Đơn hỏa tốc nhưng Goship không có dịch vụ hỏa tốc cho tuyến này, hãy chọn tay.' : 'Goship không có phương án vận chuyển cho đơn này.', 422, 'NO_RATES')
-      const cheapest = usable.reduce((a, b) => (b.fee < a.fee ? b : a))
-      const shipment = await createShipmentForOrder({ orderId, rateId: cheapest.id, actor })
+      // Ưu tiên đúng hãng + gói khách đã chọn lúc đặt hàng; hãng đó không còn thì lấy phương án rẻ nhất cùng loại.
+      const cheapest = usable.find((o) => o.preferred) || usable.reduce((a, b) => (b.fee < a.fee ? b : a))
+      const shipment = await createShipmentForOrder({ orderId, rateId: cheapest.id, actor, pickupMethod })
       console.log(`[goship] (hàng loạt) đã tạo vận đơn ${shipment.trackingId} cho đơn ${shipment.order?.orderNumber} (${actor})`)
       results.push({ orderId, orderNumber: shipment.order?.orderNumber, ok: true, carrier: cheapest.carrier, fee: cheapest.fee })
     } catch (err) {
@@ -54,10 +65,10 @@ export async function goshipBulkCreate(req, res) {
 
 // TẠO VẬN ĐƠN THẬT (phát sinh cước). Cần admin xác nhận tường minh: body.confirm === true.
 export async function goshipCreate(req, res) {
-  const { rateId, confirm } = req.body
+  const { rateId, confirm, pickupMethod } = req.body
   if (confirm !== true) return res.status(400).json({ error: 'Cần xác nhận đây là vận đơn thật.', code: 'CONFIRM_REQUIRED' })
   try {
-    const shipment = await createShipmentForOrder({ orderId: req.params.orderId, rateId, actor: req.user?.username || req.user?.email || 'admin' })
+    const shipment = await createShipmentForOrder({ orderId: req.params.orderId, rateId, pickupMethod, actor: req.user?.username || req.user?.email || 'admin' })
     console.log(`[goship] đã tạo vận đơn ${shipment.trackingId} cho đơn ${shipment.order?.orderNumber} (${req.user?.username || 'admin'})`)
     res.status(201).json(toPlain(shipment))
   } catch (err) {

@@ -81,6 +81,22 @@ export async function applyTransition(order, { to, note, actor = 'admin' }, db =
   return updated
 }
 
+// "Chuẩn bị hàng" (như Shopee): đưa đơn tới "Đang xử lý", tự xác nhận trước nếu đơn còn chờ xác nhận. Đơn chuyển khoản / PayOS phải đã thanh toán
+// (hãng lấy hàng đi mà tiền chưa về thì rủi ro). Đơn đã ở Đang xử lý hoặc Chờ giao hàng thì giữ nguyên.
+export async function advanceToProcessing(order, actor = 'admin', db = prisma) {
+  if (order.paymentMethod !== COD_METHOD_ID && order.paymentStatus !== 'PAID') {
+    throw new FlowError('Đơn chưa thanh toán nên chưa chuẩn bị hàng. Hãy xác nhận thanh toán ở mục Thanh toán trước.', 409, 'UNPAID')
+  }
+  if (order.cancelRequestedAt) throw new FlowError('Khách đang yêu cầu hủy đơn này, hãy phản hồi yêu cầu trước khi chuẩn bị hàng.', 409, 'CANCEL_REQUESTED')
+  let cur = order
+  if (cur.status === 'PENDING_CONFIRMATION') cur = await applyTransition(cur, { to: 'CONFIRMED', note: 'Xác nhận đơn hàng', actor }, db)
+  if (cur.status === 'CONFIRMED') cur = await applyTransition(cur, { to: 'PROCESSING', note: 'Chuẩn bị hàng', actor }, db)
+  if (!['PROCESSING', 'AWAITING_SHIPMENT'].includes(cur.status)) {
+    throw new FlowError(`Đơn đang ở trạng thái "${cur.status}" nên không chuẩn bị hàng được.`)
+  }
+  return cur
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Khách hủy đơn: còn "Chờ xác nhận" thì hủy ngay; shop đã xác nhận nhưng chưa giao cho vận chuyển thì gửi yêu cầu để nhân viên duyệt.
 export async function customerCancel(order, reason, db = prisma) {
@@ -232,6 +248,37 @@ export async function autoCancelUnpaid(db = prisma, now = new Date(), opts = {})
   return n
 }
 
+// Tự xác nhận đơn hợp lệ để nhân viên khỏi bấm từng đơn: đơn đã thanh toán (PayOS...), hoặc COD không quá autoConfirmCodMax đồng, địa chỉ có đủ
+// tỉnh + quận/huyện, khách không đang xin hủy. Chờ autoConfirmDelayMinutes phút để khách còn kịp hủy ngay. Đơn COD lớn / đáng ngờ vẫn do nhân viên xác nhận.
+export async function autoConfirmOrders(db = prisma, now = new Date(), opts = {}) {
+  const rules = opts.rules || (await getSettings()).orders
+  if (!rules.autoConfirmEnabled) return 0
+  const payable = [{ paymentStatus: 'PAID' }]
+  if (rules.autoConfirmCodMax > 0) payable.push({ paymentMethod: COD_METHOD_ID, total: { lte: rules.autoConfirmCodMax } })
+  const due = await db.order.findMany({
+    where: {
+      status: 'PENDING_CONFIRMATION',
+      cancelRequestedAt: null,
+      createdAt: { lt: new Date(now.getTime() - (rules.autoConfirmDelayMinutes || 0) * 60000) },
+      district: { not: null },
+      OR: payable,
+      ...(opts.where || {}),
+    },
+    take: 50,
+  })
+  let n = 0
+  for (const order of due) {
+    if (!order.province?.trim() || !order.district?.trim()) continue
+    try {
+      await applyTransition(order, { to: 'CONFIRMED', note: 'Tự động xác nhận: đơn hợp lệ', actor: 'system' }, db)
+      n++
+    } catch (err) {
+      if (!(err instanceof FlowError)) console.warn('[orders] tự xác nhận', order.orderNumber, 'lỗi:', err.message)
+    }
+  }
+  return n
+}
+
 // Tự đồng ý yêu cầu hủy của khách khi nhân viên không phản hồi sau N giờ (như Shopee). Đơn đã có vận đơn thì hủy vận đơn trước;
 // hủy vận đơn không được (ví dụ hãng đã lấy hàng) thì giữ nguyên yêu cầu để nhân viên xử lý và ghi nhật ký một lần.
 export async function autoApproveCancels(db = prisma, now = new Date(), opts = {}) {
@@ -300,11 +347,12 @@ export function startOrderJobs({ intervalMs = Number(process.env.ORDER_JOBS_INTE
     if (running) return
     running = true
     try {
+      const confirmed = await autoConfirmOrders()
       const cancelled = await autoCancelUnpaid()
       const approved = await autoApproveCancels()
       const received = await autoReceive()
       await backfillDeliveryTypes()
-      if (cancelled || approved || received) console.log(`[orders] tự hủy ${cancelled} đơn chưa thanh toán, tự đồng ý ${approved} yêu cầu hủy, tự xác nhận nhận hàng ${received} đơn`)
+      if (confirmed || cancelled || approved || received) console.log(`[orders] tự xác nhận ${confirmed} đơn, tự hủy ${cancelled} đơn chưa thanh toán, tự đồng ý ${approved} yêu cầu hủy, tự xác nhận nhận hàng ${received} đơn`)
     } catch (err) {
       console.warn('[orders] tác vụ nền lỗi:', err.message)
     } finally {

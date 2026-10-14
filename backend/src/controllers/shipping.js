@@ -4,6 +4,9 @@ import { generateTrackingId } from '../utils/ids.js'
 import { canTransitionShipping, SHIPPING_TO_ORDER_STATUS } from '../constants/workflow.js'
 import { ShipmentError, cancelShipmentById } from '../lib/goshipShipments.js'
 import { normCode } from '../lib/orderCode.js'
+import { FlowError } from '../lib/orderFlow.js'
+import { getSettings } from '../lib/settingsStore.js'
+import { pendingHandovers, createHandover, getHandover, listHandovers } from '../lib/fulfillment.js'
 
 const SHIPMENT_INCLUDE = {
   carrier: true,
@@ -65,18 +68,44 @@ export async function getShippingDashboard(req, res) {
   })
 }
 
+const flowFail = (res, err) => res.status(err.status || 400).json({ error: err.message, code: err.code })
+
+// Biên bản bàn giao theo hãng: các kiện đã đóng gói chờ bàn giao, lập biên bản, xem lại.
+export const pendingHandoverList = async (req, res) => res.json({ groups: await pendingHandovers(), recent: await listHandovers() })
+export async function createHandoverRecord(req, res) {
+  try {
+    res.status(201).json(toPlain(await createHandover({ carrierId: req.body.carrierId, shipmentIds: req.body.shipmentIds, actor: req.user?.username || req.user?.email || 'admin' })))
+  } catch (err) {
+    if (err instanceof FlowError) return flowFail(res, err)
+    throw err
+  }
+}
+export async function getHandoverRecord(req, res) {
+  const h = await getHandover(req.params.id)
+  if (!h) return res.status(404).json({ error: 'Không tìm thấy biên bản bàn giao.' })
+  res.json(toPlain(h))
+}
+
 export async function getShippingAlerts(req, res) {
-  const [notCreated, failed, awaitingPickup, returning] = await Promise.all([
+  const { orders: rules } = await getSettings()
+  const overdueBefore = rules.pickupAlertHours ? new Date(Date.now() - rules.pickupAlertHours * 3600000) : null
+  const [notCreated, failed, awaitingPickup, returning, pickupOverdue, notPacked, waitingHandover] = await Promise.all([
     prisma.order.count({ where: { status: 'AWAITING_SHIPMENT', shipment: null } }),
     prisma.shipment.count({ where: { status: 'FAILED' } }),
     prisma.shipment.count({ where: { status: 'AWAITING_PICKUP' } }),
     prisma.shipment.count({ where: { status: 'RETURNING' } }),
+    overdueBefore ? prisma.shipment.count({ where: { status: 'AWAITING_PICKUP', createdAt: { lt: overdueBefore } } }) : 0,
+    prisma.shipment.count({ where: { status: 'AWAITING_PICKUP', order: { is: { packedAt: null } } } }),
+    prisma.shipment.count({ where: { status: 'AWAITING_PICKUP', handoverId: null, order: { is: { packedAt: { not: null } } } } }),
   ])
 
   const alerts = []
   if (notCreated > 0) alerts.push({ key: 'not_created', count: notCreated, message: `${notCreated} đơn chưa tạo vận đơn`, filter: { status: 'AWAITING_SHIPMENT' } })
   if (failed > 0) alerts.push({ key: 'failed', count: failed, message: `${failed} đơn giao thất bại`, filter: { status: 'FAILED' } })
   if (awaitingPickup > 0) alerts.push({ key: 'awaiting_pickup', count: awaitingPickup, message: `${awaitingPickup} đơn đang chờ lấy hàng`, filter: { status: 'AWAITING_PICKUP' } })
+  if (pickupOverdue > 0) alerts.push({ key: 'pickup_overdue', count: pickupOverdue, message: `${pickupOverdue} đơn hãng chưa lấy hàng sau ${rules.pickupAlertHours} giờ, hãy nhắc hãng`, filter: { status: 'AWAITING_PICKUP' } })
+  if (notPacked > 0) alerts.push({ key: 'not_packed', count: notPacked, message: `${notPacked} đơn đã có vận đơn nhưng chưa quét đóng gói`, filter: { status: 'AWAITING_PICKUP' } })
+  if (waitingHandover > 0) alerts.push({ key: 'waiting_handover', count: waitingHandover, message: `${waitingHandover} đơn đã đóng gói đang chờ bàn giao cho hãng`, filter: { status: 'AWAITING_PICKUP' } })
   if (returning > 0) alerts.push({ key: 'returning', count: returning, message: `${returning} đơn đang yêu cầu hoàn hàng`, filter: { status: 'RETURNING' } })
 
   res.json({ alerts })
@@ -161,6 +190,7 @@ export async function createShipment(req, res) {
     codAmount = 0,
     note,
     carrierCode,
+    pickupMethod,
   } = req.body || {}
 
   if (!orderId || !carrierId || !senderName || !weightGrams || !shippingFee) {
@@ -190,6 +220,7 @@ export async function createShipment(req, res) {
       data: {
         trackingId: generateTrackingId(carrier.code),
         carrierCode: code,
+        pickupMethod: pickupMethod || null,
         orderId: order.id,
         carrierId: carrier.id,
         status: 'AWAITING_PICKUP',

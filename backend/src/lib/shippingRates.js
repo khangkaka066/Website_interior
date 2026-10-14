@@ -36,7 +36,7 @@ function toOption(row, free, expressKeywords) {
 }
 
 // cod: số tiền thu hộ (đ), 0 nếu khách chuyển khoản trước. subtotal: tiền hàng, cũng là giá trị khai giá.
-export async function quoteShipping({ settings, address, subtotal, cod }) {
+export async function quoteShipping({ settings, address, subtotal, cod, weightGrams }) {
   const g = settings.shipping.goship
   if (!g?.enabled || !goshipConfigured()) return { status: 'disabled', options: [] }
   try {
@@ -48,7 +48,7 @@ export async function quoteShipping({ settings, address, subtotal, cod }) {
       address_from: from,
       address_to: to,
       // Kích thước tối thiểu theo ví dụ của Goship; cước tính theo cân nặng cố định trong Cài đặt.
-      parcel: { cod: String(Math.max(0, Math.round(cod))), amount: String(Math.max(0, Math.round(subtotal))), weight: String(g.defaultWeightGrams), width: '1', height: '1', length: '1' },
+      parcel: { cod: String(Math.max(0, Math.round(cod))), amount: String(Math.max(0, Math.round(subtotal))), weight: String(weightGrams || g.defaultWeightGrams), width: '1', height: '1', length: '1' },
     })
     const free = settings.shipping.freeShippingOver > 0 && subtotal >= settings.shipping.freeShippingOver
     const options = rows.map((r) => toOption(r, free, settings.orders?.expressKeywords)).filter(Boolean).sort((a, b) => a.fee - b.fee || a.carrier.localeCompare(b.carrier, 'vi')).slice(0, 12)
@@ -65,7 +65,7 @@ export function chooseShipping(settings, subtotal, quote, rateId) {
   if (quote.status === 'ok') {
     const picked = rateId ? quote.options.find((o) => o.id === rateId) : null
     if (!picked) return { error: 'SHIPPING_CHANGED' }
-    return { fee: picked.fee, label: `${picked.carrier}${picked.service ? ` – ${picked.service}` : ''} (Goship)`, service: picked.service, express: picked.express }
+    return { fee: picked.fee, label: `${picked.carrier}${picked.service ? ` – ${picked.service}` : ''} (Goship)`, service: picked.service, carrier: picked.carrier, express: picked.express }
   }
-  return { fee: shippingFeeFor(settings, subtotal), label: null, service: null, express: false }
+  return { fee: shippingFeeFor(settings, subtotal), label: null, service: null, carrier: null, express: false }
 }

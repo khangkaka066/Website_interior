@@ -8,6 +8,7 @@ import ConfirmModal from '../../components/dashboard/ConfirmModal'
 import { api } from '../../api'
 import { SHIPPING_STATUS, SHIPPING_TIMELINE_STEPS, SHIPPING_TRANSITIONS, shippingStatusLabel } from '../../constants/shippingStatus'
 import { formatCurrency, formatDateTime } from '../../utils/format'
+import { PICKUP_LABEL } from '../../components/dashboard/orders/PickupMethod'
 
 const TIMELINE_LABELS = {
   AWAITING_PICKUP: 'Chờ lấy hàng',
@@ -158,6 +159,7 @@ export default function ShippingDetail() {
               )}
             </div>
             <div><strong>Đơn vị vận chuyển:</strong> {shipment.carrier.name}</div>
+            {shipment.pickupMethod && <div><strong>Giao cho hãng:</strong> {PICKUP_LABEL[shipment.pickupMethod]}</div>}
             <div><strong>Người gửi:</strong> {shipment.senderName}</div>
             <div><strong>Khối lượng:</strong> {shipment.weightGrams}g</div>
             {shipment.lengthCm && <div><strong>Kích thước:</strong> {shipment.lengthCm}×{shipment.widthCm}×{shipment.heightCm} cm</div>}

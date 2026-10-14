@@ -1,5 +1,6 @@
 'use client'
 
+import { paymentMethodLabel } from '../../constants/paymentMethod'
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from '@/lib/router'
 import AdminLayout from '../../components/dashboard/AdminLayout'
@@ -269,7 +270,7 @@ export default function PaymentsAdmin() {
                       {p.customer?.name || p.recipientName}
                       <div className="pay-sub">{p.recipientPhone}</div>
                     </td>
-                    <td>{p.paymentMethod}</td>
+                    <td>{paymentMethodLabel(p.paymentMethod)}</td>
                     <td><strong>{formatCurrency(Number(p.total))}</strong></td>
                     <td>
                       <span className={`order-status-badge ${PAYMENT_STATUS[p.paymentStatus]?.cls || ''}`}>{paymentStatusLabel(p.paymentStatus)}</span>

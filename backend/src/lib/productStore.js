@@ -64,6 +64,7 @@ export function toStorefront(p, rules = new Map()) {
     type: staticByShopeeId.get(p.shopeeId)?.type || TYPE_BY_CATEGORY[p.categoryId] || 'Rèm cửa',
     description: p.description || p.shortDescription || '',
     sold: Number(p.sold) || 0,
+    ...(Number(p.shipping?.weight) > 0 && { weightGrams: Math.round(Number(p.shipping.weight) * 1000) }), // khối lượng thật (form sản phẩm nhập kg) để tính cước
     createdAt: p.createdAt || '',
     ...(p.updatedAt && { updatedAt: p.updatedAt }), // ngày cập nhật cho sitemap
   }

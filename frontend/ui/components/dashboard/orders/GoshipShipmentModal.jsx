@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../../../api'
 import DeliveryBadge from '../../DeliveryBadge'
+import PickupMethod, { usePickupMethod, PICKUP_LABEL } from './PickupMethod'
 
 function money(n) {
   return Number(n || 0).toLocaleString('vi-VN') + 'đ'
@@ -16,17 +17,19 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
   const [confirmed, setConfirmed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [pickup, setPickup] = usePickupMethod()
 
   const load = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: '' }))
     setError('')
     try {
       const data = await api.get(`/shipping/goship/orders/${order.id}/rates`)
-      setState({ loading: false, options: data.options, weightGrams: data.weightGrams, cod: data.cod, error: '', code: '' })
+      setState({ loading: false, options: data.options, weightGrams: data.weightGrams, cod: data.cod, customerChoice: data.customerChoice, error: '', code: '' })
       // Mặc định phương án rẻ nhất cùng loại với đơn: đơn hỏa tốc chọn dịch vụ hỏa tốc, đơn thường tránh dịch vụ hỏa tốc đắt hơn (danh sách đã xếp rẻ trước).
+      // Khách đã chọn hãng nào lúc đặt hàng thì ưu tiên đúng hãng + gói đó.
       const wantExpress = order.deliveryType === 'EXPRESS'
       const sameKind = data.options.filter((o) => !!o.express === wantExpress)
-      setRateId((sameKind[0] || (wantExpress ? null : data.options[0]))?.id || '')
+      setRateId((sameKind.find((o) => o.preferred) || sameKind[0] || (wantExpress ? null : data.options[0]))?.id || '')
     } catch (err) {
       setState({ loading: false, options: [], error: err.message, code: err.data?.code || '' })
     }
@@ -43,7 +46,7 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
     setSubmitting(true)
     setError('')
     try {
-      const shipment = await api.post(`/shipping/goship/orders/${order.id}/shipment`, { rateId: picked.id, confirm: true })
+      const shipment = await api.post(`/shipping/goship/orders/${order.id}/shipment`, { rateId: picked.id, confirm: true, pickupMethod: pickup })
       onCreated(shipment)
     } catch (err) {
       setSubmitting(false)
@@ -59,7 +62,7 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
     <div className="dash-modal-overlay" onClick={submitting ? undefined : onClose}>
       <div className="dash-modal" onClick={(e) => e.stopPropagation()}>
         <div className="dash-modal-head">
-          <h3>Tạo vận đơn qua Goship — {order.orderNumber}</h3>
+          <h3>Chuẩn bị hàng — {order.orderNumber}</h3>
           <button className="dash-modal-close" onClick={onClose} disabled={submitting}>✕</button>
         </div>
 
@@ -88,12 +91,18 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
               <label key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', border: `1px solid ${rateId === o.id ? 'var(--dash-accent, #b5602f)' : 'var(--dash-border)'}`, cursor: 'pointer' }}>
                 <input type="radio" name="goship-rate" checked={rateId === o.id} onChange={() => setRateId(o.id)} />
                 <span style={{ flex: 1 }}>
-                  <strong>{o.carrier}{o.service ? ` – ${o.service}` : ''}</strong> {o.express && <DeliveryBadge type="EXPRESS" />}
+                  <strong>{o.carrier}{o.service ? ` – ${o.service}` : ''}</strong> {o.express && <DeliveryBadge type="EXPRESS" />}{o.preferred && <span className="dt-badge dt-intracity" style={{ marginLeft: '6px' }}>Khách đã chọn</span>}
                   {o.expected && <small style={{ display: 'block', color: 'var(--dash-muted)' }}>{o.expected}</small>}
                 </span>
                 <strong>{money(o.originalFee ?? o.fee)}</strong>
               </label>
             ))}
+            {state.customerChoice && (
+              <p style={{ fontSize: '12px', margin: 0 }}>
+                Khách chọn <strong>{state.customerChoice.carrier}{state.customerChoice.service ? ` – ${state.customerChoice.service}` : ''}</strong> và đã trả phí vận chuyển <strong>{money(state.customerChoice.fee)}</strong>.
+                {!state.options.some((o) => o.preferred) && <span style={{ color: 'var(--dash-danger)' }}> Phương án này hiện không còn, hãy chọn hãng khác tương đương.</span>}
+              </p>
+            )}
             {order.deliveryType === 'EXPRESS' && !state.options.some((o) => o.express) && (
               <p style={{ fontSize: '12px', color: 'var(--dash-danger)', margin: 0 }}>Khách đặt giao HỎA TỐC nhưng Goship hiện không có dịch vụ hỏa tốc cho tuyến này. Hãy liên hệ khách hoặc chọn dịch vụ khác.</p>
             )}
@@ -103,11 +112,13 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
           </div>
         )}
 
+        {!state.loading && !state.error && <PickupMethod value={pickup} onChange={setPickup} disabled={submitting} />}
+
         {picked && (
           <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '16px', padding: '10px 12px', background: 'var(--dash-warn-bg, #fff4e5)', fontSize: '13px', cursor: 'pointer' }}>
             <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} style={{ marginTop: '3px' }} />
             <span>
-              Tôi hiểu đây là <strong>vận đơn thật</strong>: Goship sẽ gửi yêu cầu lấy hàng tới <strong>{picked.carrier}</strong>, cước khoảng <strong>{money(picked.originalFee ?? picked.fee)}</strong> do shop trả.
+              Tôi hiểu đây là <strong>vận đơn thật</strong> qua <strong>{picked.carrier}</strong>, cước khoảng <strong>{money(picked.originalFee ?? picked.fee)}</strong> do shop trả. Cách giao hàng: <strong>{PICKUP_LABEL[pickup]}</strong>.
               Chỉ hủy được khi hãng chưa lấy hàng.
             </span>
           </label>
@@ -123,7 +134,7 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
           )}
           <button className="dash-btn dash-btn-ghost" onClick={onClose} disabled={submitting}>Hủy</button>
           <button className="dash-btn" onClick={handleCreate} disabled={!picked || !confirmed || submitting}>
-            {submitting ? 'Đang tạo vận đơn…' : 'Tạo vận đơn thật'}
+            {submitting ? 'Đang chuẩn bị…' : 'Chuẩn bị hàng và in tem'}
           </button>
         </div>
       </div>

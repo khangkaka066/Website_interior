@@ -57,6 +57,11 @@ export const ordersSchema = z.object({
   expressHandleHours: whole('Hạn xử lý đơn hỏa tốc (giờ)', 720),
   cancelAutoApproveHours: whole('Giờ tự đồng ý yêu cầu hủy', 720),
   expressKeywords: optionalText('từ khóa hỏa tốc', 300).transform((v) => v ?? ''),
+  autoConfirmEnabled: z.boolean('Giá trị bật/tắt không hợp lệ.'),
+  autoConfirmCodMax: z.number('Số tiền không hợp lệ.').int('Số tiền phải là số nguyên.').min(0, 'Số tiền không được âm.').max(1_000_000_000, 'Số tiền quá lớn.'),
+  autoConfirmDelayMinutes: whole('Số phút chờ trước khi tự xác nhận', 1440),
+  pickupCutoff: z.string('Giờ chốt đơn không hợp lệ.').trim().regex(/^(([01]\d|2[0-3]):[0-5]\d)?$/, 'Giờ chốt đơn dạng HH:MM, ví dụ 15:30 (để trống nếu không dùng).'),
+  pickupAlertHours: whole('Giờ cảnh báo hãng chưa lấy hàng', 720),
   autoReceiveDays: whole('Số ngày tự xác nhận đã nhận hàng', 90),
   returnWindowDays: whole('Số ngày được trả hàng', 90),
 })

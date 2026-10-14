@@ -14,6 +14,8 @@ import { displayCode, normCode } from '../src/lib/orderCode.js'
 import { extractOrderNumber, extractOrderNumbers } from '../src/lib/paymentWebhook.js'
 import { generateOrderNumber } from '../src/utils/ids.js'
 import { handleDueAt } from '../src/lib/orderFlow.js'
+import { orderWeightGrams } from '../src/lib/weight.js'
+import { cutoffToday } from '../src/lib/fulfillment.js'
 import { classifyDelivery, isExpressService, isSameCity, deliveryTypeOf } from '../src/lib/deliveryType.js'
 import { publicOrderView } from '../src/controllers/orders.js'
 import { ordersSchema } from '../src/schemas/settings.js'
@@ -983,12 +985,12 @@ describe('tính cước vận chuyển qua Goship', () => {
   test('chooseShipping: có báo giá thì bắt buộc chọn đúng lựa chọn, không thì phí cố định; client không tự đặt giá được', () => {
     const st = settings({ fee: 25000 })
     const ok = { status: 'ok', options: [{ id: 'a', carrier: 'GHTK', service: 'Nhanh', fee: 18000 }, { id: 'b', carrier: 'VTP', service: '', fee: 39000 }] }
-    assert.deepEqual(chooseShipping(st, 100000, ok, 'a'), { fee: 18000, label: 'GHTK – Nhanh (Goship)', service: 'Nhanh', express: undefined })
-    assert.deepEqual(chooseShipping(st, 100000, ok, 'b'), { fee: 39000, label: 'VTP (Goship)', service: '', express: undefined })
+    assert.deepEqual(chooseShipping(st, 100000, ok, 'a'), { fee: 18000, label: 'GHTK – Nhanh (Goship)', service: 'Nhanh', carrier: 'GHTK', express: undefined })
+    assert.deepEqual(chooseShipping(st, 100000, ok, 'b'), { fee: 39000, label: 'VTP (Goship)', service: '', carrier: 'VTP', express: undefined })
     assert.equal(chooseShipping(st, 100000, ok, undefined).error, 'SHIPPING_CHANGED') // không chọn: không được hưởng phí cố định rẻ hơn
     assert.equal(chooseShipping(st, 100000, ok, 'zzz').error, 'SHIPPING_CHANGED') // mã không còn hiệu lực
     for (const status of ['disabled', 'incomplete', 'error']) {
-      assert.deepEqual(chooseShipping(st, 100000, { status, options: [] }, 'a'), { fee: 25000, label: null, service: null, express: false }, status)
+      assert.deepEqual(chooseShipping(st, 100000, { status, options: [] }, 'a'), { fee: 25000, label: null, service: null, carrier: null, express: false }, status)
     }
     assert.equal(chooseShipping(settings({ fee: 25000, freeShippingOver: 50000 }), 100000, { status: 'disabled', options: [] }).fee, 0)
   })
@@ -1216,7 +1218,7 @@ describe('mã đơn hiển thị: mã vận đơn của hãng thay ORD-xxxxx khi
 })
 
 describe('vòng đời đơn kiểu Shopee', () => {
-  const rules = { handleHours: 48, intracityHandleHours: 24, expressHandleHours: 6, cancelAutoApproveHours: 24, unpaidCancelHours: 24, autoReceiveDays: 7, returnWindowDays: 7, expressKeywords: 'hỏa tốc, instant' }
+  const rules = { handleHours: 48, intracityHandleHours: 24, expressHandleHours: 6, cancelAutoApproveHours: 24, unpaidCancelHours: 24, autoReceiveDays: 7, returnWindowDays: 7, expressKeywords: 'hỏa tốc, instant', autoConfirmEnabled: true, autoConfirmCodMax: 0, autoConfirmDelayMinutes: 10, pickupCutoff: '15:30', pickupAlertHours: 24 }
   test('hạn xử lý = giờ đặt + handleHours, chỉ cho đơn còn việc', () => {
     const createdAt = new Date('2026-11-14T00:00:00Z')
     assert.equal(handleDueAt({ status: 'PENDING_CONFIRMATION', createdAt }, rules).toISOString(), '2026-11-16T00:00:00.000Z')
@@ -1299,5 +1301,29 @@ describe('loại đơn: hỏa tốc / nội thành / liên tỉnh', () => {
     assert.equal(due('INTRACITY'), '2026-11-15T00:00:00.000Z')
     assert.equal(due('INTERPROVINCE'), '2026-11-16T00:00:00.000Z')
     assert.equal(handleDueAt({ status: 'CONFIRMED', createdAt }, { ...rules, expressHandleHours: 0 }, 'EXPRESS'), null) // 0 = không đếm loại này
+  })
+})
+
+describe('khối lượng tính cước và giờ chốt đơn', () => {
+  const w = { a: 500, b: 1200 }
+  const weightOf = (id) => w[id] || 0
+  test('đủ khối lượng thật thì cộng theo số lượng', () => {
+    assert.equal(orderWeightGrams([{ productId: 'a', quantity: 2 }, { productId: 'b', quantity: 1 }], 4000, weightOf), 2200)
+  })
+  test('thiếu khối lượng của một món thì dùng cân nặng cố định (không báo cước thấp hơn thực tế)', () => {
+    assert.equal(orderWeightGrams([{ productId: 'a', quantity: 1 }, { productId: 'x', quantity: 1 }], 4000, weightOf), 4000)
+    assert.equal(orderWeightGrams([], 4000, weightOf), 4000)
+  })
+  test('giới hạn trong khoảng Goship nhận', () => {
+    assert.equal(orderWeightGrams([{ productId: 'a', quantity: 1000 }], 4000, weightOf), 100000)
+    assert.equal(orderWeightGrams([{ productId: 'a', quantity: 1 }], 4000, () => 10), 100)
+  })
+  test('giờ chốt đơn tính theo giờ Việt Nam', () => {
+    // 2026-11-14 05:00 UTC = 12:00 giờ VN -> mốc 15:30 VN = 08:30 UTC cùng ngày
+    assert.equal(cutoffToday('15:30', new Date('2026-11-14T05:00:00Z')).toISOString(), '2026-11-14T08:30:00.000Z')
+    // 2026-11-14 20:00 UTC = 03:00 ngày 15 giờ VN -> mốc của ngày 15
+    assert.equal(cutoffToday('15:30', new Date('2026-11-14T20:00:00Z')).toISOString(), '2026-11-15T08:30:00.000Z')
+    assert.equal(cutoffToday('', new Date()), null)
+    assert.equal(cutoffToday('25:99', new Date()), null)
   })
 })

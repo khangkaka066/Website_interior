@@ -8,6 +8,8 @@ import { api } from '../../../api'
 import { paymentStatusLabel } from '../../../constants/orderStatus'
 import { formatCurrency, formatDateTime } from '../../../utils/format'
 import { DELIVERY_LABEL } from '../../DeliveryBadge'
+import { PICKUP_LABEL } from './PickupMethod'
+import { paymentMethodLabel } from '../../../constants/paymentMethod'
 import '../../../styles/print.css'
 
 const MAX_ORDERS = 50
@@ -107,7 +109,7 @@ function LabelSheet({ order, shop, skipped, onToggle }) {
         </div>
       </div>
 
-      {ship?.weightGrams ? <div className="lbl-weight">Khối lượng tối đa: {ship.weightGrams}g</div> : null}
+      {ship?.weightGrams ? <div className="lbl-weight">{ship.pickupMethod ? `${PICKUP_LABEL[ship.pickupMethod]} · ` : ''}Khối lượng tối đa: {ship.weightGrams}g</div> : null}
 
       <div className="lbl-bottom">
         <div className="lbl-cod">
@@ -122,6 +124,67 @@ function LabelSheet({ order, shop, skipped, onToggle }) {
 
       {ship?.note && <div className="lbl-note"><b>Chỉ dẫn giao hàng:</b> {ship.note}</div>}
       <div className="lbl-foot">Cảm ơn quý khách đã mua hàng tại {shop.name}!{shop.hotline ? ` · Hotline: ${shop.hotline}` : ''}</div>
+    </section>
+  )
+}
+
+// Phiếu nhặt hàng GỘP: cộng số lượng cùng một sản phẩm + phân loại của nhiều đơn để nhân viên đi kho một vòng, rồi chia về từng đơn khi đóng gói.
+function PickingList({ orders, shop, skipped, onToggle }) {
+  const included = orders.filter((o) => !skipped.has(o.id))
+  const lines = new Map()
+  for (const o of included) {
+    for (const it of o.items) {
+      const key = `${it.productId || it.name}|${it.variant || ''}`
+      const line = lines.get(key) || { name: it.name, variant: it.variant, sku: it.sku, qty: 0, orders: [] }
+      line.qty += Number(it.quantity) || 0
+      line.orders.push(`${o.shipment?.carrierCode || o.orderNumber} ×${it.quantity}`)
+      lines.set(key, line)
+    }
+  }
+  const rows = [...lines.values()].sort((a, b) => a.name.localeCompare(b.name, 'vi') || String(a.variant).localeCompare(String(b.variant), 'vi'))
+  const total = rows.reduce((n, r) => n + r.qty, 0)
+  return (
+    <section className="print-sheet">
+      <div className="print-pick" style={{ flexWrap: 'wrap' }}>
+        {orders.map((o) => (
+          <label key={o.id} style={{ marginRight: '10px' }}>
+            <input type="checkbox" checked={!skipped.has(o.id)} onChange={() => onToggle(o.id)} /> {o.shipment?.carrierCode || o.orderNumber}
+          </label>
+        ))}
+      </div>
+      <header className="print-head">
+        <div>
+          <div className="print-shop">{shop.name}</div>
+          <div>Phiếu nhặt hàng gộp</div>
+        </div>
+        <div className="print-code-box">
+          <div className="print-title">{included.length} ĐƠN · {total} SẢN PHẨM</div>
+          <div>In lúc {formatDateTime(new Date())}</div>
+        </div>
+      </header>
+      <table className="print-table" style={{ marginTop: '10px' }}>
+        <thead>
+          <tr>
+            <th style={{ width: '28px' }}>☐</th>
+            <th>Sản phẩm</th>
+            <th style={{ width: '56px' }}>SL</th>
+            <th>Thuộc đơn</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}>
+              <td>☐</td>
+              <td>
+                <strong>{r.name}</strong>
+                {r.variant && <div className="print-muted">{r.variant}</div>}
+              </td>
+              <td><strong style={{ fontSize: '16px' }}>{r.qty}</strong></td>
+              <td className="print-muted">{r.orders.join(', ')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   )
 }
@@ -177,7 +240,7 @@ function Sheet({ order, shop, skipped, onToggle }) {
           ) : (
             <div>Chưa có vận đơn</div>
           )}
-          <div>Thanh toán: {order.paymentMethod} · {paymentStatusLabel(order.paymentStatus)}</div>
+          <div>Thanh toán: {paymentMethodLabel(order.paymentMethod, { staff: false })} · {paymentStatusLabel(order.paymentStatus)}</div>
         </div>
       </div>
 
@@ -235,7 +298,8 @@ export default function PrintOrdersModal({ ids, onClose }) {
   const [skipped, setSkipped] = useState(() => new Set())
   const [format, setFormat] = useState(() => {
     try {
-      return localStorage.getItem('clevinum_print_format') === 'a4' ? 'a4' : 'label'
+      const f = localStorage.getItem('clevinum_print_format')
+      return f === 'a4' || f === 'pick' ? f : 'label'
     } catch {
       return 'label'
     }
@@ -285,6 +349,7 @@ export default function PrintOrdersModal({ ids, onClose }) {
         <span className="print-seg">
           <button className={format === 'label' ? 'on' : ''} onClick={() => pickFormat('label')}>Tem giao hàng (A6)</button>
           <button className={format === 'a4' ? 'on' : ''} onClick={() => pickFormat('a4')}>Phiếu đơn (A4)</button>
+          <button className={format === 'pick' ? 'on' : ''} onClick={() => pickFormat('pick')}>Nhặt hàng gộp</button>
         </span>
         <span className="print-hint">Bỏ tích ở từng phiếu để loại bớt đơn trước khi in.</span>
       </div>
@@ -293,7 +358,8 @@ export default function PrintOrdersModal({ ids, onClose }) {
       <div className={`print-page${format === 'label' ? ' print-page-label' : ''}`} onClick={(e) => e.stopPropagation()}>
         {error && <p className="print-error">{error}</p>}
         {!orders && !error && <p>Đang tải phiếu…</p>}
-        {orders?.map((o) => {
+        {orders && format === 'pick' && <PickingList orders={orders} shop={shop} skipped={skipped} onToggle={toggle} />}
+        {format !== 'pick' && orders?.map((o) => {
           const Comp = format === 'label' ? LabelSheet : Sheet
           return <Comp key={o.id} order={o} shop={shop} skipped={skipped.has(o.id)} onToggle={() => toggle(o.id)} />
         })}

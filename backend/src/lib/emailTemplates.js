@@ -69,6 +69,20 @@ export async function orderStatusEmail(order, status) {
   return { subject, html, text: `${info[0]} (${code}). ${info[1]} Chi tiết: ${trackLink(order)}` }
 }
 
+// Báo khách: hàng đã đóng gói xong và bàn giao cho hãng vận chuyển (kèm mã vận đơn để tự tra trên website hãng).
+export async function orderHandoverEmail(order, shipment, carrierName) {
+  const { store } = await getSettings()
+  const code = shipment.carrierCode || order.orderNumber
+  const subject = `Đơn hàng ${code} đã bàn giao cho ${carrierName}`
+  const html = layout(
+    store.name,
+    'Đơn hàng đã được bàn giao cho đơn vị vận chuyển',
+    `<p>Đơn hàng <strong>${esc(order.orderNumber)}</strong> đã được đóng gói và bàn giao cho <strong>${esc(carrierName)}</strong>.${shipment.carrierCode ? ` Mã vận đơn: <strong>${esc(shipment.carrierCode)}</strong>.` : ''}</p>
+<p><a href="${esc(trackLink(order))}" style="background:#c8913f;color:#fff;padding:10px 18px;border-radius:20px;text-decoration:none;display:inline-block">Theo dõi đơn hàng</a></p>`,
+  )
+  return { subject, html, text: `${subject}. Theo dõi: ${trackLink(order)}` }
+}
+
 export async function passwordResetEmail(name, token) {
   const { store } = await getSettings()
   const link = `${shopUrl()}/reset-password?token=${encodeURIComponent(token)}`

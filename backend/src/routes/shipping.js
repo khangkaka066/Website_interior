@@ -9,6 +9,9 @@ import {
   updateShipmentStatus,
   cancelShipment,
   setCarrierCode,
+  pendingHandoverList,
+  createHandoverRecord,
+  getHandoverRecord,
 } from '../controllers/shipping.js'
 import { listCarriers, createCarrier, updateCarrier } from '../controllers/carriers.js'
 import { checkGoship } from '../lib/goship.js'
@@ -17,7 +20,7 @@ import { webhookLimiter } from '../middleware/security.js'
 import { validate } from '../middleware/validate.js'
 import { requirePermission } from '../middleware/auth.js'
 
-import { createShipmentSchema, shipmentStatusSchema, noteOnlySchema, createCarrierSchema, updateCarrierSchema, goshipCreateShipmentSchema, goshipBulkCreateSchema, carrierCodeSchema } from '../schemas/admin.js'
+import { createShipmentSchema, shipmentStatusSchema, noteOnlySchema, createCarrierSchema, updateCarrierSchema, goshipCreateShipmentSchema, goshipBulkCreateSchema, carrierCodeSchema, handoverSchema } from '../schemas/admin.js'
 
 const router = Router()
 const guard = requirePermission('shipping')
@@ -41,6 +44,9 @@ router.post('/carriers', guard, validate(createCarrierSchema), asyncHandler(crea
 router.patch('/carriers/:id', guard, validate(updateCarrierSchema), asyncHandler(updateCarrier))
 router.get('/', guard, asyncHandler(listShipments))
 router.post('/', guard, validate(createShipmentSchema), asyncHandler(createShipment))
+router.get('/handovers', guard, asyncHandler(pendingHandoverList)) // trước '/:id'
+router.post('/handovers', guard, validate(handoverSchema), asyncHandler(createHandoverRecord))
+router.get('/handovers/:id', guard, asyncHandler(getHandoverRecord))
 router.get('/:id', guard, asyncHandler(getShipment))
 router.patch('/:id/status', guard, validate(shipmentStatusSchema), asyncHandler(updateShipmentStatus))
 router.patch('/:id/carrier-code', guard, validate(carrierCodeSchema), asyncHandler(setCarrierCode))

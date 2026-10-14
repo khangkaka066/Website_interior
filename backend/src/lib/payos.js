@@ -13,8 +13,9 @@ export const payosConfigured = () =>
 
 export const PAYOS_PUBLIC_METHOD = {
   id: PAYOS_METHOD_ID,
-  label: 'Thanh toán online (PayOS)',
-  description: 'Quét mã QR ngân hàng hoặc thanh toán thẻ/ví. Đơn tự xác nhận ngay khi thanh toán xong.',
+  // Khách chỉ thấy "Chuyển khoản ngân hàng" (không nhắc tên PayOS): PayOS là cách chạy phía sau của lựa chọn chuyển khoản.
+  label: 'Chuyển khoản ngân hàng',
+  description: 'Quét mã QR bằng app ngân hàng, đơn tự xác nhận ngay khi thanh toán xong.',
 }
 
 const hmac = (data) => crypto.createHmac('sha256', process.env.PAYOS_CHECKSUM_KEY).update(data).digest('hex')

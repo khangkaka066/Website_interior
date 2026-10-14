@@ -1,4 +1,5 @@
 import { normCode } from './orderCode.js'
+import { orderWeightGrams } from './weight.js'
 import { prisma } from './prisma.js'
 import { getSettings, COD_METHOD_ID } from './settingsStore.js'
 import { quoteShipping, resolveAddressIds } from './shippingRates.js'
@@ -87,7 +88,7 @@ const str = (v) => (v === undefined || v === null ? '' : String(v))
 // ----------------------------------------------------------------------------------------------------------------
 
 async function loadOrderForShipment(db, orderId) {
-  const order = await db.order.findUnique({ where: { id: orderId }, include: { shipment: true } })
+  const order = await db.order.findUnique({ where: { id: orderId }, include: { shipment: true, items: { select: { productId: true, quantity: true } } } })
   if (!order) throw new ShipmentError('Không tìm thấy đơn hàng.', 404)
   return order
 }
@@ -109,6 +110,9 @@ function assertCreatable(order, settings) {
 // Số tiền thu hộ: đơn COD thu đúng tổng khách phải trả (tiền hàng + phí vận chuyển khách đã trả cho shop), còn lại 0.
 const codFor = (order) => (order.paymentMethod === COD_METHOD_ID ? Math.round(Number(order.total)) : 0)
 
+// Khối lượng tính cước của đơn: tổng khối lượng thật của sản phẩm nếu đủ dữ liệu, không thì cân nặng cố định trong Cài đặt.
+export const weightFor = (order, settings) => orderWeightGrams(order.items, settings.shipping.goship.defaultWeightGrams)
+
 // Hỏi cước cho một đơn hàng cụ thể (để admin chọn hãng).
 export async function ratesForOrder(orderId, db = prisma, settingsIn) {
   const order = await loadOrderForShipment(db, orderId)
@@ -119,14 +123,19 @@ export async function ratesForOrder(orderId, db = prisma, settingsIn) {
     address: { province: order.province, district: order.district, ward: order.ward },
     subtotal: Number(order.subtotal),
     cod: codFor(order),
+    weightGrams: weightFor(order, settings),
   })
   if (quote.status === 'incomplete') throw new ShipmentError('Địa chỉ của đơn chưa khớp danh sách tỉnh/quận/phường của Goship. Hãy sửa địa chỉ đơn rồi thử lại.', 422, 'ADDRESS_UNMATCHED')
   if (quote.status !== 'ok') throw new ShipmentError('Không lấy được cước từ Goship, vui lòng thử lại.', 502, 'QUOTE_FAILED')
-  return { options: quote.options, weightGrams: settings.shipping.goship.defaultWeightGrams, cod: codFor(order), subtotal: Number(order.subtotal) }
+  // Đánh dấu phương án khách đã chọn lúc đặt hàng (cùng hãng và gói dịch vụ) để mặc định chọn lại đúng hãng đó.
+  const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
+  const options = quote.options.map((o) => ({ ...o, preferred: !!order.shippingCarrier && same(o.carrier, order.shippingCarrier) && same(o.service, order.shippingService) }))
+  const customerChoice = order.shippingCarrier ? { carrier: order.shippingCarrier, service: order.shippingService, fee: Number(order.shippingFee) } : null
+  return { options, customerChoice, weightGrams: weightFor(order, settings), cod: codFor(order), subtotal: Number(order.subtotal) }
 }
 
 // Phần thân gửi Goship (thuần, kiểm thử được).
-export function buildShipmentBody({ order, settings, rateId, from, to }) {
+export function buildShipmentBody({ order, settings, rateId, from, to, weightGrams }) {
   const g = settings.shipping.goship
   return {
     rate: rateId,
@@ -137,7 +146,7 @@ export function buildShipmentBody({ order, settings, rateId, from, to }) {
     parcel: {
       cod: String(codFor(order)),
       amount: String(Math.round(Number(order.subtotal))),
-      weight: String(g.defaultWeightGrams),
+      weight: String(weightGrams || g.defaultWeightGrams),
       width: '1',
       height: '1',
       length: '1',
@@ -156,7 +165,7 @@ async function ensureGoshipCarrier(db) {
   })
 }
 
-export async function createShipmentForOrder({ orderId, rateId, actor = 'admin', settings: settingsIn }, db = prisma) {
+export async function createShipmentForOrder({ orderId, rateId, actor = 'admin', settings: settingsIn, pickupMethod = null }, db = prisma) {
   if (creating.has(orderId)) throw new ShipmentError('Đang tạo vận đơn cho đơn này, vui lòng chờ.', 409, 'IN_PROGRESS')
   creating.add(orderId)
   try {
@@ -174,7 +183,7 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
     const to = await resolveAddressIds({ province: order.province, district: order.district, ward: order.ward })
     if (!from || !to) throw new ShipmentError('Không đổi được địa chỉ sang mã Goship (kho gửi hoặc địa chỉ nhận không khớp danh sách).', 422, 'ADDRESS_UNMATCHED')
 
-    const body = buildShipmentBody({ order, settings, rateId, from, to })
+    const body = buildShipmentBody({ order, settings, rateId, from, to, weightGrams: weightFor(order, settings) })
     let created
     try {
       created = await createGoshipShipment(body)
@@ -204,6 +213,7 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
     const data = {
       trackingId: gcode,
       sortingCode: str(created.sorting_code) || null,
+      pickupMethod: pickupMethod || null, // ghi rõ cả khi rỗng: bản ghi dùng lại của vận đơn đã hủy phải bỏ lựa chọn cũ
       carrierCode: normCode(created.tracking_number) || null, // ghi rõ cả khi rỗng: bản ghi dùng lại của vận đơn đã hủy phải bỏ mã cũ
       carrierId: carrier.id,
       status: local,
@@ -214,7 +224,7 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
       ward: order.ward,
       district: order.district,
       province: order.province,
-      weightGrams: g.defaultWeightGrams,
+      weightGrams: weightFor(order, settings),
       lengthCm: 1,
       widthCm: 1,
       heightCm: 1,

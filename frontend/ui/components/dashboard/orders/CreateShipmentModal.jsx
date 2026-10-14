@@ -1,5 +1,6 @@
 'use client'
 
+import PickupMethod, { usePickupMethod } from './PickupMethod'
 import { useState, useEffect } from 'react'
 import { api } from '../../../api'
 import { formatCurrency } from '../../../utils/format'
@@ -20,6 +21,7 @@ export default function CreateShipmentModal({ order, onClose, onCreated }) {
     note: '',
   })
   const [submitting, setSubmitting] = useState(false)
+  const [pickup, setPickup] = usePickupMethod()
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export default function CreateShipmentModal({ order, onClose, onCreated }) {
         shippingFee: Number(form.shippingFee),
         codAmount: Number(form.codAmount) || 0,
         carrierCode: form.carrierCode.trim() || undefined,
+        pickupMethod: pickup,
         note: form.note,
       })
       onCreated(shipment)
@@ -122,6 +125,9 @@ export default function CreateShipmentModal({ order, onClose, onCreated }) {
           <div className="dash-form-field">
             <label>COD ({formatCurrency(order.total)} tổng đơn)</label>
             <input type="number" value={form.codAmount} onChange={(e) => update('codAmount', e.target.value)} />
+          </div>
+          <div className="dash-form-field full">
+            <PickupMethod value={pickup} onChange={setPickup} disabled={submitting} />
           </div>
           <div className="dash-form-field full">
             <label>Mã vận đơn của hãng (nếu đã có)</label>

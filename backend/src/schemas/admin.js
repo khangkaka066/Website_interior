@@ -130,6 +130,9 @@ export const addAddressSchema = z.object({ ...addressFields, isDefault: z.boolea
 export const addNoteSchema = z.object({ content: text('nội dung ghi chú', 2000) })
 
 // --- Vận chuyển ---------------------------------------------------------------
+// Cách giao hàng cho hãng: hãng tới shop lấy, hoặc shop mang ra bưu cục.
+const pickupMethod = z.enum(['PICKUP', 'DROP_OFF'], 'Cách giao hàng cho hãng không hợp lệ.').optional()
+
 export const createShipmentSchema = z.object({
   orderId: cuid('đơn hàng'),
   carrierId: cuid('đơn vị vận chuyển'),
@@ -142,6 +145,7 @@ export const createShipmentSchema = z.object({
   shippingFee: num('phí vận chuyển', { min: 0 }),
   codAmount: num('tiền thu hộ').optional().default(0),
   carrierCode: optionalText('mã vận đơn của hãng', 60),
+  pickupMethod: pickupMethod,
   note: noteField,
 })
 
@@ -160,6 +164,11 @@ export const noteOnlySchema = z.object({ note: noteField })
 export const bulkOrderStatusSchema = z.object({
   ids: z.array(text('đơn hàng', 60)).min(1, 'Chưa chọn đơn hàng nào.').max(100, 'Chọn tối đa 100 đơn mỗi lần.'),
   status: z.enum(['CONFIRMED', 'PROCESSING'], 'Chỉ chuyển hàng loạt sang Đã xác nhận hoặc Đang xử lý.'),
+})
+export const scanPackSchema = z.object({ code: text('mã vạch', 80) })
+export const handoverSchema = z.object({
+  carrierId: cuid('đơn vị vận chuyển'),
+  shipmentIds: z.array(z.string().trim().min(1).max(60)).max(500).optional(),
 })
 export const optionalNoteSchema = z.object({ note: optionalText('ghi chú', 300) })
 export const requiredNoteSchema = z.object({ note: text('lý do', 300) })
@@ -236,8 +245,10 @@ export const updatePostSchema = z.object({
 export const goshipBulkCreateSchema = z.object({
   orderIds: z.array(text('đơn hàng', 60)).min(1, 'Chưa chọn đơn hàng nào.').max(30, 'Tạo vận đơn tối đa 30 đơn mỗi lần.'),
   confirm: z.literal(true, 'Cần xác nhận đây là vận đơn thật.'),
+  pickupMethod,
 })
 export const goshipCreateShipmentSchema = z.object({
+  pickupMethod,
   rateId: z.string('Chưa chọn đơn vị vận chuyển.').trim().min(1, 'Chưa chọn đơn vị vận chuyển.').max(200, 'Mã lựa chọn không hợp lệ.'),
   confirm: z.literal(true, 'Cần xác nhận đây là vận đơn thật.'),
 })

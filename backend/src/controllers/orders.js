@@ -7,9 +7,11 @@ import { quoteShipping, chooseShipping } from '../lib/shippingRates.js'
 import { sendMail } from '../lib/mailer.js'
 import { PAYOS_METHOD_ID, payosConfigured, createPaymentLink } from '../lib/payos.js'
 import { displayCode, findOrderByCode, normCode } from '../lib/orderCode.js'
+import { orderWeightGrams } from '../lib/weight.js'
+import { scanPack, packQueue, workload } from '../lib/fulfillment.js'
 import { DELIVERY_TYPES, classifyDelivery, deliveryTypeOf } from '../lib/deliveryType.js'
 import { orderCreatedEmail } from '../lib/emailTemplates.js'
-import { ORDER_INCLUDE, OPEN_STATUSES, FlowError, applyTransition, approveCancel, rejectCancel, approveReturn, rejectReturn, handleDueAt, canRequestReturn } from '../lib/orderFlow.js'
+import { ORDER_INCLUDE, OPEN_STATUSES, FlowError, applyTransition, advanceToProcessing, approveCancel, rejectCancel, approveReturn, rejectReturn, handleDueAt, canRequestReturn } from '../lib/orderFlow.js'
 import { invalidateUser } from '../lib/authCache.js'
 
 // Đơn công khai: giá, phí ship, giảm giá do server quyết định, không tin client.
@@ -112,7 +114,10 @@ export async function listOrders(req, res) {
   }
   const view = (o) => {
     const type = deliveryTypeOf(o, settings)
-    return toPlain({ ...o, code: displayCode(o), deliveryType: type, handleDueAt: handleDueAt(o, rules, type) })
+    // Hãng chưa lấy hàng quá pickupAlertHours giờ kể từ lúc tạo vận đơn (nhắc nhân viên liên hệ hãng).
+    const waiting = o.shipment?.status === 'AWAITING_PICKUP'
+    const pickupOverdue = !!(waiting && rules.pickupAlertHours && Date.now() - new Date(o.shipment.createdAt).getTime() > rules.pickupAlertHours * 3600000)
+    return toPlain({ ...o, code: displayCode(o), deliveryType: type, handleDueAt: handleDueAt(o, rules, type), pickupOverdue })
   }
 
   if (needsAction === '1') {
@@ -222,7 +227,7 @@ export async function createOrder(req, res) {
   const tax = 0
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0)
   // Phí vận chuyển do server quyết định: báo giá Goship chạy được thì khách phải chọn đúng một lựa chọn còn hiệu lực, không thì phí cố định.
-  const quote = await quoteShipping({ settings, address: { province, district, ward }, subtotal, cod: paymentMethod === COD_METHOD_ID ? subtotal : 0 })
+  const quote = await quoteShipping({ settings, address: { province, district, ward }, subtotal, cod: paymentMethod === COD_METHOD_ID ? subtotal : 0, weightGrams: orderWeightGrams(lines, settings.shipping.goship.defaultWeightGrams) })
   const shipping = chooseShipping(settings, subtotal, quote, shippingRateId)
   if (shipping.error) {
     return res.status(409).json({ error: 'Cước vận chuyển đã thay đổi hoặc chưa chọn đơn vị vận chuyển, vui lòng chọn lại.', code: 'SHIPPING_CHANGED' })
@@ -248,6 +253,7 @@ export async function createOrder(req, res) {
           stockReserved: reserved,
           deliveryType: classifyDelivery({ province, service: shipping.service }, settings),
           shippingService: shipping.service || null,
+          shippingCarrier: shipping.carrier || null,
           orderNumber: generateOrderNumber(),
           customerId: dbCustomer.id,
           paymentMethod,
@@ -382,6 +388,24 @@ const actorOf = (req) => req.user?.username || req.user?.email || 'admin'
 function transitionOrderStatus(req, res, { to, note }) {
   return adminAction(req, res, (order) => applyTransition(order, { to, note, actor: actorOf(req) }))
 }
+
+// Quét mã vạch trên tem để xác nhận đã đóng gói; hàng đợi đóng gói; khối lượng việc và giờ chốt đơn hôm nay.
+export async function scanPackOrder(req, res) {
+  try {
+    res.json(await scanPack(req.body.code, actorOf(req)))
+  } catch (err) {
+    if (err instanceof FlowError) return flowFail(res, err)
+    throw err
+  }
+}
+export const packQueueOrders = async (req, res) => res.json(await packQueue())
+export const ordersWorkload = async (req, res) => {
+  res.set('Cache-Control', 'no-store')
+  res.json(await workload())
+}
+
+// Nút "Chuẩn bị hàng": xác nhận (nếu cần) và chuyển đơn sang Đang xử lý để tạo vận đơn / in tem.
+export const prepareOrder = (req, res) => adminAction(req, res, (order) => advanceToProcessing(order, actorOf(req)))
 
 export async function updateOrderStatus(req, res) {
   const { status, note } = req.body || {}
@@ -599,7 +623,7 @@ export async function shippingQuote(req, res) {
   }
   const settings = await getSettings()
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0)
-  const quote = await quoteShipping({ settings, address: { province, district, ward }, subtotal, cod: paymentMethod === COD_METHOD_ID ? subtotal : 0 })
+  const quote = await quoteShipping({ settings, address: { province, district, ward }, subtotal, cod: paymentMethod === COD_METHOD_ID ? subtotal : 0, weightGrams: orderWeightGrams(lines, settings.shipping.goship.defaultWeightGrams) })
   res.set('Cache-Control', 'no-store')
   if (quote.status === 'ok') return res.json({ mode: 'goship', options: quote.options })
   res.json({ mode: 'fixed', fee: shippingFeeFor(settings, subtotal), reason: quote.status })
