@@ -1,0 +1,167 @@
+/* ---------- Hiệu ứng cuộn trang (xem ScrollEffects.jsx) ---------- */
+
+/* B3. Thanh tiến trình cuộn ở mép trên trang. Nằm dưới thanh tải trang (z-index 10000) nên không đè lên nhau khi chuyển trang. */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 9990;
+  pointer-events: none;
+}
+.scroll-progress i {
+  display: block;
+  height: 100%;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, var(--accent), #e0a559);
+}
+
+/* C1. Header dính đầu trang; cuộn xuống thì gọn lại (thu thanh trên, ẩn thanh menu), cuộn lên thì hiện đầy đủ. */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: var(--bg-white);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.header.is-scrolled {
+  box-shadow: 0 8px 24px rgba(43, 33, 28, 0.1);
+}
+.header-top {
+  transition: padding 0.3s ease;
+}
+.header-bottom {
+  max-height: 120px;
+  transition: max-height 0.3s ease, opacity 0.25s ease, border-color 0.3s ease;
+}
+@media (min-width: 769px) {
+  .header.is-compact .header-top {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .header.is-compact .header-bottom {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+  }
+}
+/* Điện thoại: header cao nên không chiếm chỗ khi đọc: cuộn xuống thì trượt đi, cuộn lên thì hiện lại. */
+@media (max-width: 768px) {
+  .header.is-compact {
+    transform: translateY(-100%);
+  }
+}
+
+/* C2. Nút lên đầu trang (góc trái dưới, tránh nút gọi và chat ở góc phải). */
+.to-top {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 70;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(143, 74, 36, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px);
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s linear 0.3s, background 0.2s ease;
+}
+.to-top.is-on {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s, background 0.2s ease;
+}
+.to-top:hover {
+  background: var(--accent-dark);
+}
+.to-top:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 3px;
+}
+@media (max-width: 768px) {
+  .to-top {
+    left: 14px;
+    bottom: 14px;
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* A1 + A2. Hiện dần từ dưới lên, lần lượt. Dùng thuộc tính `translate` riêng nên không đụng tới `transform` của hiệu ứng rê chuột sẵn có. */
+.rv {
+  transition: opacity 0.7s ease var(--rv-delay, 0s), translate 0.75s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-delay, 0s);
+}
+.rv-hide {
+  opacity: 0;
+  translate: 0 26px;
+}
+
+/* A3. Ba ô danh mục "mở ra như kéo rèm": hai tấm vải che kín ô rồi trượt sang hai bên khi cuộn tới. */
+.category-grid .cat-card::before,
+.category-grid .cat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.5%;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.14) 12%, rgba(0, 0, 0, 0.08) 24%, rgba(255, 255, 255, 0.1) 36%, rgba(0, 0, 0, 0.1) 48%),
+    linear-gradient(180deg, #d9a766, #b5602f);
+  background-size: 56px 100%, 100% 100%;
+  transition: transform 1.15s cubic-bezier(0.7, 0, 0.2, 1) var(--rv-delay, 0s);
+}
+.category-grid .cat-card::before {
+  left: 0;
+  transform: translateX(-101%);
+}
+.category-grid .cat-card::after {
+  right: 0;
+  transform: translateX(101%);
+}
+.category-grid .cat-card.cc-closed::before,
+.category-grid .cat-card.cc-closed::after {
+  transform: none;
+  transition: none; /* trạng thái đóng được đặt ngay, không chạy hiệu ứng */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv,
+  .rv-hide,
+  .category-grid .cat-card::before,
+  .category-grid .cat-card::after,
+  .header,
+  .header-top,
+  .header-bottom,
+  .to-top {
+    transition: none;
+  }
+  .rv-hide {
+    opacity: 1;
+    translate: none;
+  }
+  .category-grid .cat-card::before,
+  .category-grid .cat-card::after {
+    display: none;
+  }
+}
+
+@media print {
+  .scroll-progress,
+  .to-top {
+    display: none;
+  }
+}

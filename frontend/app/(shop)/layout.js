@@ -1,6 +1,7 @@
 import Header from '@/ui/components/Header'
 import Footer from '@/ui/components/Footer'
 import ChatMount from '@/ui/components/ChatMount'
+import ScrollEffects from '@/ui/components/ScrollEffects'
 import { ProductsProvider } from '@/ui/data/liveProducts'
 import { fetchProducts, slimProduct } from '@/lib/server'
 
@@ -14,6 +15,7 @@ export default async function ShopLayout({ children }) {
       {children}
       <Footer />
       <ChatMount />
+      <ScrollEffects />
     </ProductsProvider>
   )
 }
