@@ -2606,3 +2606,28 @@ label {
     animation: none;
   }
 }
+
+/* ---------- Bố cục hero hai cột: khối chữ + ảnh rèm bên trái, video bên phải (cùng hàng); màn hình hẹp thì video xuống dưới ---------- */
+.hero-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .hero-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 48px;
+  }
+  .hero-video {
+    margin: 0;
+    max-width: none;
+    padding: 28px 28px 28px 20px; /* chừa chỗ cho viền và bốn góc trang trí nhô ra ngoài khung */
+    box-sizing: border-box;
+  }
+}

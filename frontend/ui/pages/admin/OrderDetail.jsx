@@ -84,11 +84,6 @@ export default function OrderDetail() {
     setModal('print')
   }
 
-  async function handleConfirmOrder() {
-    await api.post(`/orders/${id}/confirm`, {})
-    await load()
-  }
-
   async function handleCancelOrder(note) {
     await api.post(`/orders/${id}/cancel`, { note })
     setModal(null)
@@ -137,12 +132,10 @@ export default function OrderDetail() {
     )
   }
 
-  const canConfirm = order.status === 'PENDING_CONFIRMATION'
   const canCancel = !['CANCELLED', 'DELIVERED', 'RETURNED'].includes(order.status)
   const canRefund = order.paymentStatus === 'PAID'
   const hasActiveShipment = !!order.shipment && order.shipment.status !== 'NOT_CREATED'
-  // Hai bước riêng: Xác nhận đơn (đơn đang chờ xác nhận) rồi mới Chuẩn bị hàng (đơn đã xác nhận: nhặt, đóng gói, tạo vận đơn, in tem).
-  const canPrepare = !hasActiveShipment && ['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && !order.cancelRequestedAt
+  const canPrepare = !hasActiveShipment && ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && !order.cancelRequestedAt
   const isCancelledOrReturned = ['CANCELLED', 'RETURNED'].includes(order.status)
 
   const due = dueIn(order.handleDueAt)
@@ -171,7 +164,6 @@ export default function OrderDetail() {
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {canPrepare && <button className="dash-btn" onClick={handlePrepare} disabled={preparing}>{preparing ? 'Đang chuẩn bị…' : 'Chuẩn bị hàng'}</button>}
-          {canConfirm && !order.cancelRequestedAt && <button className="dash-btn" onClick={handleConfirmOrder}>Xác nhận đơn</button>}
           {order.shipment && (
             <button className="dash-btn dash-btn-ghost" onClick={() => navigate(`/dashboard/shipping/${order.shipment.id}`)}>
               Xem vận đơn

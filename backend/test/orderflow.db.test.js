@@ -169,18 +169,16 @@ suite('vòng đời đơn hàng với database (rollback)', () => {
           assert.equal((await load(legacy.id)).deliveryType, 'INTRACITY')
           assert.equal((await load(legacyFar.id)).deliveryType, 'INTERPROVINCE')
 
-          // --- 10) Chuẩn bị hàng là bước RIÊNG sau Xác nhận đơn: đơn chưa xác nhận thì chặn; đơn chuyển khoản chưa trả tiền / đang bị xin hủy cũng chặn ---
-          const codPending = await mk({ paymentMethod: 'COD' })
-          await assert.rejects(F.advanceToProcessing(await load(codPending.id), 'nv', tx), (e) => e instanceof F.FlowError && e.code === 'NOT_CONFIRMED')
-          assert.equal((await load(codPending.id)).status, 'PENDING_CONFIRMATION') // không tự xác nhận hộ
-          const codOrder = await mk({ paymentMethod: 'COD', status: 'CONFIRMED' })
+          // --- 10) Chuẩn bị hàng (như Shopee): tự xác nhận + sang Đang xử lý; đơn chưa thanh toán / đang bị xin hủy thì chặn ---
+          const codOrder = await mk({ paymentMethod: 'COD' })
           after = await F.advanceToProcessing(await load(codOrder.id), 'nv', tx)
           assert.equal(after.status, 'PROCESSING')
-          assert.equal((await load(codOrder.id)).statusEvents.at(-1).status, 'PROCESSING')
+          const evs = (await load(codOrder.id)).statusEvents.map((e) => e.status)
+          assert.deepEqual(evs.slice(-2), ['CONFIRMED', 'PROCESSING'])
           assert.equal((await F.advanceToProcessing(await load(codOrder.id), 'nv', tx)).status, 'PROCESSING') // gọi lại không lỗi
           const paidTransfer = await mk({ paymentStatus: 'PAID', status: 'CONFIRMED' })
           assert.equal((await F.advanceToProcessing(await load(paidTransfer.id), 'nv', tx)).status, 'PROCESSING')
-          await assert.rejects(F.advanceToProcessing(await load((await mk({ status: 'CONFIRMED' })).id), 'nv', tx), (e) => e.code === 'UNPAID')
+          await assert.rejects(F.advanceToProcessing(await load((await mk()).id), 'nv', tx), (e) => e instanceof F.FlowError && e.code === 'UNPAID')
           await assert.rejects(F.advanceToProcessing(await load((await mk({ paymentMethod: 'COD', status: 'CONFIRMED', cancelRequestedAt: new Date() })).id), 'nv', tx), (e) => e.code === 'CANCEL_REQUESTED')
           await rejectsFlow(F.advanceToProcessing(await load((await mk({ paymentMethod: 'COD', status: 'SHIPPING' })).id), 'nv', tx), /không chuẩn bị hàng được/)
 

@@ -81,18 +81,15 @@ export async function applyTransition(order, { to, note, actor = 'admin' }, db =
   return updated
 }
 
-// "Chuẩn bị hàng" (nhặt, đóng gói, tạo vận đơn): đưa đơn ĐÃ XÁC NHẬN tới "Đang xử lý". Xác nhận đơn là bước riêng đứng trước (kiểm tra đơn, xác nhận với khách,
-// khách nhận email "đã xác nhận"), không tự gộp vào đây. Đơn chuyển khoản / PayOS phải đã thanh toán (hãng lấy hàng đi mà tiền chưa về thì rủi ro).
-// Đơn đã ở Đang xử lý hoặc Chờ giao hàng thì giữ nguyên.
+// "Chuẩn bị hàng" (như Shopee): đưa đơn tới "Đang xử lý", tự xác nhận trước nếu đơn còn chờ xác nhận. Đơn chuyển khoản / PayOS phải đã thanh toán
+// (hãng lấy hàng đi mà tiền chưa về thì rủi ro). Đơn đã ở Đang xử lý hoặc Chờ giao hàng thì giữ nguyên.
 export async function advanceToProcessing(order, actor = 'admin', db = prisma) {
-  if (order.status === 'PENDING_CONFIRMATION') {
-    throw new FlowError('Đơn chưa được xác nhận. Hãy bấm "Xác nhận đơn" trước (kiểm tra đơn, xác nhận với khách), rồi mới chuẩn bị hàng.', 409, 'NOT_CONFIRMED')
-  }
   if (order.paymentMethod !== COD_METHOD_ID && order.paymentStatus !== 'PAID') {
     throw new FlowError('Đơn chưa thanh toán nên chưa chuẩn bị hàng. Hãy xác nhận thanh toán ở mục Thanh toán trước.', 409, 'UNPAID')
   }
   if (order.cancelRequestedAt) throw new FlowError('Khách đang yêu cầu hủy đơn này, hãy phản hồi yêu cầu trước khi chuẩn bị hàng.', 409, 'CANCEL_REQUESTED')
   let cur = order
+  if (cur.status === 'PENDING_CONFIRMATION') cur = await applyTransition(cur, { to: 'CONFIRMED', note: 'Xác nhận đơn hàng', actor }, db)
   if (cur.status === 'CONFIRMED') cur = await applyTransition(cur, { to: 'PROCESSING', note: 'Chuẩn bị hàng', actor }, db)
   if (!['PROCESSING', 'AWAITING_SHIPMENT'].includes(cur.status)) {
     throw new FlowError(`Đơn đang ở trạng thái "${cur.status}" nên không chuẩn bị hàng được.`)

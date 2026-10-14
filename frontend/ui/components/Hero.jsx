@@ -10,31 +10,34 @@ export default function Hero() {
       <div className="hero-glow glow-2" />
 
       <div className="container hero-inner">
-        <div className="hero-text">
-          <span className="hero-eyebrow">CHẤT LIỆU CAO CẤP · CURTAIN PREMIUM</span>
-          <h1>
-            Ánh sáng đẹp,
-            <br />
-            <span className="hero-accent">rèm chuẩn form.</span>
-          </h1>
-          <p>
-            Vải rèm dày dặn, cản sáng &amp; chống tia UV vượt trội — buông rủ mềm mại,
-            lên màu sang trọng dưới mọi ánh đèn.
-          </p>
-          <div className="hero-cta">
-            <Link className="btn btn-hero" to="/products">
-              MUA NGAY
-            </Link>
+        {/* Khối chữ + ảnh rèm (cột trái trên máy tính); video ở cột phải, cùng hàng. */}
+        <div className="hero-main">
+          <div className="hero-text">
+            <span className="hero-eyebrow">CHẤT LIỆU CAO CẤP · CURTAIN PREMIUM</span>
+            <h1>
+              Ánh sáng đẹp,
+              <br />
+              <span className="hero-accent">rèm chuẩn form.</span>
+            </h1>
+            <p>
+              Vải rèm dày dặn, cản sáng &amp; chống tia UV vượt trội — buông rủ mềm mại,
+              lên màu sang trọng dưới mọi ánh đèn.
+            </p>
+            <div className="hero-cta">
+              <Link className="btn btn-hero" to="/products">
+                MUA NGAY
+              </Link>
+            </div>
           </div>
-        </div>
 
-        <div className="hero-visual">
-          <div className="hero-visual-glow" />
-          <div className="hero-3d-stack">
-            <img className="stack-card card-back" src="/images/curtains/blue.webp" alt="Rèm xanh dương" />
-            <img className="stack-card card-mid" src="/images/curtains/brown.webp" alt="Rèm nâu" />
-            <img className="stack-card card-front" src="/images/curtains/gold.webp" alt="Rèm vàng gold" fetchPriority="high" decoding="async" />
-            <img className="hero-badge-logo" src="/images/brand/logo.png" alt="Curtain Premium Quality" />
+          <div className="hero-visual">
+            <div className="hero-visual-glow" />
+            <div className="hero-3d-stack">
+              <img className="stack-card card-back" src="/images/curtains/blue.webp" alt="Rèm xanh dương" />
+              <img className="stack-card card-mid" src="/images/curtains/brown.webp" alt="Rèm nâu" />
+              <img className="stack-card card-front" src="/images/curtains/gold.webp" alt="Rèm vàng gold" fetchPriority="high" decoding="async" />
+              <img className="hero-badge-logo" src="/images/brand/logo.png" alt="Curtain Premium Quality" />
+            </div>
           </div>
         </div>
 

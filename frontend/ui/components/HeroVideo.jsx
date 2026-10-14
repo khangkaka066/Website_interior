@@ -6,18 +6,34 @@ const SRC = '/videos/curtain-fabric.mp4'
 const POSTER = '/videos/curtain-fabric-poster.webp'
 
 // Video giới thiệu vải rèm trong khung viền vàng trang trí. Để trang chủ nhẹ: video chỉ được tải khi khách cuộn tới gần, tự phát (tắt tiếng, lặp)
-// khi nằm trong màn hình và tự dừng khi cuộn đi chỗ khác. Khách bật "giảm chuyển động" trong hệ điều hành thì không tự phát (có nút phát).
+// khi nằm trong màn hình và tự dừng khi cuộn đi chỗ khác. Khách KHÔNG có nút dừng; chỉ có nút bật/tắt tiếng. Nút phát ▶ chỉ hiện khi video không tự phát được
+// (khách bật "giảm chuyển động" trong hệ điều hành, hoặc trình duyệt chặn tự phát) để vẫn có cách xem.
 export default function HeroVideo() {
   const wrap = useRef(null)
   const video = useRef(null)
   const [load, setLoad] = useState(false) // đã tới gần: bắt đầu tải video
-  const [playing, setPlaying] = useState(false)
+  const [needsTap, setNeedsTap] = useState(false) // không tự phát được: hiện nút ▶
   const [muted, setMuted] = useState(true)
   const [reduced, setReduced] = useState(false)
 
+  // Phát video; trình duyệt chặn thì chuyển sang chế độ chờ khách bấm ▶.
+  function tryPlay() {
+    const v = video.current
+    if (!v) return
+    v.play().then(() => setNeedsTap(false)).catch(() => setNeedsTap(true))
+  }
+
+  // Tự phát chỉ khi khách không bật "giảm chuyển động". Đọc thiết lập ngay lúc phát (không dùng state) để tránh phát nhầm trước khi state kịp cập nhật.
+  const prefersReduced = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)
+  function autoPlay() {
+    if (!prefersReduced()) tryPlay()
+  }
+
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)')
-    setReduced(Boolean(mq?.matches))
+    const r = Boolean(mq?.matches)
+    setReduced(r)
+    setNeedsTap(r)
   }, [])
 
   useEffect(() => {
@@ -31,7 +47,7 @@ export default function HeroVideo() {
         const v = video.current
         if (entry.isIntersecting) {
           setLoad(true)
-          if (v && !reduced && v.paused && !v.dataset.userPaused) v.play().catch(() => {}) // trình duyệt chặn tự phát: để khách bấm nút
+          if (v && v.paused) autoPlay()
         } else if (v && !v.paused) {
           v.pause()
         }
@@ -40,26 +56,23 @@ export default function HeroVideo() {
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [reduced])
+  }, [])
 
-  // Video vừa tải xong dữ liệu đầu: phát nếu đang trong màn hình.
-  function onLoadedData() {
+  // Vừa đặt nguồn video (khách cuộn tới gần): phát ngay. Gọi play() sau khi đã có src mới tải được dữ liệu dù preload="none"; gọi trước đó (lúc chưa có src)
+  // thì không có tác dụng và video đứng yên cho tới khi khách cuộn thêm.
+  useEffect(() => {
     const v = video.current
+    if (!load || !v) return
     const r = wrap.current?.getBoundingClientRect()
     const visible = r && r.top < window.innerHeight && r.bottom > 0
-    if (v && visible && !reduced && !v.dataset.userPaused) v.play().catch(() => {})
-  }
+    if (visible) autoPlay()
+  }, [load])
 
-  function togglePlay() {
+  function playNow() {
     const v = video.current
     if (!v) return
-    if (v.paused) {
-      delete v.dataset.userPaused
-      v.play().catch(() => {})
-    } else {
-      v.dataset.userPaused = '1' // khách chủ động dừng: không tự phát lại khi cuộn qua
-      v.pause()
-    }
+    setLoad(true)
+    tryPlay()
   }
 
   function toggleMute() {
@@ -87,15 +100,15 @@ export default function HeroVideo() {
             loop
             playsInline
             preload="none"
-            onLoadedData={onLoadedData}
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
+            onPlay={() => setNeedsTap(false)}
             aria-label="Video vải rèm buông rủ dưới ánh sáng tự nhiên"
           />
           <div className="hv-controls">
-            <button type="button" onClick={togglePlay} aria-label={playing ? 'Tạm dừng video' : 'Phát video'}>
-              {playing ? '❚❚' : '▶'}
-            </button>
+            {needsTap && (
+              <button type="button" onClick={playNow} aria-label="Phát video">
+                ▶
+              </button>
+            )}
             <button type="button" onClick={toggleMute} aria-label={muted ? 'Bật tiếng' : 'Tắt tiếng'}>
               {muted ? '🔇' : '🔊'}
             </button>
