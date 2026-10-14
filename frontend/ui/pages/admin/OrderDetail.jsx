@@ -7,6 +7,7 @@ import StatusTimeline from '../../components/dashboard/StatusTimeline'
 import ConfirmModal from '../../components/dashboard/ConfirmModal'
 import CreateShipmentModal from '../../components/dashboard/orders/CreateShipmentModal'
 import GoshipShipmentModal from '../../components/dashboard/orders/GoshipShipmentModal'
+import PrintOrdersModal from '../../components/dashboard/orders/PrintOrdersModal'
 import { api } from '../../api'
 import {
   ORDER_STATUS,
@@ -33,7 +34,7 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [modal, setModal] = useState(null) // 'cancel' | 'confirm' | 'refund' | 'create-shipment' | 'goship-shipment'
+  const [modal, setModal] = useState(null) // 'cancel' | 'confirm' | 'refund' | 'create-shipment' | 'goship-shipment' | 'print'
   const [goshipReady, setGoshipReady] = useState(false) // đã bật tạo vận đơn thật qua Goship ở Cài đặt
 
   useEffect(() => {
@@ -73,9 +74,9 @@ export default function OrderDetail() {
     await load()
   }
 
-  // Mở trang in riêng (chỉ có nội dung phiếu, không kèm menu/nút) ở tab mới.
+  // Xem trước phiếu ngay trên trang này rồi in.
   function handlePrintInvoice() {
-    window.open(`/dashboard/orders/print?ids=${encodeURIComponent(id)}`, '_blank', 'noopener')
+    setModal('print')
   }
 
   if (loading) {
@@ -296,6 +297,8 @@ export default function OrderDetail() {
           onClose={() => setModal(null)}
         />
       )}
+      {modal === 'print' && <PrintOrdersModal ids={[order.id]} onClose={() => setModal(null)} />}
+
       {modal === 'goship-shipment' && (
         <GoshipShipmentModal
           order={order}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from '@/lib/router'
 import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
+import PrintOrdersModal from '../../components/dashboard/orders/PrintOrdersModal'
 import { ORDER_STATUS, PAYMENT_STATUS, orderStatusLabel, paymentStatusLabel } from '../../constants/orderStatus'
 import { formatCurrency, formatDate } from '../../utils/format'
 
@@ -20,6 +21,7 @@ export default function OrderList() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
+  const [printIds, setPrintIds] = useState(null) // mở khung xem trước phiếu in khi có giá trị
   const [selected, setSelected] = useState(() => new Set()) // id các đơn được chọn để in (giữ khi sang trang khác)
 
   const [data, setData] = useState({ items: [], total: 0 })
@@ -83,8 +85,7 @@ export default function OrderList() {
   const toggleAll = () => setSelected((s) => { const n = new Set(s); pageIds.forEach((id) => (allOnPage ? n.delete(id) : n.add(id))); return n })
   // In các đơn đã chọn; chưa chọn đơn nào thì in các đơn đang hiện trên trang này.
   function handlePrint() {
-    const ids = selected.size ? [...selected] : pageIds
-    window.open(`/dashboard/orders/print?ids=${ids.map(encodeURIComponent).join(',')}`, '_blank', 'noopener')
+    setPrintIds(selected.size ? [...selected] : pageIds)
   }
 
   return (
@@ -214,6 +215,8 @@ export default function OrderList() {
           )}
         </>
       )}
+
+      {printIds && <PrintOrdersModal ids={printIds} onClose={() => setPrintIds(null)} />}
     </AdminLayout>
   )
 }

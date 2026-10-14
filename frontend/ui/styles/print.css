@@ -1,16 +1,55 @@
-/* Phiếu in đơn hàng (trang /dashboard/orders/print). Màn hình: xem trước giống tờ giấy; in: chỉ còn phiếu, mỗi đơn một trang. */
+/* Phiếu in đơn hàng (khung PrintOrdersModal). Màn hình: khung xem trước phủ trên trang admin; in: chỉ còn phiếu, mỗi đơn một trang. */
+.print-portal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  overflow-y: auto;
+  background: rgba(20, 20, 20, 0.6);
+  padding: 24px 16px;
+}
 .print-page {
   max-width: 820px;
   margin: 0 auto;
-  padding: 16px;
   color: #111;
   font-size: 13px;
   line-height: 1.5;
 }
 .print-toolbar {
+  position: sticky;
+  top: -24px;
+  z-index: 1;
   display: flex;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin: -24px -16px 16px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+.print-hint {
+  font-size: 12px;
+  color: #666;
+}
+.print-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+}
+.print-skip {
+  opacity: 0.4;
+}
+.print-barcode-row {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 0;
+}
+.print-barcode {
+  max-width: 100%;
+  height: auto;
 }
 .print-error {
   color: #c0392b;
@@ -122,8 +161,23 @@
   html,
   body {
     background: #fff !important;
+    height: auto !important;
+    overflow: visible !important;
   }
-  .print-toolbar {
+  /* Ẩn toàn bộ giao diện admin, chỉ giữ khung phiếu (gắn trực tiếp vào <body>). */
+  body > *:not(.print-portal) {
+    display: none !important;
+  }
+  .print-portal {
+    position: static;
+    inset: auto;
+    overflow: visible;
+    background: none;
+    padding: 0;
+  }
+  .print-toolbar,
+  .print-pick,
+  .print-skip {
     display: none !important;
   }
   .print-page {
