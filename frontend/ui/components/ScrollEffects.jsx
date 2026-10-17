@@ -170,8 +170,40 @@ export default function ScrollEffects() {
     }
   }, [pathname])
 
+  // Lên đầu trang: tự chạy từng khung hình (thay cho scroll mượt của trình duyệt). Cuộn mượt gốc có thời gian cố định theo trình duyệt và bị giật khi trang
+  // đang có nhiều hiệu ứng theo cuộn; ở đây thời gian tỉ lệ nhẹ với quãng đường (0,45–1,1 giây), có đà vào/ra, và trong lúc chạy tạm tắt các hiệu ứng
+  // gắn với vị trí cuộn (class is-jumping, xem scroll-effects.css) để mỗi khung hình chỉ còn việc cuộn. Khách lăn chuột / chạm / bấm phím thì dừng ngay.
+  const jumpRef = useRef(null)
+  function stopJump() {
+    const j = jumpRef.current
+    if (!j) return
+    cancelAnimationFrame(j.raf)
+    ;['wheel', 'touchstart', 'keydown', 'mousedown'].forEach((t) => window.removeEventListener(t, stopJump))
+    document.documentElement.classList.remove('is-jumping')
+    jumpRef.current = null
+  }
+  useEffect(() => stopJump, [])
   function toTop() {
-    window.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' })
+    stopJump()
+    const from = window.scrollY
+    if (from <= 0) return
+    if (reducedMotion()) {
+      window.scrollTo(0, 0)
+      return
+    }
+    const duration = Math.min(1100, Math.max(450, Math.sqrt(from) * 14))
+    const ease = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2)
+    const t0 = performance.now()
+    document.documentElement.classList.add('is-jumping')
+    ;['wheel', 'touchstart', 'keydown', 'mousedown'].forEach((t) => window.addEventListener(t, stopJump, { passive: true }))
+    const j = (jumpRef.current = { raf: 0 })
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / duration)
+      window.scrollTo(0, from * (1 - ease(p)))
+      if (p < 1) j.raf = requestAnimationFrame(step)
+      else stopJump()
+    }
+    j.raf = requestAnimationFrame(step)
   }
 
   return (

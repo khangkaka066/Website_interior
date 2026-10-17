@@ -123,3 +123,19 @@
     scale: 0.97;
   }
 }
+
+/* Đang chạy lên đầu trang: tạm tắt các hiệu ứng gắn với vị trí cuộn (mờ dần khi ra, từng từ của tiêu đề) cho mượt; xong thì tự trở lại đúng trạng thái. */
+html.is-jumping .words:not(.words-load) .w,
+html.is-jumping .hero-center,
+html.is-jumping .category-grid .cat-card,
+html.is-jumping .showcase-head,
+html.is-jumping .product-section .tabs,
+html.is-jumping .product-section .product-grid > *,
+html.is-jumping .deal-visual,
+html.is-jumping .deal-content,
+html.is-jumping .product-columns > *,
+html.is-jumping .perks > .perk,
+html.is-jumping .instagram-grid > *,
+html.is-jumping .collection-head {
+  animation: none !important;
+}

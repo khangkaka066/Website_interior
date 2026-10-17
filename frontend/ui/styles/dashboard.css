@@ -1,12 +1,12 @@
 /* White theme, matches the rest of the site (see theme.css) */
 .dash-root {
-  --dash-body-bg: #f9f9f9;
+  --dash-body-bg: #f2f2f2; /* xám trung tính nhạt, cùng nền trang bán hàng; thẻ giữ trắng để nổi lên */
   --dash-card-bg: #ffffff;
   --dash-border: #e5e7eb;
   --dash-text: #475569; /* chữ phụ: đậm hơn để đủ tương phản trên nền trắng */
   --dash-radius: 8px;
   --dash-heading: #1e293b;
-  --dash-muted: #64748b;
+  --dash-muted: #56657a; /* đậm hơn một chút để đủ tương phản (≥4.5:1) trên nền #f2f2f2 */
   --dash-primary: #946b08;
   --dash-success: #3e8e4f;
   --dash-info: #3aa0c9;

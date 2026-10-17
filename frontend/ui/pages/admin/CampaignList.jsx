@@ -37,6 +37,19 @@ export default function CampaignList() {
     load()
   }, [load])
 
+  // Xóa chiến dịch kèm Ad Set và quảng cáo bên trong. Đơn hàng đã quy về chiến dịch vẫn giữ nguyên, chỉ không còn gắn với chiến dịch này nữa.
+  async function removeCampaign(c) {
+    const detail = `${c.adSetCount} Ad Set, ${c.adCount} quảng cáo`
+    const orders = c.orders > 0 ? `\n${c.orders} đơn hàng đã quy về chiến dịch này vẫn được giữ, nhưng sẽ không còn tính vào doanh thu / ROAS của chiến dịch.` : ''
+    if (!window.confirm(`Xóa chiến dịch "${c.name}"?\nSẽ xóa luôn ${detail} bên trong.${orders}\nKhông thể hoàn tác.`)) return
+    try {
+      await api.delete(`/campaigns/${c.id}`)
+      await load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const totals = campaigns.reduce(
     (acc, c) => ({
       spent: acc.spent + Number(c.spentAmount),
@@ -107,6 +120,7 @@ export default function CampaignList() {
                 <th>Doanh thu</th>
                 <th>ROAS</th>
                 <th>Thời gian chạy</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -122,6 +136,9 @@ export default function CampaignList() {
                   <td>{formatCurrency(c.revenue)}</td>
                   <td>{c.roas.toFixed(2)}x</td>
                   <td>{formatDate(c.startDate)}{c.endDate ? ` – ${formatDate(c.endDate)}` : ''}</td>
+                  <td>
+                    <button type="button" className="dash-btn dash-btn-ghost" onClick={(e) => { e.stopPropagation(); removeCampaign(c) }} aria-label={`Xóa chiến dịch ${c.name}`}>Xóa</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

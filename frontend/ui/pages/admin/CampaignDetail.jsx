@@ -13,6 +13,7 @@ export default function CampaignDetail() {
   const [campaign, setCampaign] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deleteError, setDeleteError] = useState('') // lỗi khi xóa: hiện ngay trên trang, không thay cả trang bằng màn hình lỗi
   const [editingSpend, setEditingSpend] = useState(false)
   const [spendInput, setSpendInput] = useState('')
   const [addingAdSet, setAddingAdSet] = useState(false)
@@ -83,6 +84,20 @@ export default function CampaignDetail() {
     await load()
   }
 
+  // Xóa cả chiến dịch (kèm Ad Set và quảng cáo). Đơn hàng đã quy về chiến dịch vẫn giữ, chỉ không còn gắn với chiến dịch này.
+  async function handleDeleteCampaign() {
+    const adCount = (campaign.adSets || []).reduce((n, a) => n + (a.ads?.length || 0), 0)
+    const orders = campaign.orders > 0 ? `\n${campaign.orders} đơn hàng đã quy về chiến dịch này vẫn được giữ, nhưng sẽ không còn tính vào doanh thu / ROAS của chiến dịch.` : ''
+    if (!window.confirm(`Xóa chiến dịch "${campaign.name}"?\nSẽ xóa luôn ${(campaign.adSets || []).length} Ad Set và ${adCount} quảng cáo bên trong.${orders}\nKhông thể hoàn tác.`)) return
+    setDeleteError('')
+    try {
+      await api.delete(`/campaigns/${id}`)
+      navigate('/dashboard/campaigns')
+    } catch (err) {
+      setDeleteError(err.message)
+    }
+  }
+
   if (loading) {
     return (
       <AdminLayout activeNav="campaigns" pageTitle="Quảng cáo">
@@ -120,8 +135,11 @@ export default function CampaignDetail() {
               <option key={key} value={key}>{v.label}</option>
             ))}
           </select>
+          <button type="button" className="dash-btn dash-btn-ghost" style={{ color: 'var(--dash-danger)' }} onClick={handleDeleteCampaign}>Xóa chiến dịch</button>
         </div>
       </div>
+
+      {deleteError && <div className="dash-card" style={{ padding: '14px 16px', marginBottom: '16px', color: 'var(--dash-danger)' }} role="alert">{deleteError}</div>}
 
       <section className="kpi-grid" style={{ marginBottom: '24px' }}>
         <div className="kpi-card"><strong className="kpi-value">{formatCurrency(campaign.budgetTotal)}</strong><span className="kpi-label">Ngân sách tổng</span></div>
