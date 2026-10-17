@@ -122,3 +122,35 @@
     display: none;
   }
 }
+
+/* ---------- Mờ dần khi cuộn ra khỏi đầu màn hình (trang chủ) ----------
+   Hiệu ứng gắn với vị trí cuộn (CSS scroll-driven animation): cuộn xuống thì khối mờ và trượt lên nhẹ, cuộn ngược lại thì hiện trở lại,
+   không cần JavaScript. Trình duyệt chưa hỗ trợ (Firefox cũ) hoặc khách bật "giảm chuyển động" thì không có hiệu ứng, nội dung vẫn hiện đủ. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-center,
+    .category-grid .cat-card,
+    .showcase-head,
+    .product-section .section-title,
+    .product-section .tabs,
+    .product-section .product-grid > *,
+    .deal-visual,
+    .deal-content,
+    .product-columns > *,
+    .perks > .perk,
+    .instagram-section .section-title,
+    .instagram-grid > *,
+    .collection-head {
+      animation: sx-exit linear forwards; /* forwards (không có backwards) để không đè trạng thái "chưa hiện" của hiệu ứng hiện dần */
+      animation-timeline: view();
+      animation-range: exit 0% exit 90%;
+    }
+  }
+}
+@keyframes sx-exit {
+  to {
+    opacity: 0;
+    translate: 0 -48px;
+    scale: 0.97;
+  }
+}
