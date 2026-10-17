@@ -168,6 +168,7 @@ export async function ratesForOrder(orderId, db = prisma, settingsIn, opts = {})
     subtotal: Number(order.subtotal),
     cod: codFor(order),
     weightGrams: weightFor(order, settings),
+    withSurcharge: false, // nhân viên thấy cước thật của hãng, không cộng khoản bù thêm thu khách
   })
   if (quote.status === 'incomplete') throw new ShipmentError('Địa chỉ của đơn chưa khớp danh sách tỉnh/quận/phường của Goship. Hãy sửa địa chỉ đơn rồi thử lại.', 422, 'ADDRESS_UNMATCHED')
   if (quote.status !== 'ok') throw new ShipmentError('Không lấy được cước từ Goship, vui lòng thử lại.', 502, 'QUOTE_FAILED')

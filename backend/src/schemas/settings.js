@@ -83,6 +83,7 @@ export const shippingSchema = z
         enabled: z.boolean('Trạng thái Goship không hợp lệ.'),
         createShipments: z.boolean('Trạng thái tạo vận đơn không hợp lệ.').optional().default(false),
         expressEnabled: z.boolean('Trạng thái giao hỏa tốc không hợp lệ.').optional().default(false),
+        feeSurcharge: z.number('Khoản cộng thêm vào cước không hợp lệ.').int('Khoản cộng thêm phải là số nguyên.').min(0, 'Khoản cộng thêm không được âm.').max(100_000, 'Khoản cộng thêm quá lớn.').optional(),
         defaultWeightGrams: z.number('Cân nặng không hợp lệ.').int('Cân nặng phải là số nguyên (gram).').min(100, 'Cân nặng tối thiểu 100g.').max(100_000, 'Cân nặng tối đa 100.000g.'),
         origin: z.object({
           province: place('Tỉnh/thành kho gửi hàng'),

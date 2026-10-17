@@ -225,7 +225,7 @@ function PaymentTab({ data, onSaved }) {
 function ShippingTab({ data, onSaved }) {
   const goship = data.goship || { enabled: false, createShipments: false, defaultWeightGrams: 4000, origin: { province: '', district: '', ward: '', street: '', name: '', phone: '' } }
   const [form, setForm] = useState({ fee: String(data.fee), freeShippingOver: String(data.freeShippingOver) })
-  const [gs, setGs] = useState({ enabled: goship.enabled, createShipments: Boolean(goship.createShipments), expressEnabled: Boolean(goship.expressEnabled), weight: String(goship.defaultWeightGrams), origin: { street: '', name: '', phone: '', lat: null, lng: null, ...goship.origin } })
+  const [gs, setGs] = useState({ enabled: goship.enabled, createShipments: Boolean(goship.createShipments), expressEnabled: Boolean(goship.expressEnabled), weight: String(goship.defaultWeightGrams), surcharge: String(goship.feeSurcharge ?? 1000), origin: { street: '', name: '', phone: '', lat: null, lng: null, ...goship.origin } })
   const [geo, setGeo] = useState({ busy: false, msg: '', error: '' })
   const coord = (v) => (v === null || v === undefined || v === '' ? '' : String(v))
   const [state, save] = useSave('shipping', onSaved)
@@ -236,6 +236,7 @@ function ShippingTab({ data, onSaved }) {
     num(form.freeShippingOver) !== data.freeShippingOver ||
     gs.enabled !== goship.enabled ||
     num(gs.weight) !== goship.defaultWeightGrams ||
+    num(gs.surcharge) !== (goship.feeSurcharge ?? 1000) ||
     gs.origin.province !== o.province ||
     gs.origin.district !== o.district ||
     gs.origin.ward !== o.ward ||
@@ -267,7 +268,7 @@ function ShippingTab({ data, onSaved }) {
           save({
             fee: num(form.fee),
             freeShippingOver: num(form.freeShippingOver),
-            goship: { enabled: gs.enabled, createShipments: gs.createShipments, expressEnabled: gs.expressEnabled, defaultWeightGrams: num(gs.weight), origin: gs.origin },
+            goship: { enabled: gs.enabled, createShipments: gs.createShipments, expressEnabled: gs.expressEnabled, defaultWeightGrams: num(gs.weight), feeSurcharge: num(gs.surcharge), origin: gs.origin },
           })
         }}
       >
@@ -299,6 +300,9 @@ function ShippingTab({ data, onSaved }) {
             hint={Number.isFinite(num(gs.weight)) ? `${num(gs.weight) / 1000} kg, cố định cho cả đơn bất kể số lượng` : 'Nhập số'}
           >
             <input className="dash-input" inputMode="numeric" value={gs.weight} onChange={(e) => setGs({ ...gs, weight: e.target.value.replace(/[^\d]/g, '') })} />
+          </Field>
+          <Field label="Cộng thêm vào cước báo cho khách (đồng)" hint="Cộng vào mọi phương án cước khách thấy ở trang thanh toán (mặc định 1.000đ, bù phí nền tảng Goship trên mỗi đơn giao thành công). Phương án miễn phí vận chuyển vẫn là 0đ. Nhân viên khi tạo vận đơn vẫn thấy cước thật của hãng. 0 = không cộng.">
+            <input className="dash-input" inputMode="numeric" value={gs.surcharge} onChange={(e) => setGs({ ...gs, surcharge: e.target.value.replace(/[^\d]/g, '') })} />
           </Field>
         </div>
         <h4 style={{ margin: '16px 0 8px', fontSize: '13px' }}>Kho gửi hàng (điểm lấy hàng để tính cước)</h4>

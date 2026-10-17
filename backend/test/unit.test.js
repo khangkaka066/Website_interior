@@ -14,6 +14,7 @@ import { couponSchema, couponPatchSchema } from '../src/schemas/coupons.js'
 import { welcomeConfigSchema, blastSchema, unsubscribeSchema } from '../src/schemas/subscribers.js'
 import { blastEmail, welcomeEmail } from '../src/lib/emailTemplates.js'
 import { rowsOf } from '../src/lib/goship.js'
+import { applySurcharge } from '../src/lib/shippingRates.js'
 import { cleanPhone, carrierCodeOf } from '../src/lib/goshipShipments.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { displayCode, normCode } from '../src/lib/orderCode.js'
@@ -1657,5 +1658,20 @@ describe('Goship trả danh sách dạng mảng hoặc từ điển', () => {
     assert.equal(rowsOf({ errors: { a: ['x'] } }), null)
     assert.equal(rowsOf(null), null)
     assert.equal(rowsOf(undefined), null)
+  })
+})
+
+describe('cộng thêm vào cước báo', () => {
+  const opts = [{ id: 'a', fee: 22000 }, { id: 'b', fee: 30000 }]
+  test('cộng 1.000đ vào mọi phương án', () => {
+    assert.deepEqual(applySurcharge(opts, 1000).map((o) => o.fee), [23000, 31000])
+  })
+  test('0 hoặc không có thì giữ nguyên', () => {
+    assert.deepEqual(applySurcharge(opts, 0), opts)
+    assert.deepEqual(applySurcharge(opts, undefined), opts)
+  })
+  test('miễn phí vận chuyển thì giữ 0, giá gạch ngang cũng cộng', () => {
+    const free = [{ id: 'a', fee: 0, originalFee: 22000 }]
+    assert.deepEqual(applySurcharge(free, 1000, { free: true }), [{ id: 'a', fee: 0, originalFee: 23000 }])
   })
 })

@@ -56,8 +56,19 @@ async function expressOptions({ settings, address, weightGrams, cod }) {
   }
 }
 
+// Cộng thêm một khoản cố định (mặc định 1.000đ, bù phí nền tảng Goship trên mỗi đơn giao thành công) vào cước báo cho khách. Phương án miễn phí (fee 0) giữ 0.
+export function applySurcharge(options, surcharge, { free = false } = {}) {
+  const s = Math.max(0, Math.round(Number(surcharge) || 0))
+  if (!s) return options
+  return options.map((o) => ({
+    ...o,
+    fee: free && o.fee === 0 ? 0 : o.fee + s,
+    ...(o.originalFee != null ? { originalFee: o.originalFee + s } : {}),
+  }))
+}
+
 // cod: số tiền thu hộ (đ), 0 nếu khách chuyển khoản trước. subtotal: tiền hàng, cũng là giá trị khai giá.
-export async function quoteShipping({ settings, address, subtotal, cod, weightGrams }) {
+export async function quoteShipping({ settings, address, subtotal, cod, weightGrams, withSurcharge = true }) {
   const g = settings.shipping.goship
   if (!g?.enabled || !goshipConfigured()) return { status: 'disabled', options: [] }
   try {
@@ -73,7 +84,8 @@ export async function quoteShipping({ settings, address, subtotal, cod, weightGr
       parcel: { cod: String(Math.max(0, Math.round(cod))), amount: String(Math.max(0, Math.round(subtotal))), weight: String(weightGrams || g.defaultWeightGrams), width: '1', height: '1', length: '1' },
     })
     const free = settings.shipping.freeShippingOver > 0 && subtotal >= settings.shipping.freeShippingOver
-    const options = [...rows.map((r) => toOption(r, free, settings.orders?.expressKeywords)).filter(Boolean), ...(await express)]
+    const base = [...rows.map((r) => toOption(r, free, settings.orders?.expressKeywords)).filter(Boolean), ...(await express)]
+    const options = (withSurcharge ? applySurcharge(base, g.feeSurcharge, { free }) : base)
       .sort((a, b) => a.fee - b.fee || a.carrier.localeCompare(b.carrier, 'vi'))
       .slice(0, 12)
     return options.length ? { status: 'ok', options } : { status: 'error', options: [], reason: 'empty' }
