@@ -100,7 +100,8 @@
     order: 2;
     flex: 1;
     justify-content: center;
-    gap: 20px;
+    min-width: 0;
+    gap: clamp(12px, 1.5vw, 26px); /* co lại theo bề rộng để khi đã đăng nhập (thêm Quản trị / Đăng xuất) vẫn vừa viên thuốc */
     font-size: 14px;
     white-space: nowrap;
   }
@@ -121,12 +122,19 @@
   }
   .header-actions {
     order: 4;
+    flex-shrink: 0;
     margin-left: 0;
-    gap: 14px;
+    gap: 12px;
   }
-  .best-offer {
-    order: 5;
-    margin-left: 0;
+  .cart-total {
+    display: none; /* tổng tiền đã có ở trang Giỏ hàng; trên viên thuốc chỉ giữ biểu tượng và số lượng */
+  }
+  .account-menu {
+    gap: 10px;
+    font-size: 13px;
+  }
+  .account-logout {
+    font-size: 13px;
   }
   .support,
   .account-greeting,
@@ -153,21 +161,6 @@
     height: 34px;
     background: var(--text-dark);
   }
-  /* Nút ưu đãi cùng ngôn ngữ nút viên thuốc của trang: tối, chữ trắng. */
-  .best-offer {
-    background: var(--text-dark);
-    box-shadow: 0 8px 18px rgba(30, 41, 59, 0.25);
-    border-radius: var(--radius-pill);
-    padding: 11px 20px;
-    font-size: 13px;
-  }
-  .best-offer:hover {
-    background: #0f172a;
-    box-shadow: 0 12px 24px rgba(30, 41, 59, 0.32);
-  }
-  .best-offer svg {
-    color: #e8c05a;
-  }
   /* Menu xổ "Sản phẩm" trải theo bề rộng viên thuốc, bo góc, hạ xuống dưới. */
   .mega-menu {
     top: calc(100% + 10px);
@@ -178,17 +171,31 @@
   }
 }
 @media (min-width: 1100px) and (max-width: 1279px) {
-  .best-offer {
-    display: none;
+  .header-pill {
+    gap: 12px;
+    padding-left: 16px;
+  }
+  .logo-text {
+    font-size: 20px;
   }
   .main-nav {
-    gap: 16px;
+    gap: 12px;
     font-size: 13px;
+  }
+  .account-logout {
+    display: none; /* đã đăng nhập: bỏ nút Đăng xuất khỏi viên thuốc cho vừa chỗ (vẫn có ở trang Tài khoản / Quản trị) */
+  }
+  .search-box,
+  .search-box:focus-within {
+    flex-basis: 120px;
+    min-width: 100px;
   }
 }
 
 /* ---------- Hero căn giữa ---------- */
 .hero {
+  position: relative;
+  z-index: 5; /* danh sách chọn của thanh lọc phải nổi lên trên các thẻ danh mục bên dưới */
   background: #fff;
   overflow: visible;
 }
@@ -269,30 +276,112 @@
   margin-top: 44px;
 }
 .filter-field {
+  position: relative;
   flex: 1;
+  min-width: 0;
+}
+.filter-trigger {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 0 14px;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
   background: #fff;
+  border: 0;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-soft);
-  color: var(--text-dark);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 0.25s ease, color 0.25s ease;
 }
-.filter-field select {
+.filter-trigger:hover {
+  box-shadow: var(--shadow-lift);
+}
+.filter-field.has-value .filter-trigger {
+  color: var(--text-dark);
+  font-weight: 600;
+}
+.filter-field.is-open .filter-trigger {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-lift);
+}
+.filter-trigger svg {
+  flex-shrink: 0;
+}
+.filter-value {
   flex: 1;
   min-width: 0;
-  padding: 14px 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.filter-caret {
+  color: var(--text-muted);
+  transition: transform 0.25s ease;
+}
+.filter-field.is-open .filter-caret {
+  transform: rotate(180deg);
+}
+
+/* Danh sách chọn: thẻ nổi bo góc, tối đa ~6 dòng rồi cuộn */
+.filter-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  min-width: 230px;
+  max-height: 320px;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lift);
+  text-align: left;
+  animation: filter-menu-in 0.2s ease-out;
+}
+@keyframes filter-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  font-size: 14px;
   color: var(--text-dark);
   cursor: pointer;
-  outline: none;
-  text-overflow: ellipsis;
+}
+.filter-option span {
+  flex: 1;
+  min-width: 0;
+}
+.filter-option:first-child {
+  color: var(--text-muted);
+}
+.filter-option.is-active {
+  background: var(--surface-soft);
+}
+.filter-option.is-selected {
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+.filter-swatch {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(30, 41, 59, 0.18);
 }
 .filter-submit {
   padding: 14px 26px;
@@ -591,6 +680,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .filter-menu {
+    animation: none;
+  }
+  .filter-caret,
+  .filter-trigger,
   .btn-pill,
   .cat-card,
   .cat-go,
@@ -713,4 +807,75 @@
 }
 .search-suggest {
   border-radius: 20px;
+}
+
+
+/* ---------- Nút ưu đãi nổi (góc phải dưới, trên cùng cột nút chat) ---------- */
+.offer-fab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 24px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, #b8860b, #946b08);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 14px 30px rgba(148, 107, 8, 0.45);
+  animation: offer-pulse 2.6s ease-in-out infinite;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.offer-fab:hover {
+  animation-play-state: paused;
+  transform: translateY(-3px);
+  box-shadow: 0 20px 38px rgba(148, 107, 8, 0.55);
+}
+.offer-fab:focus-visible {
+  outline: 3px solid var(--text-dark);
+  outline-offset: 3px;
+}
+.offer-fab-icon {
+  animation: offer-wiggle 2.6s ease-in-out infinite;
+  transform-origin: 30% 30%;
+}
+/* Vòng sáng lan ra rồi tắt, kèm thẻ giá lắc nhẹ: chỉ chạy khi khách không bật "giảm chuyển động" */
+@keyframes offer-pulse {
+  0%, 100% {
+    box-shadow: 0 14px 30px rgba(148, 107, 8, 0.45), 0 0 0 0 rgba(217, 173, 60, 0.55);
+  }
+  60% {
+    box-shadow: 0 14px 30px rgba(148, 107, 8, 0.45), 0 0 0 14px rgba(217, 173, 60, 0);
+  }
+}
+@keyframes offer-wiggle {
+  0%, 70%, 100% {
+    transform: rotate(0);
+  }
+  76% {
+    transform: rotate(-16deg);
+  }
+  84% {
+    transform: rotate(12deg);
+  }
+  92% {
+    transform: rotate(-6deg);
+  }
+}
+@media (max-width: 768px) {
+  .offer-fab {
+    padding: 12px 18px;
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .offer-fab,
+  .offer-fab-icon {
+    animation: none;
+  }
+  .offer-fab {
+    transition: none;
+  }
 }

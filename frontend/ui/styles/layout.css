@@ -250,13 +250,6 @@
   color: var(--text-dark);
 }
 
-.best-offer {
-  margin-left: auto;
-  color: var(--accent);
-  font-weight: 700;
-  font-size: 13px;
-  white-space: nowrap;
-}
 
 /* ---------- Hero (white, elegant, centered) ---------- */
 .hero {
@@ -2320,29 +2313,6 @@ a.product-card {
   display: none; /* menu Sản phẩm đã có mũi tên và menu xổ riêng */
 }
 
-/* Nút "Ưu đãi hôm nay": thẻ màu vàng gold, chữ trắng, có biểu tượng thẻ giảm giá. */
-.best-offer {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 18px;
-  border-radius: 6px;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  box-shadow: 0 6px 16px rgba(148, 107, 8, 0.25);
-  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-}
-.best-offer:hover {
-  background: var(--accent-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(148, 107, 8, 0.32);
-}
-.best-offer svg {
-  flex-shrink: 0;
-}
-
 /* Header: đường viền mờ tách khỏi nội dung, thanh menu thoáng hơn. */
 .header {
   border-bottom: 1px solid var(--border-soft);
@@ -2353,8 +2323,7 @@ a.product-card {
 }
 @media (prefers-reduced-motion: reduce) {
   .main-nav a,
-  .main-nav a::after,
-  .best-offer {
+  .main-nav a::after {
     transition: none;
   }
 }

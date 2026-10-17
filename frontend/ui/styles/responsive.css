@@ -172,9 +172,6 @@ video {
     flex-shrink: 0;
     padding: 6px 0;
   }
-  .best-offer {
-    display: none;
-  }
 
   .hero-inner {
     padding-top: 44px;

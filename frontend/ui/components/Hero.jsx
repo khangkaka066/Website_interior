@@ -22,9 +22,9 @@ export default function Hero() {
         </span>
 
         <h1>
-          Ánh sáng đẹp,
+          Giữ ánh sáng,
           <br />
-          <span className="hero-accent">rèm chuẩn form.</span>
+          <span className="hero-accent">giữ không gian riêng.</span>
         </h1>
         <p className="hero-sub">Vải rèm dày dặn, cản sáng &amp; chống tia UV vượt trội, buông rủ mềm mại và lên màu sang trọng dưới mọi ánh đèn.</p>
 
