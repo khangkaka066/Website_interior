@@ -4,7 +4,7 @@ import { canTransitionOrder } from '../constants/workflow.js'
 import { releaseStock, loadProducts } from './productStore.js'
 import { getSettings, COD_METHOD_ID } from './settingsStore.js'
 import { sendMail } from './mailer.js'
-import { cancelShipmentById } from './goshipShipments.js'
+import { cancelShipmentById, ShipmentError } from './goshipShipments.js'
 import { classifyDelivery } from './deliveryType.js'
 import { orderStatusEmail, NOTIFY_STATUSES } from './emailTemplates.js'
 
@@ -55,6 +55,18 @@ export function handleDueAt(order, rules, type = order.deliveryType) {
 export async function applyTransition(order, { to, note, actor = 'admin' }, db = prisma) {
   if (!canTransitionOrder(order.status, to)) {
     throw new FlowError(`Không thể chuyển trạng thái từ "${order.status}" sang "${to}".`)
+  }
+
+  // Hủy đơn khi vận đơn còn chờ hãng lấy hàng: hủy vận đơn bên hãng (Goship) TRƯỚC để hãng không cử người tới lấy kiện của đơn đã hủy.
+  // Hãng không hủy được (thường vì đã lấy hàng) thì dừng, không đánh dấu hủy đơn ở mình để hai bên không lệch nhau.
+  // Vận đơn đã được lấy / đang đi thì giữ như trước (không tự hủy bên hãng).
+  if (to === 'CANCELLED' && order.shipment?.status === 'AWAITING_PICKUP') {
+    try {
+      await cancelShipmentById(order.shipment.id, { actor, note: 'Hủy vận đơn do hủy đơn hàng' }, db)
+    } catch (err) {
+      if (err instanceof ShipmentError) throw new FlowError(err.message, err.status === 503 ? 503 : 409, err.code)
+      throw err
+    }
   }
 
   let released = false
