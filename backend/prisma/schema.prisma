@@ -182,6 +182,7 @@ model Order {
   shippingFee Decimal @default(0) @db.Decimal(12, 2)
   tax         Decimal @default(0) @db.Decimal(12, 2)
   total       Decimal @db.Decimal(12, 2)
+  couponCode  String? // mã giảm giá khách đã dùng (số tiền giảm nằm ở discount)
 
   // Shipping address (snapshot at time of order)
   recipientName String
@@ -266,6 +267,8 @@ model Review {
   authorName  String
   variant     String?
   hidden      Boolean   @default(false)
+  reply       String? // phản hồi của shop (hiện công khai dưới đánh giá)
+  repliedAt   DateTime?
   createdAt   DateTime  @default(now())
 
   @@index([productId, hidden])
@@ -629,4 +632,43 @@ model Setting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+// Mã giảm giá khách nhập ở trang thanh toán. FIXED: giảm số tiền cố định (value = đồng). PERCENT: giảm theo phần trăm (value = %, tối đa maxDiscount đồng).
+// minOrder: đơn tối thiểu (tạm tính); usageLimit: tổng lượt dùng (null = không giới hạn); perCustomerLimit: lượt tối đa mỗi khách.
+enum CouponType {
+  FIXED
+  PERCENT
+}
+
+model Coupon {
+  id               String             @id @default(cuid())
+  code             String             @unique
+  description      String?
+  type             CouponType
+  value            Int
+  maxDiscount      Int?
+  minOrder         Int                @default(0)
+  usageLimit       Int?
+  perCustomerLimit Int?
+  usedCount        Int                @default(0)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  active           Boolean            @default(true)
+  redemptions      CouponRedemption[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+// Mỗi đơn dùng mã ghi một dòng (hủy đơn / trả hàng thì xóa dòng này và trả lại lượt dùng).
+model CouponRedemption {
+  id         String   @id @default(cuid())
+  couponId   String
+  coupon     Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  orderId    String   @unique
+  customerId String
+  amount     Int
+  createdAt  DateTime @default(now())
+
+  @@index([couponId, customerId])
 }

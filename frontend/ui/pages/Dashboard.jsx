@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { timeRanges } from '../data/dashboardDemo'
 import AdminLayout from '../components/dashboard/AdminLayout'
+import TodoList from '../components/dashboard/TodoList'
 import KpiCards from '../components/dashboard/KpiCards'
 import RevenueChart from '../components/dashboard/RevenueChart'
 import OrderOverview from '../components/dashboard/OrderOverview'
@@ -48,6 +49,8 @@ export default function Dashboard() {
           Xem shop trên Shopee →
         </a>
       </section>
+
+      <TodoList />
 
       <KpiCards range={range} />
 

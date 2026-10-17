@@ -6,6 +6,9 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 import { validate } from '../middleware/validate.js'
 import { getSettings, getPublicPaymentOptions, getPublicContent } from '../lib/settingsStore.js'
 import { productReviews, reviewSummaries } from '../lib/orderFlow.js'
+import { checkCoupon, CouponError } from '../lib/coupons.js'
+import { couponCheckSchema } from '../schemas/coupons.js'
+import { quoteLimiter } from '../middleware/security.js'
 import { goshipConfigured, isGoshipId, listCities, listDistricts, listWards, GoshipError } from '../lib/goship.js'
 
 const router = Router()
@@ -75,6 +78,17 @@ router.get('/products', REVALIDATE, (req, res) => {
 router.get('/ratings', asyncHandler(async (req, res) => {
   res.set('Cache-Control', 'public, max-age=60')
   res.json(await reviewSummaries())
+}))
+
+// Khách thử mã giảm giá ở trang thanh toán: trả số tiền giảm (kiểm tra lại đầy đủ khi đặt hàng, kể cả lượt dùng của riêng khách).
+router.post('/coupons/check', quoteLimiter, validate(couponCheckSchema), asyncHandler(async (req, res) => {
+  try {
+    const { coupon, discount } = await checkCoupon(req.body.code, req.body.subtotal)
+    res.json({ code: coupon.code, description: coupon.description, discount })
+  } catch (err) {
+    if (err instanceof CouponError) return res.status(400).json({ error: err.message })
+    throw err
+  }
 }))
 
 router.get('/products/:id/reviews', REVALIDATE, asyncHandler(async (req, res) => {

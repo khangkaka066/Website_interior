@@ -71,6 +71,9 @@ function IssueRow({ issue, dismissed, onToggle }) {
         </div>
       </div>
       <table className="pa-table">
+        <thead>
+          <tr><th>{isSku ? 'Sản phẩm / phân loại' : 'Phân loại'}</th><th>SKU</th><th>Giá</th></tr>
+        </thead>
         <tbody>
           {issue.rows.map((r) => (
             <tr key={r.variantId} className={issue.oddIds.has(r.variantId) ? 'pa-odd' : ''}>

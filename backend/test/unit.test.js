@@ -9,6 +9,8 @@ import { parseKeywordResult, lenientJsonParse, generateKeywords, SeoConfigError,
 import { keywordsSchema } from '../src/schemas/seo.js'
 import { RATE_LIMIT_WAITS } from '../src/lib/openrouterClient.js'
 import { startJob, getJob, currentJob, cancelJob, jobView, JobLimitError } from '../src/lib/seoJobs.js'
+import { discountFor, checkCoupon, CouponError, normalizeCode } from '../src/lib/coupons.js'
+import { couponSchema, couponPatchSchema } from '../src/schemas/coupons.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { displayCode, normCode } from '../src/lib/orderCode.js'
 import { extractOrderNumber, extractOrderNumbers } from '../src/lib/paymentWebhook.js'
@@ -1537,5 +1539,51 @@ describe('giao hỏa tốc qua Goship (Ahamove, Grab)', () => {
         done()
       }
     })
+  })
+})
+
+describe('mã giảm giá', () => {
+  const base = { id: 'c1', code: 'GIAM', type: 'FIXED', value: 50000, maxDiscount: null, minOrder: 0, usageLimit: null, perCustomerLimit: null, usedCount: 0, startsAt: null, endsAt: null, active: true }
+  const db = (coupon, used = 0) => ({ coupon: { findUnique: async () => coupon }, couponRedemption: { count: async () => used } })
+  const fails = (p, msg) => assert.rejects(p, (e) => e instanceof CouponError && msg.test(e.message))
+
+  test('giảm cố định, không vượt tạm tính', () => {
+    assert.equal(discountFor(base, 300000), 50000)
+    assert.equal(discountFor(base, 30000), 30000)
+  })
+  test('giảm phần trăm có mức tối đa', () => {
+    const pc = { ...base, type: 'PERCENT', value: 10, maxDiscount: 30000 }
+    assert.equal(discountFor(pc, 200000), 20000)
+    assert.equal(discountFor(pc, 1000000), 30000)
+    assert.equal(discountFor({ ...pc, maxDiscount: null }, 1000000), 100000)
+  })
+  test('chuẩn hóa mã', () => assert.equal(normalizeCode(' giam 10 '), 'GIAM10'))
+  test('mã hợp lệ', async () => assert.equal((await checkCoupon('giam', 200000, {}, db(base))).discount, 50000))
+  test('không có / đã tắt', async () => {
+    await fails(checkCoupon('x', 1000, {}, db(null)), /không hợp lệ/)
+    await fails(checkCoupon('x', 1000, {}, db({ ...base, active: false })), /không hợp lệ/)
+  })
+  test('chưa tới / hết hạn', async () => {
+    const now = new Date('2026-06-15')
+    await fails(checkCoupon('x', 1000, { now }, db({ ...base, startsAt: new Date('2026-07-01') })), /chưa đến/)
+    await fails(checkCoupon('x', 1000, { now }, db({ ...base, endsAt: new Date('2026-06-01') })), /hết hạn/)
+  })
+  test('đơn tối thiểu', async () => {
+    await fails(checkCoupon('x', 99000, {}, db({ ...base, minOrder: 100000 })), /từ 100\.000đ/)
+    assert.ok(await checkCoupon('x', 100000, {}, db({ ...base, minOrder: 100000 })))
+  })
+  test('hết tổng lượt / hết lượt của khách', async () => {
+    await fails(checkCoupon('x', 1000, {}, db({ ...base, usageLimit: 5, usedCount: 5 })), /hết lượt/)
+    await fails(checkCoupon('x', 1000, { customerId: 'k' }, db({ ...base, perCustomerLimit: 1 }, 1)), /dùng hết số lượt/)
+    assert.ok(await checkCoupon('x', 1000, { customerId: 'k' }, db({ ...base, perCustomerLimit: 2 }, 1)))
+  })
+  test('schema: tạo mới có mặc định, sửa một phần không ghi đè', () => {
+    assert.deepEqual(couponPatchSchema.parse({ active: false }), { active: false })
+    const c = couponSchema.parse({ code: 'abc', type: 'FIXED', value: 5000 })
+    assert.equal(c.code, 'ABC')
+    assert.equal(c.minOrder, 0)
+    assert.equal(c.active, true)
+    assert.equal(couponSchema.safeParse({ code: 'abc', type: 'PERCENT', value: 120 }).success, false)
+    assert.equal(couponSchema.safeParse({ code: 'ab', type: 'FIXED', value: 1 }).success, false)
   })
 })

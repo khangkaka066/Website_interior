@@ -172,6 +172,8 @@ export const handoverSchema = z.object({
 })
 export const optionalNoteSchema = z.object({ note: optionalText('ghi chú', 300) })
 export const requiredNoteSchema = z.object({ note: text('lý do', 300) })
+// Phản hồi của shop dưới đánh giá; gửi chuỗi rỗng để xóa phản hồi.
+export const reviewReplySchema = z.object({ reply: z.string('Nội dung không hợp lệ.').trim().max(1000, 'Phản hồi tối đa 1000 ký tự.') })
 export const reviewHiddenSchema = z.object({ hidden: z.boolean('Giá trị không hợp lệ.') })
 
 export const orderStatusSchema = z.object({

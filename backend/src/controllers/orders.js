@@ -8,6 +8,7 @@ import { sendMail } from '../lib/mailer.js'
 import { PAYOS_METHOD_ID, payosConfigured, createPaymentLink } from '../lib/payos.js'
 import { displayCode, findOrderByCode, normCode } from '../lib/orderCode.js'
 import { orderWeightGrams } from '../lib/weight.js'
+import { checkCoupon, redeemCoupon, CouponError } from '../lib/coupons.js'
 import { scanPack, packQueue, workload } from '../lib/fulfillment.js'
 import { DELIVERY_TYPES, classifyDelivery, deliveryTypeOf } from '../lib/deliveryType.js'
 import { orderCreatedEmail } from '../lib/emailTemplates.js'
@@ -52,6 +53,8 @@ function priceLine(it) {
 }
 
 
+const ORDER_STATUSES = ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT', 'SHIPPING', 'DELIVERED', 'CANCELLED', 'RETURNED']
+
 export async function listOrders(req, res) {
   const {
     search = '',
@@ -92,7 +95,12 @@ export async function listOrders(req, res) {
   }
   if (and.length) where.AND = and
   if (DELIVERY_TYPES.includes(deliveryType)) where.deliveryType = deliveryType
-  if (status) where.status = status
+  if (status) {
+    // Một trạng thái, hoặc nhiều trạng thái cách nhau bằng dấu phẩy (tab "Chờ lấy hàng" gồm Đã xác nhận + Đang xử lý + Chờ giao hàng...).
+    const list = String(status).split(',').filter((v) => ORDER_STATUSES.includes(v))
+    if (list.length === 1) where.status = list[0]
+    else if (list.length > 1) where.status = { in: list }
+  }
   if (paymentStatus) where.paymentStatus = paymentStatus
   if (paymentMethod) where.paymentMethod = paymentMethod
   if (carrierId) where.shipment = { carrierId }
@@ -196,6 +204,7 @@ export async function createOrder(req, res) {
     district,
     province,
     shippingRateId,
+    couponCode,
     utmSource,
     utmMedium,
     utmCampaign,
@@ -223,7 +232,6 @@ export async function createOrder(req, res) {
     settings.payment.methods.find((m) => m.id === paymentMethod && m.enabled) ||
     (paymentMethod === PAYOS_METHOD_ID && payosConfigured() ? { id: PAYOS_METHOD_ID } : null)
   if (!method) return res.status(400).json({ error: 'Phương thức thanh toán này hiện không khả dụng.' })
-  const discount = 0
   const tax = 0
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0)
   // Phí vận chuyển do server quyết định: báo giá Goship chạy được thì khách phải chọn đúng một lựa chọn còn hiệu lực, không thì phí cố định.
@@ -233,9 +241,23 @@ export async function createOrder(req, res) {
     return res.status(409).json({ error: 'Cước vận chuyển đã thay đổi hoặc chưa chọn đơn vị vận chuyển, vui lòng chọn lại.', code: 'SHIPPING_CHANGED' })
   }
   const shippingFee = shipping.fee
-  const total = subtotal - discount + shippingFee + tax
 
   const dbCustomer = await resolveOrderCustomer(req.user, customer)
+
+  // Mã giảm giá: kiểm tra lại toàn bộ điều kiện ở server (khách có thể gửi mã cũ / hết hạn), số tiền giảm do server tính.
+  let coupon = null
+  let discount = 0
+  if (couponCode) {
+    try {
+      const checked = await checkCoupon(couponCode, subtotal, { customerId: dbCustomer.id })
+      coupon = checked.coupon
+      discount = checked.discount
+    } catch (err) {
+      if (err instanceof CouponError) return res.status(400).json({ error: err.message, code: 'COUPON_INVALID' })
+      throw err
+    }
+  }
+  const total = subtotal - discount + shippingFee + tax
 
   let campaignId = null
   if (utmCampaign) {
@@ -248,7 +270,7 @@ export async function createOrder(req, res) {
     prisma.$transaction(async (tx) => {
       // Trừ tồn kho và tạo đơn trong cùng một giao dịch: hết hàng giữa chừng thì không tạo đơn.
       const reserved = await reserveStock(tx, lines)
-      return tx.order.create({
+      const created = await tx.order.create({
         data: {
           stockReserved: reserved,
           deliveryType: shipping.express ? 'EXPRESS' : classifyDelivery({ province, service: shipping.service }, settings),
@@ -259,6 +281,7 @@ export async function createOrder(req, res) {
           paymentMethod,
           subtotal,
           discount,
+          couponCode: coupon?.code || null,
           shippingFee,
           tax,
           total,
@@ -279,6 +302,8 @@ export async function createOrder(req, res) {
         },
         include: ORDER_INCLUDE,
       })
+      if (coupon) await redeemCoupon(tx, coupon, { orderId: created.id, customerId: dbCustomer.id, amount: discount })
+      return created
     }, { timeout: 15000, maxWait: 10000 })
 
   let order
@@ -294,6 +319,7 @@ export async function createOrder(req, res) {
     }
   } catch (err) {
     if (err instanceof StockError) return res.status(400).json({ error: err.message })
+    if (err instanceof CouponError) return res.status(400).json({ error: err.message, code: 'COUPON_INVALID' })
     throw err
   }
   await loadProducts() // website thấy số lượng còn lại ngay
@@ -401,7 +427,8 @@ export async function scanPackOrder(req, res) {
 export const packQueueOrders = async (req, res) => res.json(await packQueue())
 export const ordersWorkload = async (req, res) => {
   res.set('Cache-Control', 'no-store')
-  res.json(await workload())
+  const [w, reviewsToReply] = await Promise.all([workload(), prisma.review.count({ where: { hidden: false, reply: null } })])
+  res.json({ ...w, reviewsToReply })
 }
 
 // Nút "Chuẩn bị hàng": xác nhận (nếu cần) và chuyển đơn sang Đang xử lý để tạo vận đơn / in tem.
@@ -456,6 +483,14 @@ export const rejectReturnRequest = (req, res) => adminAction(req, res, (o) => re
 export async function listReviews(req, res) {
   const { rating, status, q, page, pageSize } = req.query
   res.json(await listReviewsAdmin({ rating: Number(rating) || undefined, status, q, page: Number(page) || 1, pageSize: Number(pageSize) || 20 }))
+}
+
+// Nhân viên trả lời đánh giá của khách (hiện công khai dưới đánh giá); gửi chuỗi rỗng để xóa phản hồi.
+export async function replyReview(req, res) {
+  const reply = req.body.reply
+  const r = await prisma.review.updateMany({ where: { id: req.params.reviewId }, data: { reply: reply || null, repliedAt: reply ? new Date() : null } })
+  if (!r.count) return res.status(404).json({ error: 'Không tìm thấy đánh giá.' })
+  res.json({ ok: true })
 }
 
 // Nhân viên ẩn / hiện đánh giá không phù hợp của một đơn.

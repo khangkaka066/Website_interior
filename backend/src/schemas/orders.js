@@ -33,6 +33,7 @@ export const createOrderSchema = z.object({
   ward: optionalText('phường/xã', 100),
   district: optionalText('quận/huyện', 100),
   province: text('tỉnh/thành phố', 100),
+  couponCode: optionalText('mã giảm giá', 40), // server kiểm tra lại điều kiện và tự tính số tiền giảm, không tin số tiền từ client
   shippingRateId: optionalText('lựa chọn vận chuyển', 200), // mã lựa chọn cước Goship khách đã chọn; server kiểm tra lại, không tin số tiền
   utmSource: optionalText('utmSource', 100),
   utmMedium: optionalText('utmMedium', 100),

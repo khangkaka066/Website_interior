@@ -12,6 +12,17 @@ import DeliveryBadge, { DELIVERY_LABEL } from '../../components/DeliveryBadge'
 
 const PAGE_SIZE = 10
 
+// Tab theo tiến độ xử lý; mỗi tab gom một nhóm trạng thái.
+const TABS = [
+  { key: '', label: 'Tất cả', statuses: [] },
+  { key: 'confirm', label: 'Chờ xác nhận', statuses: ['PENDING_CONFIRMATION'] },
+  { key: 'pack', label: 'Chờ lấy hàng / đóng gói', statuses: ['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'] },
+  { key: 'shipping', label: 'Đang giao', statuses: ['SHIPPING'] },
+  { key: 'done', label: 'Đã giao', statuses: ['DELIVERED'] },
+  { key: 'closed', label: 'Đơn hủy / hoàn trả', statuses: ['CANCELLED', 'RETURNED'] },
+]
+const tabOfStatus = (st) => TABS.find((t) => t.statuses.includes(st))?.key || ''
+
 // Hạn xử lý + huy hiệu yêu cầu của khách (hủy / trả hàng) đang chờ nhân viên phản hồi.
 function DueCell({ order }) {
   const due = dueIn(order.handleDueAt)
@@ -33,7 +44,8 @@ export default function OrderList() {
   const [searchParams] = useSearchParams()
 
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState(searchParams.get('status') || '')
+  const [tab, setTab] = useState(() => tabOfStatus(searchParams.get('status')))
+  const [counts, setCounts] = useState({}) // số đơn theo từng trạng thái, để hiện trên tab
   const [paymentStatus, setPaymentStatus] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -62,7 +74,8 @@ export default function OrderList() {
     try {
       const params = new URLSearchParams()
       if (search) params.set('search', search)
-      if (status) params.set('status', status)
+      const tabStatuses = TABS.find((t) => t.key === tab)?.statuses || []
+      if (tabStatuses.length) params.set('status', tabStatuses.join(','))
       if (paymentStatus) params.set('paymentStatus', paymentStatus)
       if (paymentMethod) params.set('paymentMethod', paymentMethod)
       if (dateFrom) params.set('dateFrom', dateFrom)
@@ -74,12 +87,13 @@ export default function OrderList() {
 
       const res = await api.get(`/orders?${params.toString()}`)
       setData(res)
+      api.get('/orders/status-counts').then(setCounts).catch(() => {})
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
-  }, [search, status, paymentStatus, paymentMethod, dateFrom, dateTo, needsAction, deliveryType, page])
+  }, [search, tab, paymentStatus, paymentMethod, dateFrom, dateTo, needsAction, deliveryType, page])
 
   useEffect(() => {
     load()
@@ -191,6 +205,18 @@ export default function OrderList() {
         </div>
       )}
 
+      <div className="order-tabs" role="tablist" aria-label="Lọc đơn theo tiến độ">
+        {TABS.map((t) => {
+          const n = t.statuses.length ? t.statuses.reduce((sum, st) => sum + (counts[st] || 0), 0) : Object.values(counts).reduce((a, b) => a + b, 0)
+          return (
+            <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={`order-tab${tab === t.key ? ' is-active' : ''}`} onClick={() => { setTab(t.key); setPage(1); setSelected(new Set()) }}>
+              {t.label}
+              <span className="order-tab-count">{n}</span>
+            </button>
+          )
+        })}
+      </div>
+
       <div className="dash-toolbar">
         <input
           type="text"
@@ -202,12 +228,6 @@ export default function OrderList() {
           }}
           className="dash-input"
         />
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }} className="dash-select">
-          <option value="">Tất cả trạng thái</option>
-          {Object.entries(ORDER_STATUS).map(([key, v]) => (
-            <option key={key} value={key}>{v.label}</option>
-          ))}
-        </select>
         <select value={paymentStatus} onChange={(e) => { setPaymentStatus(e.target.value); setPage(1) }} className="dash-select">
           <option value="">Tất cả thanh toán</option>
           {Object.entries(PAYMENT_STATUS).map(([key, v]) => (

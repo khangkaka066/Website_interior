@@ -52,6 +52,10 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const [couponInput, setCouponInput] = useState('')
+  const [coupon, setCoupon] = useState(null) // { code, description, discount } sau khi áp mã thành công
+  const [couponError, setCouponError] = useState('')
+  const [couponBusy, setCouponBusy] = useState(false)
   const [rateId, setRateId] = useState(null) // lựa chọn vận chuyển khách đã chọn (khi có báo giá Goship)
 
   useEffect(() => {
@@ -77,6 +81,29 @@ export default function Checkout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, items.length, submitted])
 
+  async function applyCoupon(code, { silent = false } = {}) {
+    if (!code.trim()) return
+    setCouponBusy(true)
+    if (!silent) setCouponError('')
+    try {
+      const res = await api.post('/shop/coupons/check', { code, subtotal: totalPrice })
+      setCoupon(res)
+      setCouponInput('')
+      setCouponError('')
+    } catch (err) {
+      setCoupon(null)
+      setCouponError(err.message)
+    } finally {
+      setCouponBusy(false)
+    }
+  }
+
+  // Giỏ hàng đổi (thêm/bớt hàng) thì kiểm tra lại mã đang áp: số tiền giảm có thể đổi, hoặc không còn đủ đơn tối thiểu.
+  useEffect(() => {
+    if (coupon) applyCoupon(coupon.code, { silent: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPrice])
+
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
   }
@@ -87,7 +114,8 @@ export default function Checkout() {
   const quote = useShippingQuote({ items, paymentMethod: form.paymentMethod, province: form.province, district: form.district, ward: form.ward })
   const picked = quote.status === 'ok' ? quote.options.find((o) => o.id === rateId) || quote.options[0] : null // chưa chọn thì lấy lựa chọn rẻ nhất
   const shippingFee = picked ? picked.fee : fixedFee
-  const total = totalPrice + shippingFee
+  const couponDiscount = coupon ? Math.min(coupon.discount, totalPrice) : 0
+  const total = totalPrice - couponDiscount + shippingFee
   // 0đ có hai nghĩa: miễn phí thật hoặc chưa có cước nào để tính. "Miễn phí" chỉ hiện khi đã có kết quả cụ thể (Goship báo 0đ, hoặc đã
   // xét xong địa chỉ mà đơn đủ mức miễn phí); trước khi khách chọn đủ địa chỉ thì luôn là "Chưa tính".
   const freeByRule = freeShippingOver > 0 && totalPrice >= freeShippingOver
@@ -122,6 +150,7 @@ export default function Checkout() {
         district: form.district,
         province: form.province,
         shippingRateId: picked?.id,
+        couponCode: coupon?.code,
         ...attribution,
       })
 
@@ -143,6 +172,7 @@ export default function Checkout() {
     } catch (err) {
       setError(err.message)
       setSubmitting(false)
+      if (err.data?.code === 'COUPON_INVALID') setCoupon(null) // mã vừa hết hiệu lực: bỏ mã, khách đặt lại
       if (err.data?.code === 'SHIPPING_CHANGED') quote.refresh() // cước vừa đổi: hỏi lại để khách chọn đúng lựa chọn mới
     }
   }
@@ -248,6 +278,32 @@ export default function Checkout() {
                 <span>Tạm tính</span>
                 <strong>{formatPrice(totalPrice)}</strong>
               </div>
+              <div className="coupon-box">
+                {coupon ? (
+                  <div className="coupon-applied">
+                    <span>🏷️ <strong>{coupon.code}</strong>{coupon.description ? ` · ${coupon.description}` : ''}</span>
+                    <button type="button" className="coupon-remove" onClick={() => setCoupon(null)} aria-label="Bỏ mã giảm giá">Bỏ</button>
+                  </div>
+                ) : (
+                  <form
+                    className="coupon-form"
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      applyCoupon(couponInput)
+                    }}
+                  >
+                    <input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder="Mã giảm giá" maxLength={40} aria-label="Mã giảm giá" autoCapitalize="characters" />
+                    <button type="submit" className="btn" disabled={couponBusy || !couponInput.trim()}>{couponBusy ? '…' : 'Áp dụng'}</button>
+                  </form>
+                )}
+                {couponError && <p className="coupon-error" role="alert">{couponError}</p>}
+              </div>
+              {couponDiscount > 0 && (
+                <div className="cart-summary-row">
+                  <span>Giảm giá</span>
+                  <strong className="coupon-discount">-{formatPrice(couponDiscount)}</strong>
+                </div>
+              )}
               <div className="cart-summary-row">
                 <span>Phí vận chuyển</span>
                 <strong>{shippingLabel}</strong>

@@ -2286,10 +2286,75 @@ a.product-card {
   .mega-menu { max-height: 70vh; overflow-y: auto; }
 }
 
-/* Chữ menu chính in đậm */
+/* Chữ menu chính: vừa phải (Medium) cho nhẹ nhàng, hover có gạch chân trượt ra từ trái. */
 .main-nav a,
 .nav-products-link {
-  font-weight: 700;
+  position: relative;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: color 0.3s ease;
+}
+.main-nav a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 0.3s ease;
+}
+.main-nav a:hover,
+.main-nav a:focus-visible {
+  color: var(--accent);
+}
+.main-nav a:hover::after,
+.main-nav a:focus-visible::after {
+  transform: scaleX(1);
+}
+.nav-products-link::after {
+  display: none; /* menu Sản phẩm đã có mũi tên và menu xổ riêng */
+}
+
+/* Nút "Ưu đãi hôm nay": thẻ màu vàng gold, chữ trắng, có biểu tượng thẻ giảm giá. */
+.best-offer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  box-shadow: 0 6px 16px rgba(148, 107, 8, 0.25);
+  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.best-offer:hover {
+  background: var(--accent-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(148, 107, 8, 0.32);
+}
+.best-offer svg {
+  flex-shrink: 0;
+}
+
+/* Header: đường viền mờ tách khỏi nội dung, thanh menu thoáng hơn. */
+.header {
+  border-bottom: 1px solid var(--border-soft);
+}
+.header-bottom-inner {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .main-nav a,
+  .main-nav a::after,
+  .best-offer {
+    transition: none;
+  }
 }
 
 /* ---- Hiệu ứng tải trang nhẹ: thanh tiến trình, khung xương, vòng xoay, hiện dần ---- */
@@ -2689,4 +2754,64 @@ label {
     padding: 28px 28px 28px 20px; /* chừa chỗ cho viền và bốn góc trang trí nhô ra ngoài khung */
     box-sizing: border-box;
   }
+}
+
+/* Ô nhập mã giảm giá ở trang thanh toán */
+.coupon-box {
+  margin: 14px 0 6px;
+}
+.coupon-form {
+  display: flex;
+  gap: 8px;
+}
+.coupon-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  font: inherit;
+  text-transform: uppercase;
+}
+.coupon-form input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.coupon-form .btn {
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: var(--text-dark);
+  color: #fff;
+  white-space: nowrap;
+}
+.coupon-form .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.coupon-applied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px dashed var(--accent);
+  border-radius: 6px;
+  background: #fbf4e0;
+  font-size: 14px;
+}
+.coupon-remove {
+  background: none;
+  border: 0;
+  color: var(--accent-dark);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.coupon-error {
+  margin: 6px 0 0;
+  color: var(--discount-red);
+  font-size: 13px;
+}
+.coupon-discount {
+  color: var(--green-badge);
 }

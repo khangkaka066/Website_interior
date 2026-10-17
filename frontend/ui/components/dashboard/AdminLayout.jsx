@@ -5,6 +5,7 @@ import { Link, useNavigate, useLocation } from '@/lib/router'
 import { shopInfo } from '../../data/shop'
 import { getSession, logout } from '../../auth'
 import { api } from '../../api'
+import { useAlerts } from './useAlerts'
 
 // `permKey` matches a backend SupportPermission key — omitted for items every
 // admin can always see (Tổng quan, Cài đặt). `mainAdminOnly` items never show
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
   { id: 'overview', label: 'Tổng quan', to: '/dashboard' },
   { id: 'products', label: 'Sản phẩm', to: '/dashboard/products', permKey: 'products' },
   { id: 'discounts', label: 'Giảm giá', to: '/dashboard/discounts', permKey: 'products' },
+  { id: 'coupons', label: 'Mã giảm giá', to: '/dashboard/coupons', permKey: 'products' },
   { id: 'seo', label: 'Từ khóa SEO', to: '/dashboard/seo', permKey: 'products' },
   { id: 'orders', label: 'Đơn hàng', to: '/dashboard/orders', permKey: 'orders' },
   { id: 'reviews', label: 'Đánh giá', to: '/dashboard/reviews', permKey: 'orders' },
@@ -32,22 +34,21 @@ const NAV_ITEMS = [
 const NAV_TREE = [
   { id: 'overview' },
   { id: 'sales', label: 'Bán hàng', children: ['orders', 'reviews', 'payments', 'shipping'] },
-  { id: 'catalog', label: 'Sản phẩm', children: ['products', 'discounts'] },
+  { id: 'catalog', label: 'Sản phẩm', children: ['products', 'discounts', 'coupons'] },
   { id: 'people', label: 'Khách hàng', children: ['customers', 'messages'] },
   { id: 'marketing', label: 'Marketing', children: ['campaigns', 'seo', 'news', 'analytics'] },
   { id: 'settings' },
 ]
 
-const UNREAD_POLL_MS = 10000
 const HOVER_OPEN_MS = 140
 const HOVER_CLOSE_MS = 320
 
-function NavGroup({ group, items, currentActive, unreadCount }) {
+function NavGroup({ group, items, currentActive, badges }) {
   const hasActive = items.some((i) => i.id === currentActive)
   const [pinned, setPinned] = useState(false) // bấm mũi tên để giữ mở (điện thoại / bàn phím)
   const [hover, setHover] = useState(false)
   const open = hasActive || pinned || hover
-  const unread = items.some((i) => i.id === 'messages') ? unreadCount : 0
+  const unread = items.reduce((sum, i) => sum + (badges[i.id] || 0), 0) // gộp số việc của các mục con để thấy ngay khi nhóm đang thu gọn
 
   // Chỉ chuột mới mở/đóng khi rê: màn hình cảm ứng giả lập rê chuột khi chạm, sẽ mở rồi đóng ngay.
   // Mở sau một nhịp ngắn (lướt chuột ngang qua không làm menu nhảy), đóng chậm hơn (lệch tay ra ngoài chút không bị đóng mất).
@@ -85,7 +86,7 @@ function NavGroup({ group, items, currentActive, unreadCount }) {
           {items.map((item) => (
             <Link key={item.id} to={item.to} className={`dash-nav-item dash-nav-subitem ${currentActive === item.id ? 'dash-nav-active' : ''}`}>
               {item.label}
-              {item.id === 'messages' && unreadCount > 0 && <span className="dash-nav-badge">{unreadCount}</span>}
+              {badges[item.id] > 0 && <span className="dash-nav-badge">{badges[item.id]}</span>}
             </Link>
           ))}
         </div>
@@ -135,26 +136,8 @@ export default function AdminLayout({ activeNav, pageTitle, headerActions, child
   const onDashboardOverview = location.pathname === '/dashboard'
   const isMainAdmin = session?.adminRole === 'MAIN_ADMIN'
 
-  const [unreadCount, setUnreadCount] = useState(0)
-  useEffect(() => {
-    if (!canAccess('messages')) return
-    let cancelled = false
-    async function poll() {
-      try {
-        const data = await api.get('/chat/conversations')
-        if (!cancelled) setUnreadCount(data.items.reduce((sum, c) => sum + c.unreadCount, 0))
-      } catch {
-        // backend offline / no access — ignore
-      }
-    }
-    poll()
-    const id = setInterval(poll, UNREAD_POLL_MS)
-    return () => {
-      cancelled = true
-      clearInterval(id)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const alerts = useAlerts({ orders: canAccess('orders'), messages: canAccess('messages') })
+  const badges = { orders: alerts.orders, reviews: alerts.reviews, messages: alerts.messages }
 
   // Link (client-side navigation) không tự cuộn tới anchor như thẻ <a> gốc
   // trong cùng trang — nên khi hash đổi (kể cả sau khi điều hướng từ trang
@@ -185,11 +168,11 @@ export default function AdminLayout({ activeNav, pageTitle, headerActions, child
               return (
                 <Link key={item.id} to={item.to} className={`dash-nav-item ${currentActive === item.id ? 'dash-nav-active' : ''}`}>
                   {item.label}
-                  {item.id === 'messages' && unreadCount > 0 && <span className="dash-nav-badge">{unreadCount}</span>}
+                  {badges[item.id] > 0 && <span className="dash-nav-badge">{badges[item.id]}</span>}
                 </Link>
               )
             }
-            return <NavGroup key={node.id} group={node} items={own} currentActive={currentActive} unreadCount={unreadCount} />
+            return <NavGroup key={node.id} group={node} items={own} currentActive={currentActive} badges={badges} />
           })}
         </nav>
         <div className="dash-sidebar-footer">

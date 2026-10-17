@@ -35,6 +35,12 @@ export default function ProductReviews({ reviews }) {
               <small>{day(r.createdAt)}{r.variant ? ` · Phân loại: ${r.variant}` : ''}</small>
             </div>
             {r.comment && <p>{r.comment}</p>}
+            {r.reply && (
+              <div className="pr-reply">
+                <strong>Phản hồi từ Clevinum</strong>
+                <p>{r.reply}</p>
+              </div>
+            )}
           </li>
         ))}
       </ul>

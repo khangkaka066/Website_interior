@@ -1,4 +1,5 @@
 import { prisma } from './prisma.js'
+import { releaseCoupon } from './coupons.js'
 import { canTransitionOrder } from '../constants/workflow.js'
 import { releaseStock, loadProducts } from './productStore.js'
 import { getSettings, COD_METHOD_ID } from './settingsStore.js'
@@ -69,6 +70,7 @@ export async function applyTransition(order, { to, note, actor = 'admin' }, db =
       await tx.order.update({ where: { id: order.id }, data: { stockReserved: false } })
       released = true
     }
+    if (to === 'CANCELLED' || to === 'RETURNED') await releaseCoupon(tx, order.id) // trả lại lượt dùng mã giảm giá
     if (to === 'CANCELLED') await tx.order.update({ where: { id: order.id }, data: { cancelRequestedAt: null } })
     await logActivity(tx, order.id, `status_${to.toLowerCase()}`, actor, note)
     return tx.order.findUniqueOrThrow({ where: { id: order.id }, include: ORDER_INCLUDE })
@@ -210,7 +212,7 @@ export async function productReviews(productId, { take = 30 } = {}, db = prisma)
   const [agg, groups, items] = await Promise.all([
     db.review.aggregate({ where, _avg: { rating: true }, _count: { _all: true } }),
     db.review.groupBy({ by: ['rating'], where, _count: { _all: true } }),
-    db.review.findMany({ where, orderBy: { createdAt: 'desc' }, take, select: { id: true, rating: true, comment: true, authorName: true, variant: true, createdAt: true } }),
+    db.review.findMany({ where, orderBy: { createdAt: 'desc' }, take, select: { id: true, rating: true, comment: true, authorName: true, variant: true, createdAt: true, reply: true, repliedAt: true } }),
   ])
   const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
   for (const g of groups) distribution[g.rating] = g._count._all
@@ -231,6 +233,7 @@ export async function listReviewsAdmin({ rating, status, q, page = 1, pageSize =
   if (rating >= 1 && rating <= 5) and.push({ rating })
   if (status === 'hidden') and.push({ hidden: true })
   if (status === 'visible') and.push({ hidden: false })
+  if (status === 'unanswered') and.push({ hidden: false, reply: null }) // đánh giá đang hiện mà shop chưa trả lời
   const term = String(q || '').trim()
   if (term) {
     and.push({
@@ -244,24 +247,25 @@ export async function listReviewsAdmin({ rating, status, q, page = 1, pageSize =
   }
   const where = and.length ? { AND: and } : {}
   const take = Math.min(100, Math.max(1, pageSize))
-  const [total, items, all, hidden] = await Promise.all([
+  const [total, items, all, hidden, unanswered] = await Promise.all([
     db.review.count({ where }),
     db.review.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       skip: (Math.max(1, page) - 1) * take,
       take,
-      select: { id: true, rating: true, comment: true, authorName: true, variant: true, hidden: true, createdAt: true, productId: true, orderItem: { select: { name: true, order: { select: { id: true, orderNumber: true } } } } },
+      select: { id: true, rating: true, comment: true, authorName: true, variant: true, hidden: true, reply: true, repliedAt: true, createdAt: true, productId: true, orderItem: { select: { name: true, order: { select: { id: true, orderNumber: true } } } } },
     }),
     db.review.aggregate({ _avg: { rating: true }, _count: { _all: true } }),
     db.review.count({ where: { hidden: true } }),
+    db.review.count({ where: { hidden: false, reply: null } }),
   ])
   return {
     items: items.map(({ orderItem, ...r }) => ({ ...r, productName: orderItem?.name, order: orderItem?.order })),
     total,
     page: Math.max(1, page),
     pageSize: take,
-    stats: { total: all._count._all, hidden, average: all._avg.rating ? Math.round(all._avg.rating * 10) / 10 : 0 },
+    stats: { total: all._count._all, hidden, unanswered, average: all._avg.rating ? Math.round(all._avg.rating * 10) / 10 : 0 },
   }
 }
 

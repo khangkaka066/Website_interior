@@ -3,9 +3,10 @@
   --dash-body-bg: #f9f9f9;
   --dash-card-bg: #ffffff;
   --dash-border: #e5e7eb;
-  --dash-text: #64748b;
+  --dash-text: #475569; /* chữ phụ: đậm hơn để đủ tương phản trên nền trắng */
+  --dash-radius: 8px;
   --dash-heading: #1e293b;
-  --dash-muted: #94a3b8;
+  --dash-muted: #64748b;
   --dash-primary: #946b08;
   --dash-success: #3e8e4f;
   --dash-info: #3aa0c9;
@@ -389,7 +390,7 @@
   background: var(--dash-card-bg);
   border: 1px solid var(--dash-border);
   box-shadow: 0 4px 16px rgba(30, 41, 59, 0.05);
-  border-radius: 0;
+  border-radius: var(--dash-radius);
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -420,7 +421,7 @@
   font-size: 12px;
   font-weight: 700;
   padding: 3px 8px;
-  border-radius: 0;
+  border-radius: 6px;
 }
 
 .kpi-up {
@@ -434,12 +435,16 @@
 }
 
 .kpi-value {
-  font-size: 22px;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
   color: var(--dash-heading);
 }
 
 .kpi-label {
   font-size: 13px;
+  font-weight: 500;
   color: var(--dash-text);
 }
 
@@ -453,7 +458,7 @@
   box-shadow: 0 4px 16px rgba(30, 41, 59, 0.05);
   background: var(--dash-card-bg);
   border: 1px solid var(--dash-border);
-  border-radius: 0;
+  border-radius: var(--dash-radius);
   padding: 24px;
 }
 
@@ -1951,12 +1956,14 @@
   background: #ecfdf3;
   color: #166534;
   font-size: 14px;
+  border-radius: var(--dash-radius);
 }
 .pa-item {
   margin-top: 14px;
   padding: 14px 16px;
   border: 1px solid var(--dash-border);
   border-left-width: 4px;
+  border-radius: var(--dash-radius);
 }
 .pa-item.pa-error {
   border-left-color: #b91c1c;
@@ -2011,6 +2018,7 @@
   border: 1px solid var(--dash-border);
   background: #fff;
   cursor: pointer;
+  border-radius: var(--dash-radius);
 }
 .pa-btn:hover {
   border-color: #946b08;
@@ -2024,9 +2032,22 @@
   border-collapse: collapse;
   font-size: 13px;
 }
-.pa-table td {
+.pa-table th {
   padding: 6px 10px;
-  border-top: 1px solid #f0ebe6;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dash-text);
+  background: var(--dash-hover-bg);
+}
+.pa-table th:last-child {
+  text-align: right;
+}
+.pa-table td {
+  padding: 8px 10px;
+  border-top: 1px solid var(--dash-border);
 }
 .pa-table .pa-sku {
   color: var(--dash-muted);
@@ -2064,6 +2085,7 @@
   color: #9a3412;
   font-size: 14px;
   text-decoration: none;
+  border-radius: var(--dash-radius);
 }
 .pa-banner:hover {
   background: #ffedd5;
@@ -2317,3 +2339,95 @@
 .ai-audit { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
 .ai-audit li.ok span:first-child { color: var(--dash-primary); font-weight: 700; }
 .ai-audit li.bad span:first-child { color: var(--dash-danger); font-weight: 700; }
+
+/* Tab trạng thái của danh sách đơn hàng */
+.order-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--dash-border);
+}
+.order-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  color: var(--dash-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+.order-tab:hover {
+  color: var(--dash-heading);
+  background: var(--dash-hover-bg);
+}
+.order-tab.is-active {
+  color: var(--dash-primary);
+  font-weight: 700;
+  border-bottom-color: var(--dash-primary);
+}
+.order-tab-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--dash-hover-bg);
+  color: var(--dash-heading);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.order-tab.is-active .order-tab-count {
+  background: var(--dash-primary);
+  color: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .order-tab { transition: none; }
+}
+
+/* Việc cần làm (trang Tổng quan) */
+.todo-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.todo-list a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  color: var(--dash-heading);
+  font-size: 14px;
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.todo-list a:hover {
+  border-color: var(--dash-primary);
+  background: var(--dash-hover-bg);
+}
+.todo-n {
+  min-width: 34px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dash-primary);
+}
+.todo-warn {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dash-danger);
+}
+.todo-go {
+  margin-left: auto;
+  color: var(--dash-muted);
+}

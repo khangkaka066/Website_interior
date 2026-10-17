@@ -109,3 +109,19 @@
   color: var(--accent, #946b08);
   text-decoration: underline;
 }
+
+/* Phản hồi của shop dưới đánh giá */
+.pr-reply {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: var(--bg-cream, #f9f9f9);
+  border-left: 3px solid var(--accent, #946b08);
+  font-size: 14px;
+}
+.pr-reply strong {
+  font-size: 13px;
+  color: var(--accent-dark, #7a5806);
+}
+.pr-reply p {
+  margin: 4px 0 0;
+}
