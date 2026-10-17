@@ -13,8 +13,8 @@
   gap: 32px;
   align-items: center;
   padding: 16px 0;
-  border-top: 1px solid #e5d9cc;
-  border-bottom: 1px solid #e5d9cc;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
 }
 .pr-score {
   display: flex;
@@ -25,7 +25,7 @@
 .pr-score strong {
   font-size: 40px;
   line-height: 1;
-  color: var(--accent, #b5602f);
+  color: var(--accent, #946b08);
 }
 .pr-stars {
   color: #f5a623;
@@ -84,4 +84,28 @@
   .pr-summary {
     gap: 16px;
   }
+}
+
+/* Sao trung bình gọn trên thẻ sản phẩm và gần tiêu đề trang chi tiết */
+.rating-mini {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dark, #1e293b);
+}
+.rating-mini small {
+  font-weight: 400;
+  color: var(--text-muted, #64748b);
+}
+.rating-mini-star {
+  color: #d9ad3c;
+}
+.pdp-rating-link {
+  color: inherit;
+  font-weight: 600;
+}
+.pdp-rating-link:hover {
+  color: var(--accent, #946b08);
+  text-decoration: underline;
 }

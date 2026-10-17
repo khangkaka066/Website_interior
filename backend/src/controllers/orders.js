@@ -11,7 +11,7 @@ import { orderWeightGrams } from '../lib/weight.js'
 import { scanPack, packQueue, workload } from '../lib/fulfillment.js'
 import { DELIVERY_TYPES, classifyDelivery, deliveryTypeOf } from '../lib/deliveryType.js'
 import { orderCreatedEmail } from '../lib/emailTemplates.js'
-import { ORDER_INCLUDE, OPEN_STATUSES, FlowError, applyTransition, advanceToProcessing, approveCancel, rejectCancel, approveReturn, rejectReturn, handleDueAt, canRequestReturn } from '../lib/orderFlow.js'
+import { ORDER_INCLUDE, OPEN_STATUSES, FlowError, applyTransition, advanceToProcessing, approveCancel, rejectCancel, approveReturn, rejectReturn, handleDueAt, canRequestReturn, listReviewsAdmin } from '../lib/orderFlow.js'
 import { invalidateUser } from '../lib/authCache.js'
 
 // Đơn công khai: giá, phí ship, giảm giá do server quyết định, không tin client.
@@ -451,6 +451,12 @@ export const approveCancelRequest = (req, res) => adminAction(req, res, (o) => a
 export const rejectCancelRequest = (req, res) => adminAction(req, res, (o) => rejectCancel(o, { note: req.body.note, actor: actorOf(req) }))
 export const approveReturnRequest = (req, res) => adminAction(req, res, (o) => approveReturn(o, { note: req.body?.note, actor: actorOf(req) }))
 export const rejectReturnRequest = (req, res) => adminAction(req, res, (o) => rejectReturn(o, { note: req.body.note, actor: actorOf(req) }))
+
+// Nhân viên xem tất cả đánh giá (lọc theo sao / trạng thái / từ khóa).
+export async function listReviews(req, res) {
+  const { rating, status, q, page, pageSize } = req.query
+  res.json(await listReviewsAdmin({ rating: Number(rating) || undefined, status, q, page: Number(page) || 1, pageSize: Number(pageSize) || 20 }))
+}
 
 // Nhân viên ẩn / hiện đánh giá không phù hợp của một đơn.
 export async function setReviewHidden(req, res) {

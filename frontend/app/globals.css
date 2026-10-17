@@ -16,7 +16,7 @@
 @source "../lib";
 
 :root {
-  --border-soft: #ece0d6;
+  --border-soft: #e5e7eb;
 }
 
 @theme inline {

@@ -36,7 +36,7 @@ export default function PickupMethod({ value, onChange, disabled }) {
       <legend style={{ fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Cách giao hàng cho hãng vận chuyển</legend>
       <div style={{ display: 'grid', gap: '8px' }}>
         {opts.map(([id, label, hint]) => (
-          <label key={id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '8px 12px', border: `1px solid ${value === id ? 'var(--dash-accent, #b5602f)' : 'var(--dash-border)'}`, cursor: 'pointer' }}>
+          <label key={id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '8px 12px', border: `1px solid ${value === id ? 'var(--dash-accent, #946b08)' : 'var(--dash-border)'}`, cursor: 'pointer' }}>
             <input type="radio" name="pickup-method" checked={value === id} onChange={() => onChange(id)} style={{ marginTop: '3px' }} />
             <span>
               <strong style={{ fontSize: '13px' }}>{label}</strong>

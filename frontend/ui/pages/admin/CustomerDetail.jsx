@@ -126,19 +126,19 @@ export default function CustomerDetail() {
 
   const chartOptions = {
     chart: { type: 'area', toolbar: { show: false } },
-    colors: ['#b5602f'],
+    colors: ['#946b08'],
     dataLabels: { enabled: false },
     stroke: { curve: 'smooth', width: 3 },
     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.28, opacityTo: 0, stops: [0, 90, 100] } },
-    grid: { borderColor: '#ece0d6' },
+    grid: { borderColor: '#e5e7eb' },
     legend: { show: false },
     xaxis: {
       categories: customer.spendingByMonth.map((m) => m.label),
-      labels: { style: { colors: '#a89685' } },
+      labels: { style: { colors: '#94a3b8' } },
       axisBorder: { show: false },
       axisTicks: { show: false },
     },
-    yaxis: { labels: { style: { colors: '#a89685' } } },
+    yaxis: { labels: { style: { colors: '#94a3b8' } } },
     tooltip: { theme: 'light' },
   }
   const chartSeries = [{ name: METRICS.find((m) => m.id === metric).label, data: customer.spendingByMonth.map((m) => m[metric]) }]

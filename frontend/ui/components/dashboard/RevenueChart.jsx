@@ -31,22 +31,22 @@ export default function RevenueChart({ range = '7d' }) {
 
   const options = {
     chart: { type: 'area', toolbar: { show: false } },
-    colors: ['#b5602f', '#e0c9b8'],
+    colors: ['#946b08', '#e0c9b8'],
     dataLabels: { enabled: false },
     stroke: { curve: 'smooth', width: [3, 2], dashArray: [0, 4] },
     fill: {
       type: 'gradient',
       gradient: { shadeIntensity: 1, opacityFrom: 0.28, opacityTo: 0, stops: [0, 90, 100] },
     },
-    grid: { borderColor: '#ece0d6' },
-    legend: { show: false, labels: { colors: '#7a6f68' }, markers: { radius: 4 } },
+    grid: { borderColor: '#e5e7eb' },
+    legend: { show: false, labels: { colors: '#64748b' }, markers: { radius: 4 } },
     xaxis: {
       categories: trend.map((t) => t.label),
-      labels: { style: { colors: '#a89685' } },
+      labels: { style: { colors: '#94a3b8' } },
       axisBorder: { show: false },
       axisTicks: { show: false },
     },
-    yaxis: { labels: { style: { colors: '#a89685' } } },
+    yaxis: { labels: { style: { colors: '#94a3b8' } } },
     tooltip: { theme: 'light' },
   }
 

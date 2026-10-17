@@ -18,6 +18,7 @@ import {
   approveReturnRequest,
   rejectReturnRequest,
   setReviewHidden,
+  listReviews,
   prepareOrder,
   scanPackOrder,
   packQueueOrders,
@@ -54,6 +55,7 @@ router.get('/workload', guard, asyncHandler(ordersWorkload))
 router.get('/pack-queue', guard, asyncHandler(packQueueOrders))
 router.post('/scan-pack', guard, validate(scanPackSchema), asyncHandler(scanPackOrder))
 router.post('/bulk-status', guard, validate(bulkOrderStatusSchema), asyncHandler(bulkOrderStatus))
+router.get('/reviews', guard, asyncHandler(listReviews))
 router.patch('/reviews/:reviewId', guard, validate(reviewHiddenSchema), asyncHandler(setReviewHidden))
 router.get('/:id', guard, asyncHandler(getOrder))
 router.patch('/:id/status', guard, validate(orderStatusSchema), asyncHandler(updateOrderStatus))

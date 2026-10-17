@@ -217,6 +217,54 @@ export async function productReviews(productId, { take = 30 } = {}, db = prisma)
   return { count: agg._count._all, average: agg._avg.rating ? Math.round(agg._avg.rating * 10) / 10 : 0, distribution, items }
 }
 
+// Công khai: điểm trung bình + số đánh giá của MỌI sản phẩm (để hiện sao trên thẻ sản phẩm). { [productId]: { average, count } }
+export async function reviewSummaries(db = prisma) {
+  const groups = await db.review.groupBy({ by: ['productId'], where: { hidden: false }, _avg: { rating: true }, _count: { _all: true } })
+  const out = {}
+  for (const g of groups) out[g.productId] = { average: Math.round(g._avg.rating * 10) / 10, count: g._count._all }
+  return out
+}
+
+// Quản trị: danh sách đánh giá (kể cả đã ẩn) có lọc theo sao / trạng thái / từ khóa, kèm số liệu tổng quan.
+export async function listReviewsAdmin({ rating, status, q, page = 1, pageSize = 20 } = {}, db = prisma) {
+  const and = []
+  if (rating >= 1 && rating <= 5) and.push({ rating })
+  if (status === 'hidden') and.push({ hidden: true })
+  if (status === 'visible') and.push({ hidden: false })
+  const term = String(q || '').trim()
+  if (term) {
+    and.push({
+      OR: [
+        { comment: { contains: term, mode: 'insensitive' } },
+        { authorName: { contains: term, mode: 'insensitive' } },
+        { orderItem: { name: { contains: term, mode: 'insensitive' } } },
+        { orderItem: { order: { orderNumber: { contains: term, mode: 'insensitive' } } } },
+      ],
+    })
+  }
+  const where = and.length ? { AND: and } : {}
+  const take = Math.min(100, Math.max(1, pageSize))
+  const [total, items, all, hidden] = await Promise.all([
+    db.review.count({ where }),
+    db.review.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (Math.max(1, page) - 1) * take,
+      take,
+      select: { id: true, rating: true, comment: true, authorName: true, variant: true, hidden: true, createdAt: true, productId: true, orderItem: { select: { name: true, order: { select: { id: true, orderNumber: true } } } } },
+    }),
+    db.review.aggregate({ _avg: { rating: true }, _count: { _all: true } }),
+    db.review.count({ where: { hidden: true } }),
+  ])
+  return {
+    items: items.map(({ orderItem, ...r }) => ({ ...r, productName: orderItem?.name, order: orderItem?.order })),
+    total,
+    page: Math.max(1, page),
+    pageSize: take,
+    stats: { total: all._count._all, hidden, average: all._avg.rating ? Math.round(all._avg.rating * 10) / 10 : 0 },
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Tác vụ chạy nền
 // Tự hủy đơn chuyển khoản/PayOS quá hạn chưa thanh toán (chưa có vận đơn) và trả lại tồn kho.

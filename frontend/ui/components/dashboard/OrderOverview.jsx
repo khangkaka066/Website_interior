@@ -5,14 +5,14 @@ import { api } from '../../api'
 import { ORDER_STATUS } from '../../constants/orderStatus'
 
 const COLORS = {
-  PENDING_CONFIRMATION: '#a89685',
+  PENDING_CONFIRMATION: '#94a3b8',
   CONFIRMED: '#3aa0c9',
   PROCESSING: '#6cb7d6',
-  AWAITING_SHIPMENT: '#e0a559',
-  SHIPPING: '#b5602f',
+  AWAITING_SHIPMENT: '#d9ad3c',
+  SHIPPING: '#946b08',
   DELIVERED: '#3e8e4f',
   CANCELLED: '#d14343',
-  RETURNED: '#8f4a24',
+  RETURNED: '#7a5806',
 }
 
 // Đếm đơn theo trạng thái từ dữ liệu thật.

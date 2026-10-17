@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from '@/lib/router'
 import WishlistButton from './WishlistButton'
 import PriceOld from './PriceOld'
+import RatingStars from './RatingStars'
+import { useRatings } from '../data/ratings'
 import { sized, IMG } from '../utils/image'
 
 const MAX_IMAGES = 4
@@ -21,6 +23,7 @@ export default function ProductHoverCard({ product: p }) {
   const [armed, setArmed] = useState(false) // đã rê chuột vào thẻ: từ lúc này mới dựng các ảnh phụ
   const timer = useRef(null)
   const multi = gallery.length > 1
+  const rating = useRatings()[p.id]
 
   useEffect(() => () => clearTimeout(timer.current), [])
 
@@ -64,6 +67,7 @@ export default function ProductHoverCard({ product: p }) {
         <WishlistButton productId={p.id} />
       </div>
       <h4>{p.name}</h4>
+      <RatingStars rating={rating} />
       <div className="product-meta">
         <span className="price">
           {p.priceMax ? 'Từ ' : ''}

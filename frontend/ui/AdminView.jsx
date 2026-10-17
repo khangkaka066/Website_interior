@@ -30,6 +30,7 @@ const VIEWS = {
   payments: lazy(() => import('./pages/admin/PaymentsAdmin')),
   discounts: lazy(() => import('./pages/admin/DiscountsAdmin')),
   seoKeywords: lazy(() => import('./pages/admin/SeoKeywords')),
+  reviews: lazy(() => import('./pages/admin/ReviewsAdmin')),
   news: lazy(() => import('./pages/admin/NewsAdmin')),
   settings: lazy(() => import('./pages/admin/SettingsAdmin')),
 }

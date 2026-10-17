@@ -79,18 +79,18 @@ export default function CustomerList() {
 
   const chartOptions = {
     chart: { type: 'bar', toolbar: { show: false }, stacked: false },
-    colors: ['#b5602f', '#3aa0c9'],
+    colors: ['#946b08', '#3aa0c9'],
     plotOptions: { bar: { columnWidth: '55%', borderRadius: 0 } },
     dataLabels: { enabled: false },
-    grid: { borderColor: '#ece0d6' },
-    legend: { show: true, labels: { colors: '#7a6f68' }, markers: { radius: 4 } },
+    grid: { borderColor: '#e5e7eb' },
+    legend: { show: true, labels: { colors: '#64748b' }, markers: { radius: 4 } },
     xaxis: {
       categories: overview?.newVsReturning?.map((m) => m.label) || [],
-      labels: { style: { colors: '#a89685' } },
+      labels: { style: { colors: '#94a3b8' } },
       axisBorder: { show: false },
       axisTicks: { show: false },
     },
-    yaxis: { labels: { style: { colors: '#a89685' } } },
+    yaxis: { labels: { style: { colors: '#94a3b8' } } },
     tooltip: { theme: 'light' },
   }
   const chartSeries = [

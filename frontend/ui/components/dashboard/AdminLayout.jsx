@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from '@/lib/router'
 import { shopInfo } from '../../data/shop'
 import { getSession, logout } from '../../auth'
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { id: 'discounts', label: 'Giảm giá', to: '/dashboard/discounts', permKey: 'products' },
   { id: 'seo', label: 'Từ khóa SEO', to: '/dashboard/seo', permKey: 'products' },
   { id: 'orders', label: 'Đơn hàng', to: '/dashboard/orders', permKey: 'orders' },
+  { id: 'reviews', label: 'Đánh giá', to: '/dashboard/reviews', permKey: 'orders' },
   { id: 'payments', label: 'Thanh toán', to: '/dashboard/payments', permKey: 'payments' },
   { id: 'customers', label: 'Khách hàng', to: '/dashboard/customers', permKey: 'customers' },
   { id: 'shipping', label: 'Vận chuyển', to: '/dashboard/shipping', permKey: 'shipping' },
@@ -30,7 +31,7 @@ const NAV_ITEMS = [
 // giống menu “Sản phẩm” ở trang bán hàng. Mục nào không có quyền thì ẩn; nhóm chỉ còn một mục thì hiện thẳng mục đó.
 const NAV_TREE = [
   { id: 'overview' },
-  { id: 'sales', label: 'Bán hàng', children: ['orders', 'payments', 'shipping'] },
+  { id: 'sales', label: 'Bán hàng', children: ['orders', 'reviews', 'payments', 'shipping'] },
   { id: 'catalog', label: 'Sản phẩm', children: ['products', 'discounts'] },
   { id: 'people', label: 'Khách hàng', children: ['customers', 'messages'] },
   { id: 'marketing', label: 'Marketing', children: ['campaigns', 'seo', 'news', 'analytics'] },
@@ -38,6 +39,8 @@ const NAV_TREE = [
 ]
 
 const UNREAD_POLL_MS = 10000
+const HOVER_OPEN_MS = 140
+const HOVER_CLOSE_MS = 320
 
 function NavGroup({ group, items, currentActive, unreadCount }) {
   const hasActive = items.some((i) => i.id === currentActive)
@@ -47,8 +50,15 @@ function NavGroup({ group, items, currentActive, unreadCount }) {
   const unread = items.some((i) => i.id === 'messages') ? unreadCount : 0
 
   // Chỉ chuột mới mở/đóng khi rê: màn hình cảm ứng giả lập rê chuột khi chạm, sẽ mở rồi đóng ngay.
-  const onEnter = (e) => e.pointerType === 'mouse' && setHover(true)
-  const onLeave = (e) => e.pointerType === 'mouse' && setHover(false)
+  // Mở sau một nhịp ngắn (lướt chuột ngang qua không làm menu nhảy), đóng chậm hơn (lệch tay ra ngoài chút không bị đóng mất).
+  const timer = useRef(null)
+  useEffect(() => () => clearTimeout(timer.current), [])
+  const schedule = (value, ms) => {
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => setHover(value), ms)
+  }
+  const onEnter = (e) => e.pointerType === 'mouse' && schedule(true, HOVER_OPEN_MS)
+  const onLeave = (e) => e.pointerType === 'mouse' && schedule(false, HOVER_CLOSE_MS)
 
   return (
     <div className={`dash-nav-group ${open ? 'dash-nav-group-open' : ''}`} onPointerEnter={onEnter} onPointerLeave={onLeave}>
@@ -69,7 +79,8 @@ function NavGroup({ group, items, currentActive, unreadCount }) {
           </svg>
         </button>
       </div>
-      {open && (
+      {/* Luôn có trong DOM để mở/đóng trượt mượt (grid 0fr -> 1fr); đóng thì ẩn khỏi bàn phím và trình đọc màn hình. */}
+      <div className="dash-nav-sub-wrap" aria-hidden={!open} inert={!open}>
         <div className="dash-nav-sub">
           {items.map((item) => (
             <Link key={item.id} to={item.to} className={`dash-nav-item dash-nav-subitem ${currentActive === item.id ? 'dash-nav-active' : ''}`}>
@@ -78,7 +89,7 @@ function NavGroup({ group, items, currentActive, unreadCount }) {
             </Link>
           ))}
         </div>
-      )}
+      </div>
     </div>
   )
 }

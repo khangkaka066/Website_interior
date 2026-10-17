@@ -5,7 +5,7 @@ import { listPublicPosts, getPublicPost } from '../controllers/posts.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { validate } from '../middleware/validate.js'
 import { getSettings, getPublicPaymentOptions, getPublicContent } from '../lib/settingsStore.js'
-import { productReviews } from '../lib/orderFlow.js'
+import { productReviews, reviewSummaries } from '../lib/orderFlow.js'
 import { goshipConfigured, isGoshipId, listCities, listDistricts, listWards, GoshipError } from '../lib/goship.js'
 
 const router = Router()
@@ -71,6 +71,12 @@ router.get('/products', REVALIDATE, (req, res) => {
 })
 
 // Đánh giá của khách đã nhận hàng cho một sản phẩm (công khai, tên đã che).
+// Điểm sao trung bình của mọi sản phẩm (hiện trên thẻ sản phẩm). Cho phép cache ngắn vì chỉ là con số tổng hợp.
+router.get('/ratings', asyncHandler(async (req, res) => {
+  res.set('Cache-Control', 'public, max-age=60')
+  res.json(await reviewSummaries())
+}))
+
 router.get('/products/:id/reviews', REVALIDATE, asyncHandler(async (req, res) => {
   if (!getStorefrontProduct(req.params.id)) return res.status(404).json({ error: 'Không tìm thấy sản phẩm.' })
   res.json(await productReviews(req.params.id))

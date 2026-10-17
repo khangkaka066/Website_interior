@@ -5,8 +5,8 @@
 .oa-note {
   margin: 0 0 8px;
   padding: 10px 12px;
-  background: #faf3ea;
-  border-left: 3px solid var(--accent, #b5602f);
+  background: #f9f9f9;
+  border-left: 3px solid var(--accent, #946b08);
   font-size: 13px;
 }
 .oa-error {
@@ -31,7 +31,7 @@
   gap: 10px;
   margin-top: 12px;
   padding: 16px;
-  border: 1px solid #e5d9cc;
+  border: 1px solid #e5e7eb;
   background: #fff;
 }
 .oa-form h4 {
@@ -88,9 +88,9 @@
 }
 .oa .btn-outline {
   background: transparent;
-  color: var(--accent, #b5602f);
-  border: 1px solid var(--accent, #b5602f);
+  color: var(--accent, #946b08);
+  border: 1px solid var(--accent, #946b08);
 }
 .oa .btn-outline:hover {
-  background: #faf3ea;
+  background: #f9f9f9;
 }

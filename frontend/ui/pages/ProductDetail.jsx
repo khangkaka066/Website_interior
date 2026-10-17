@@ -52,7 +52,7 @@ const ACCORDION_SECTIONS = [
 
 // initialProduct: sản phẩm đầy đủ do máy chủ truyền xuống (danh sách chung trong HTML chỉ là bản rút gọn, xem slimProduct), nên HTML đầu
 // tiên đã có mô tả/phân loại cho Google; khi danh sách đầy đủ về tới trình duyệt thì dùng bản mới nhất trong đó.
-export default function ProductDetail({ initialProduct } = {}) {
+export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
   const { id } = useParams()
   const navigate = useNavigate()
   const products = useProducts()
@@ -146,7 +146,14 @@ export default function ProductDetail({ initialProduct } = {}) {
                 {salePrice && <span className="pdp-price-old">{formatPrice(salePrice)}</span>}
                 {salePercent ? <span className="badge badge-discount">-{salePercent}%</span> : null}
               </div>
-              {product.rating ? (
+              {reviewSummary?.count > 0 ? (
+                <div className="pdp-rating">
+                  <a href="#danh-gia" className="pdp-rating-link">
+                    <span className="rating-mini-star" aria-hidden="true">★</span> {reviewSummary.average.toFixed(1)} · {reviewSummary.count} đánh giá
+                  </a>
+                  {product.sold ? ` · ${product.sold} đã bán` : ''}
+                </div>
+              ) : product.rating ? (
                 <div className="pdp-rating">
                   ★ {product.rating}
                   {product.sold ? ` · ${product.sold} đã bán` : ''}

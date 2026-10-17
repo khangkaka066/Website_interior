@@ -104,7 +104,7 @@ export default async function ProductPage({ params }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <ProductDetail initialProduct={product} />
+      <ProductDetail initialProduct={product} reviewSummary={reviews} />
       <ProductReviews reviews={reviews} />
     </>
   )

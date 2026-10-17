@@ -63,13 +63,13 @@ export const revenueSeries = {
 }
 
 export const orderStatuses = [
-  { id: 'unpaid', label: 'Chờ thanh toán', count: 42, color: '#a89685' },
+  { id: 'unpaid', label: 'Chờ thanh toán', count: 42, color: '#94a3b8' },
   { id: 'processing', label: 'Đang xử lý', count: 118, color: '#3aa0c9' },
-  { id: 'ready', label: 'Chờ giao', count: 76, color: '#e0a559' },
-  { id: 'shipping', label: 'Đang vận chuyển', count: 154, color: '#b5602f' },
+  { id: 'ready', label: 'Chờ giao', count: 76, color: '#d9ad3c' },
+  { id: 'shipping', label: 'Đang vận chuyển', count: 154, color: '#946b08' },
   { id: 'delivered', label: 'Đã giao', count: 812, color: '#3e8e4f' },
   { id: 'cancelled', label: 'Đã hủy', count: 38, color: '#d14343' },
-  { id: 'returned', label: 'Đã trả hàng', count: 14, color: '#8f4a24' },
+  { id: 'returned', label: 'Đã trả hàng', count: 14, color: '#7a5806' },
 ]
 
 export const topProducts = [

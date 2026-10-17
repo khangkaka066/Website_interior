@@ -77,7 +77,7 @@ export default function ImageUploader({ images, onChange }) {
           padding: '24px',
           textAlign: 'center',
           cursor: 'pointer',
-          backgroundColor: dragOver ? 'rgba(181, 96, 47, 0.05)' : 'transparent',
+          backgroundColor: dragOver ? 'rgba(148, 107, 8, 0.05)' : 'transparent',
         }}
       >
         <input

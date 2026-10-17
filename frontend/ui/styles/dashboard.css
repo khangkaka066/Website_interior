@@ -1,18 +1,18 @@
 /* White theme, matches the rest of the site (see theme.css) */
 .dash-root {
-  --dash-body-bg: #fbf3ec;
+  --dash-body-bg: #f9f9f9;
   --dash-card-bg: #ffffff;
-  --dash-border: #ece0d6;
-  --dash-text: #7a6f68;
-  --dash-heading: #2b211c;
-  --dash-muted: #a89685;
-  --dash-primary: #b5602f;
+  --dash-border: #e5e7eb;
+  --dash-text: #64748b;
+  --dash-heading: #1e293b;
+  --dash-muted: #94a3b8;
+  --dash-primary: #946b08;
   --dash-success: #3e8e4f;
   --dash-info: #3aa0c9;
-  --dash-warning: #e0a559;
+  --dash-warning: #d9ad3c;
   --dash-danger: #d14343;
-  --dash-hover-bg: #f6ece2;
-  --dash-active-bg: #f9ede1;
+  --dash-hover-bg: #f1f5f9;
+  --dash-active-bg: #fbf4e0;
 
   display: grid;
   grid-template-columns: 240px 1fr;
@@ -29,6 +29,12 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
+  position: sticky; /* menu đứng yên khi cuộn trang dài */
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .dash-logo {
@@ -63,11 +69,16 @@
   color: var(--dash-muted);
   font-size: 14px;
   font-weight: 500;
+  transition: background-color 0.28s ease, color 0.28s ease, box-shadow 0.28s ease, padding-left 0.28s ease;
 }
 
 .dash-nav-item:hover {
   background: var(--dash-hover-bg);
   color: var(--dash-heading);
+}
+
+.dash-nav-item:not(.dash-nav-group-head):hover {
+  padding-left: 18px; /* nhích nhẹ sang phải khi rê */
 }
 
 .dash-nav-active {
@@ -121,7 +132,7 @@
 }
 
 .dash-nav-caret svg {
-  transition: transform 0.18s;
+  transition: transform 0.32s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .dash-nav-group-open .dash-nav-caret svg {
@@ -131,6 +142,23 @@
 .dash-nav-group-active {
   color: var(--dash-primary);
   font-weight: 700;
+}
+
+.dash-nav-sub-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.34s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.26s ease;
+}
+
+.dash-nav-group-open .dash-nav-sub-wrap {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.dash-nav-sub-wrap > .dash-nav-sub {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .dash-nav-sub {
@@ -209,7 +237,7 @@
 }
 
 .dash-pill {
-  background: rgba(181, 96, 47, 0.12);
+  background: rgba(148, 107, 8, 0.12);
   color: var(--dash-primary);
   font-size: 12px;
   font-weight: 600;
@@ -265,7 +293,7 @@
 
 .range-filter {
   display: flex;
-  background: #f3f3f1;
+  background: #f3f4f6;
   border-radius: 0;
   padding: 4px;
   gap: 2px;
@@ -285,7 +313,7 @@
 .range-btn-active {
   background: #ffffff;
   color: var(--dash-primary);
-  box-shadow: 0 2px 6px rgba(43, 33, 28, 0.08);
+  box-shadow: 0 2px 6px rgba(30, 41, 59, 0.08);
 }
 
 .icon-bell {
@@ -320,7 +348,7 @@
   gap: 28px;
   background: var(--dash-card-bg);
   border: 1px solid var(--dash-border);
-  box-shadow: 0 4px 16px rgba(43, 33, 28, 0.05);
+  box-shadow: 0 4px 16px rgba(30, 41, 59, 0.05);
   border-radius: 0;
   padding: 16px 24px;
   flex-wrap: wrap;
@@ -360,7 +388,7 @@
 .kpi-card {
   background: var(--dash-card-bg);
   border: 1px solid var(--dash-border);
-  box-shadow: 0 4px 16px rgba(43, 33, 28, 0.05);
+  box-shadow: 0 4px 16px rgba(30, 41, 59, 0.05);
   border-radius: 0;
   padding: 18px;
   display: flex;
@@ -378,7 +406,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #f9ede1;
+  background: #fbf4e0;
   color: var(--dash-primary);
   display: flex;
   align-items: center;
@@ -422,7 +450,7 @@
 }
 
 .dash-card {
-  box-shadow: 0 4px 16px rgba(43, 33, 28, 0.05);
+  box-shadow: 0 4px 16px rgba(30, 41, 59, 0.05);
   background: var(--dash-card-bg);
   border: 1px solid var(--dash-border);
   border-radius: 0;
@@ -449,7 +477,7 @@
 .dash-tag {
   font-size: 11px;
   color: var(--dash-muted);
-  background: #f3f3f1;
+  background: #f3f4f6;
   padding: 4px 10px;
   border-radius: 0;
 }
@@ -492,7 +520,7 @@
   width: 40px;
   height: 40px;
   object-fit: contain;
-  background: #f3f3f1;
+  background: #f3f4f6;
   border: 1px solid var(--dash-border);
   border-radius: 0;
   padding: 3px;
@@ -506,7 +534,7 @@
 /* ---------- Revenue chart metric toggle ---------- */
 .metric-toggle {
   display: flex;
-  background: #f3f3f1;
+  background: #f3f4f6;
   border-radius: 0;
   padding: 4px;
   gap: 2px;
@@ -525,7 +553,7 @@
 .metric-btn-active {
   background: #ffffff;
   color: var(--dash-primary);
-  box-shadow: 0 2px 6px rgba(43, 33, 28, 0.08);
+  box-shadow: 0 2px 6px rgba(30, 41, 59, 0.08);
 }
 
 /* ---------- Order overview ---------- */
@@ -549,7 +577,7 @@
 }
 
 .order-status-track {
-  background: #f3f3f1;
+  background: #f3f4f6;
   border-radius: 0;
   height: 8px;
   overflow: hidden;
@@ -571,7 +599,7 @@
 
 .stock-low {
   color: var(--dash-warning);
-  background: rgba(224, 165, 89, 0.16);
+  background: rgba(217, 173, 60, 0.16);
 }
 
 .stock-out {
@@ -613,7 +641,7 @@
   width: 40px;
   height: 40px;
   object-fit: contain;
-  background: #f3f3f1;
+  background: #f3f4f6;
   border: 1px solid var(--dash-border);
   border-radius: 0;
   padding: 3px;
@@ -683,13 +711,13 @@
 }
 
 .funnel-bar-track {
-  background: #f3f3f1;
+  background: #f3f4f6;
   border-radius: 0;
   overflow: hidden;
 }
 
 .funnel-bar {
-  background: linear-gradient(90deg, #e0a559, #b5602f);
+  background: linear-gradient(90deg, #d9ad3c, #946b08);
   padding: 10px 14px;
   border-radius: 0;
   display: flex;
@@ -730,7 +758,7 @@
 
 .status-pending {
   color: var(--dash-muted);
-  background: #f3f3f1;
+  background: #f3f4f6;
 }
 .status-processing {
   color: var(--dash-info);
@@ -738,11 +766,11 @@
 }
 .status-ready {
   color: var(--dash-warning);
-  background: rgba(224, 165, 89, 0.16);
+  background: rgba(217, 173, 60, 0.16);
 }
 .status-shipping {
   color: var(--dash-primary);
-  background: rgba(181, 96, 47, 0.12);
+  background: rgba(148, 107, 8, 0.12);
 }
 .status-delivered {
   color: var(--dash-success);
@@ -753,13 +781,13 @@
   background: rgba(209, 67, 67, 0.12);
 }
 .status-returned {
-  color: #8f4a24;
-  background: rgba(143, 74, 36, 0.12);
+  color: #7a5806;
+  background: rgba(122, 88, 6, 0.12);
 }
 
 /* ---------- AI Insights ---------- */
 .ai-insights {
-  background: linear-gradient(120deg, #fbf3ec, #f9ede1);
+  background: linear-gradient(120deg, #f9f9f9, #fbf4e0);
   border: 1px solid var(--dash-border);
   border-radius: 0;
   padding: 28px 32px;
@@ -782,7 +810,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(43, 33, 28, 0.08);
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.08);
 }
 
 .ai-insights-head h3 {
@@ -831,7 +859,7 @@
 /* ---------- Login (white, matches landing page) ---------- */
 .login-root {
   min-height: 100vh;
-  background: linear-gradient(180deg, #ffffff 0%, #fbf3ec 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f9f9f9 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -841,9 +869,9 @@
 
 .login-card {
   background: #ffffff;
-  border: 1px solid #ece0d6;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
-  box-shadow: 0 20px 50px rgba(43, 33, 28, 0.08);
+  box-shadow: 0 20px 50px rgba(30, 41, 59, 0.08);
   padding: 44px 40px;
   width: 100%;
   max-width: 380px;
@@ -857,7 +885,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fffaf3, #ede1d2 80%);
+  background: radial-gradient(circle at 35% 30%, #fcfcfc, #e5e7eb 80%);
   object-fit: contain;
   padding: 8px;
   margin-bottom: 20px;
@@ -866,20 +894,20 @@
 
 .login-card h1 {
   font-size: 20px;
-  color: #2b211c;
+  color: #1e293b;
   margin: 0 0 8px;
 }
 
 .login-card p {
   font-size: 13px;
-  color: #7a6f68;
+  color: #64748b;
   margin: 0 0 24px;
 }
 
 .login-tabs {
   display: flex;
   width: 100%;
-  background: #f3f3f1;
+  background: #f3f4f6;
   border-radius: 0;
   padding: 4px;
   margin-bottom: 24px;
@@ -892,14 +920,14 @@
   padding: 9px 0;
   font-size: 13px;
   font-weight: 600;
-  color: #7a6f68;
+  color: #64748b;
   border-radius: 0;
 }
 
 .login-tab-active {
   background: #ffffff;
-  color: #b5602f;
-  box-shadow: 0 4px 10px rgba(43, 33, 28, 0.08);
+  color: #946b08;
+  box-shadow: 0 4px 10px rgba(30, 41, 59, 0.08);
 }
 
 .login-divider {
@@ -907,7 +935,7 @@
   align-items: center;
   width: 100%;
   margin: 22px 0 16px;
-  color: #a89685;
+  color: #94a3b8;
   font-size: 12px;
 }
 
@@ -916,7 +944,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: #ece0d6;
+  background: #e5e7eb;
 }
 
 .login-divider span {
@@ -930,16 +958,16 @@
   justify-content: center;
   gap: 10px;
   padding: 11px 14px;
-  border: 1px solid #ece0d6;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
-  color: #2b211c;
+  color: #1e293b;
   font-size: 14px;
   font-weight: 600;
   background: #ffffff;
 }
 
 .google-btn:hover {
-  background: #f3f3f1;
+  background: #f3f4f6;
   border-color: #d8c9ba;
 }
 
@@ -947,7 +975,7 @@
   display: block;
   margin-top: 10px;
   font-size: 12px;
-  color: #a89685;
+  color: #94a3b8;
   text-align: center;
 }
 
@@ -964,21 +992,21 @@
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: #7a6f68;
+  color: #64748b;
 }
 
 .login-form input {
-  background: #f3f3f1;
-  border: 1px solid #ece0d6;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
   border-radius: 0;
   padding: 11px 14px;
-  color: #2b211c;
+  color: #1e293b;
   outline: none;
   font-size: 14px;
 }
 
 .login-form input:focus {
-  border-color: #b5602f;
+  border-color: #946b08;
   background: #fff;
 }
 
@@ -992,25 +1020,25 @@
   text-align: center;
   border: none;
   margin-top: 4px;
-  background: #b5602f;
+  background: #946b08;
   color: #fff;
   border-radius: 0;
   padding: 13px 24px;
 }
 
 .login-submit:hover {
-  background: #8f4a24;
+  background: #7a5806;
 }
 
 .login-back {
   display: inline-block;
   margin-top: 24px;
   font-size: 13px;
-  color: #7a6f68;
+  color: #64748b;
 }
 
 .login-back:hover {
-  color: #b5602f;
+  color: #946b08;
 }
 
 /* ---------- Dashboard responsiveness ---------- */
@@ -1024,6 +1052,17 @@
   }
   .funnel-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-nav-item,
+  .dash-nav-caret svg,
+  .dash-nav-sub-wrap {
+    transition: none;
+  }
+  .dash-nav-item:not(.dash-nav-group-head):hover {
+    padding-left: 14px;
   }
 }
 
@@ -1127,7 +1166,7 @@
 .page-btn-active {
   background: #ffffff;
   color: var(--dash-primary);
-  box-shadow: 0 2px 6px rgba(43, 33, 28, 0.08);
+  box-shadow: 0 2px 6px rgba(30, 41, 59, 0.08);
 }
 
 .product-form-grid {
@@ -1160,7 +1199,7 @@
   justify-content: flex-end;
   gap: 12px;
   margin: 0 -36px -60px;
-  box-shadow: 0 -4px 16px rgba(43, 33, 28, 0.06);
+  box-shadow: 0 -4px 16px rgba(30, 41, 59, 0.06);
   z-index: 100;
 }
 
@@ -1186,7 +1225,7 @@
 }
 
 .dash-btn-outline:hover {
-  background: rgba(181, 96, 47, 0.08);
+  background: rgba(148, 107, 8, 0.08);
 }
 
 .form-group {
@@ -1331,7 +1370,7 @@
 
 .step-timeline-item.current .step-timeline-dot {
   background: var(--dash-primary);
-  box-shadow: 0 0 0 3px rgba(181, 96, 47, 0.18);
+  box-shadow: 0 0 0 3px rgba(148, 107, 8, 0.18);
 }
 
 .step-timeline-item.failed .step-timeline-dot {
@@ -1395,7 +1434,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: #fdf3e7;
+  background: #faf6ea;
   border: 1px solid var(--dash-warning);
   color: var(--dash-heading);
   font-size: 13px;
@@ -1414,7 +1453,7 @@
 .dash-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(43, 33, 28, 0.45);
+  background: rgba(30, 41, 59, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1837,7 +1876,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 10px 14px;
-  background: rgba(181, 96, 47, 0.06);
+  background: rgba(148, 107, 8, 0.06);
   font-size: 13px;
   color: var(--dash-text);
 }
@@ -1963,7 +2002,7 @@
 }
 .pa-link {
   font-size: 12px;
-  color: #b5602f;
+  color: #946b08;
   text-decoration: underline;
 }
 .pa-btn {
@@ -1974,7 +2013,7 @@
   cursor: pointer;
 }
 .pa-btn:hover {
-  border-color: #b5602f;
+  border-color: #946b08;
 }
 .pa-more {
   margin-top: 14px;
@@ -2063,7 +2102,7 @@
   font-size: 14px;
 }
 .pay-link {
-  color: #b5602f;
+  color: #946b08;
   text-decoration: underline;
   background: none;
   border: 0;
@@ -2073,7 +2112,7 @@
 }
 .pay-sub { font-size: 12px; color: var(--dash-muted); }
 .pay-error { color: var(--dash-danger, #b91c1c); font-size: 13px; }
-.pay-action { margin-bottom: 18px; border-left: 4px solid #b5602f; }
+.pay-action { margin-bottom: 18px; border-left: 4px solid #946b08; }
 .pay-field { display: block; margin: 10px 0; }
 .pay-field span { display: block; margin-bottom: 4px; font-size: 12px; color: var(--dash-muted); }
 .pay-pager {
@@ -2105,7 +2144,7 @@
   cursor: pointer;
 }
 .set-tab:hover { color: var(--dash-heading); }
-.set-tab-active { color: #b5602f; border-bottom-color: #b5602f; font-weight: 600; }
+.set-tab-active { color: #946b08; border-bottom-color: #946b08; font-weight: 600; }
 .set-card { margin-bottom: 20px; }
 .set-grid {
   display: grid;
@@ -2127,7 +2166,7 @@
 .set-savebar { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
 .set-save {
   padding: 9px 20px;
-  background: #b5602f;
+  background: #946b08;
   color: #fff;
   border: 0;
   font: inherit;
@@ -2144,8 +2183,8 @@
 .checkout-bank-info {
   margin-top: 12px;
   padding: 12px 14px;
-  background: #fbf3ec;
-  border: 1px solid #ece0d6;
+  background: #f9f9f9;
+  border: 1px solid #e5e7eb;
   font-size: 14px;
   line-height: 1.7;
 }
@@ -2153,7 +2192,7 @@
   margin: 0 0 16px;
   padding: 10px 14px;
   font-size: 13px;
-  background: #f3f3f1;
+  background: #f3f4f6;
   color: var(--dash-muted);
 }
 .pay-auto-on {
@@ -2166,8 +2205,8 @@
 .set-auto {
   margin-top: 18px;
   padding: 12px 14px;
-  background: #fbf3ec;
-  border: 1px dashed #d8c9bc;
+  background: #f9f9f9;
+  border: 1px dashed #d1d5db;
   font-size: 13px;
 }
 .set-auto code {

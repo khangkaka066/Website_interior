@@ -102,7 +102,7 @@ export default function GoshipShipmentModal({ order, onClose, onCreated, onManua
         ) : (
           <div style={{ display: 'grid', gap: '8px' }}>
             {state.options.map((o) => (
-              <label key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', border: `1px solid ${rateId === o.id ? 'var(--dash-accent, #b5602f)' : 'var(--dash-border)'}`, cursor: 'pointer' }}>
+              <label key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', border: `1px solid ${rateId === o.id ? 'var(--dash-accent, #946b08)' : 'var(--dash-border)'}`, cursor: 'pointer' }}>
                 <input type="radio" name="goship-rate" checked={rateId === o.id} onChange={() => setRateId(o.id)} />
                 <span style={{ flex: 1 }}>
                   <strong>{o.carrier}{o.service ? ` – ${o.service}` : ''}</strong> {o.express && <DeliveryBadge type="EXPRESS" />}{o.preferred && <span className="dt-badge dt-intracity" style={{ marginLeft: '6px' }}>Khách đã chọn</span>}

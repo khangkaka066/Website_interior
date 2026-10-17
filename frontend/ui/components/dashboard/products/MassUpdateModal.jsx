@@ -152,7 +152,7 @@ function ImportTab({ onApplied, onClose }) {
           padding: '28px',
           textAlign: 'center',
           cursor: 'pointer',
-          background: dragOver ? 'rgba(181, 96, 47, 0.06)' : 'transparent',
+          background: dragOver ? 'rgba(148, 107, 8, 0.06)' : 'transparent',
           fontSize: '13px',
           color: 'var(--dash-text)',
         }}
