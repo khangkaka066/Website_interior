@@ -178,6 +178,12 @@ export async function ratesForOrder(orderId, db = prisma, settingsIn, opts = {})
   return { options, customerChoice, weightGrams: weightFor(order, settings), cod: codFor(order), subtotal: Number(order.subtotal) }
 }
 
+// Số điện thoại gửi Goship chỉ gồm chữ số (bỏ khoảng trắng, dấu chấm, gạch; +84 đổi thành 0): "0356 789 749" có thể bị hãng từ chối.
+export const cleanPhone = (v) => {
+  const d = String(v ?? '').replace(/[^\d+]/g, '')
+  return d.startsWith('+84') ? `0${d.slice(3)}` : d.startsWith('84') && d.length >= 11 ? `0${d.slice(2)}` : d.replace(/\D/g, '')
+}
+
 // Phần thân gửi Goship (thuần, kiểm thử được).
 export function buildShipmentBody({ order, settings, rateId, from, to, weightGrams }) {
   const g = settings.shipping.goship
@@ -185,8 +191,8 @@ export function buildShipmentBody({ order, settings, rateId, from, to, weightGra
     rate: rateId,
     payer: 1, // 1 = shop trả cước cho Goship (khách đã trả phí vận chuyển cho shop trong tổng đơn); 0 = người nhận trả
     order_id: order.orderNumber, // mã đơn của mình: để webhook và tra cứu đối chiếu được
-    address_from: { name: g.origin.name, phone: g.origin.phone, street: g.origin.street, city: from.city, district: from.district, ward: from.ward },
-    address_to: { name: order.recipientName, phone: order.recipientPhone, street: order.addressLine, city: to.city, district: to.district, ward: to.ward },
+    address_from: { name: g.origin.name, phone: cleanPhone(g.origin.phone), street: g.origin.street, city: from.city, district: from.district, ward: from.ward },
+    address_to: { name: order.recipientName, phone: cleanPhone(order.recipientPhone), street: order.addressLine, city: to.city, district: to.district, ward: to.ward },
     parcel: {
       cod: String(codFor(order)),
       amount: String(Math.round(Number(order.subtotal))),
@@ -257,8 +263,11 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
     }
 
     const gcode = str(created.id)
-    const status = Number(created.shipment_status)
-    if (!gcode || status === 900 || created.carrier_error) {
+    let status = Number(created.shipment_status)
+    // Goship xử lý bất đồng bộ: vận đơn mới tạo có shipment_status 900 ("Đơn mới", chưa gửi sang hãng) và CHƯA có tracking_number, đó là bình thường,
+    // mã hãng đến sau (webhook, hoặc bấm "Cập nhật từ Goship"). Chỉ coi là lỗi khi Goship không trả mã vận đơn hoặc trả kèm carrier_error có nội dung.
+    const carrierErr = typeof created.carrier_error === 'string' ? created.carrier_error.trim() : created.carrier_error && Object.keys(created.carrier_error).length ? created.carrier_error : ''
+    if (!gcode || carrierErr) {
       // Goship báo lỗi tạo (HTTP vẫn 200). Dọn đơn nháp nếu có, rồi báo lý do thật cho admin.
       if (gcode) await cancelGoshipShipment(gcode).catch(() => {})
       // Lý do có thể nằm ở nhiều trường tùy hãng; gom tất cả trường dạng chữ có nội dung. Cả phản hồi được ghi vào log máy chủ để tra cứu.
@@ -273,9 +282,23 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
       throw new ShipmentError(`Hãng vận chuyển từ chối vận đơn${code}: ${detail}`, 422, 'CARRIER_ERROR')
     }
 
+    // Chưa có mã hãng: hỏi lại Goship vài lần ngắn (thường vài giây là có). Vẫn chưa có thì lưu trước, mã tự cập nhật qua webhook hoặc nút "Cập nhật từ Goship".
+    if (!normCode(created.tracking_number)) {
+      for (let i = 0; i < 3; i++) {
+        await new Promise((r) => setTimeout(r, 1500))
+        const found = await searchGoshipShipment(gcode).catch(() => null)
+        if (found) {
+          const t = found.tracking_number ?? found.carrier_code
+          if (normCode(t)) created = { ...created, tracking_number: t, sorting_code: found.sorting_code || created.sorting_code, shipment_status: found.status_code ?? found.shipment_status ?? created.shipment_status, fee: found.fee ?? created.fee }
+          if (normCode(t)) break
+        }
+      }
+    }
+
     const carrier = await ensureGoshipCarrier(db)
     const noteBits = [created.carrier ? `${created.carrier}${created.carrier_short_name ? ` (${created.carrier_short_name})` : ''}` : 'Goship', created.tracking_number ? `mã hãng: ${created.tracking_number}` : null].filter(Boolean)
     const note = `Goship · ${noteBits.join(' · ')}`
+    status = Number(created.shipment_status)
     const local = mapGoshipStatus(status).local || 'AWAITING_PICKUP'
     const fee = num(created.fee) ?? option.fee
     const data = {

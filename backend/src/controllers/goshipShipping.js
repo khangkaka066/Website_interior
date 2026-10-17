@@ -111,3 +111,15 @@ export async function goshipWebhook(req, res) {
   console.log(`[goship webhook] ${req.body?.gcode || req.body?.order_id || '?'} status=${req.body?.status ?? '?'} -> ${result.handled ? `đã xử lý (${result.status}${result.duplicate ? ', trùng' : ''})` : `bỏ qua (${result.reason})`}`)
   res.status(200).json({ ok: true })
 }
+
+// Nút "Cập nhật từ Goship": hỏi lại Goship về vận đơn này và cập nhật mã hãng / trạng thái (dùng khi Goship chưa trả mã lúc tạo và chưa có webhook).
+export async function goshipSync(req, res) {
+  const shipment = await prisma.shipment.findUnique({ where: { id: req.params.id }, include: { carrier: true } })
+  if (!shipment) return res.status(404).json({ error: 'Không tìm thấy vận đơn.' })
+  if (shipment.carrier?.code !== 'GOSHIP' || !shipment.trackingId) return res.status(400).json({ error: 'Chỉ cập nhật được vận đơn tạo qua Goship.' })
+  if (!goshipConfigured()) return res.status(503).json({ error: 'Chưa có GOSHIP_TOKEN nên không hỏi được Goship.' })
+  const result = await processGoshipWebhook({ payload: { gcode: shipment.trackingId }, verified: false })
+  if (!result.handled) return res.status(502).json({ error: 'Goship chưa trả thông tin cho vận đơn này, vui lòng thử lại sau ít phút.' })
+  const fresh = await prisma.shipment.findUnique({ where: { id: shipment.id }, include: { carrier: true, order: { include: { customer: true } }, trackingEvents: { orderBy: { createdAt: 'asc' } } } })
+  res.json(toPlain(fresh))
+}

@@ -13,6 +13,7 @@ import { discountFor, checkCoupon, CouponError, normalizeCode } from '../src/lib
 import { couponSchema, couponPatchSchema } from '../src/schemas/coupons.js'
 import { welcomeConfigSchema, blastSchema, unsubscribeSchema } from '../src/schemas/subscribers.js'
 import { blastEmail, welcomeEmail } from '../src/lib/emailTemplates.js'
+import { cleanPhone } from '../src/lib/goshipShipments.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { displayCode, normCode } from '../src/lib/orderCode.js'
 import { extractOrderNumber, extractOrderNumbers } from '../src/lib/paymentWebhook.js'
@@ -1616,5 +1617,16 @@ describe('email marketing', () => {
     assert.match(m.subject, /10%/)
     assert.match(m.html, /HELLO-ABC123/)
     assert.match(m.text, /HELLO-ABC123/)
+  })
+})
+
+describe('số điện thoại gửi Goship', () => {
+  test('chỉ giữ chữ số, +84 đổi thành 0', () => {
+    assert.equal(cleanPhone('0356 789 749'), '0356789749')
+    assert.equal(cleanPhone('0356.789.749'), '0356789749')
+    assert.equal(cleanPhone('+84 356 789 749'), '0356789749')
+    assert.equal(cleanPhone('84356789749'), '0356789749')
+    assert.equal(cleanPhone('0963603157'), '0963603157')
+    assert.equal(cleanPhone(null), '')
   })
 })

@@ -15,7 +15,8 @@ import {
 } from '../controllers/shipping.js'
 import { listCarriers, createCarrier, updateCarrier } from '../controllers/carriers.js'
 import { checkGoship } from '../lib/goship.js'
-import { goshipConfig, goshipRates, goshipCreate, goshipBulkCreate, goshipWebhook, geocodeLookup } from '../controllers/goshipShipping.js'
+import { goshipConfig, goshipRates, goshipCreate, goshipBulkCreate, goshipWebhook,
+  goshipSync, geocodeLookup } from '../controllers/goshipShipping.js'
 import { webhookLimiter } from '../middleware/security.js'
 import { validate } from '../middleware/validate.js'
 import { requirePermission } from '../middleware/auth.js'
@@ -39,6 +40,7 @@ router.get('/goship/orders/:orderId/rates', guard, asyncHandler(goshipRates))
 router.post('/goship/bulk-shipments', guard, validate(goshipBulkCreateSchema), asyncHandler(goshipBulkCreate))
 router.post('/goship/orders/:orderId/shipment', guard, validate(goshipCreateShipmentSchema), asyncHandler(goshipCreate))
 // Webhook công khai từ Goship: xác thực bằng chữ ký HMAC (Client Secret), không dùng đăng nhập.
+router.post('/goship/shipments/:id/sync', guard, asyncHandler(goshipSync))
 router.post('/goship/webhook', webhookLimiter, asyncHandler(goshipWebhook))
 router.get('/carriers', guard, asyncHandler(listCarriers))
 router.post('/carriers', guard, validate(createCarrierSchema), asyncHandler(createCarrier))

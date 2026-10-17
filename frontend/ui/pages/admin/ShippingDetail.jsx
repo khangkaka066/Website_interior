@@ -29,6 +29,8 @@ export default function ShippingDetail() {
   const [location, setLocation] = useState('')
   const [codeDraft, setCodeDraft] = useState(null) // null = không sửa mã vận đơn của hãng
   const [codeError, setCodeError] = useState('')
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -45,6 +47,21 @@ export default function ShippingDetail() {
   useEffect(() => {
     load()
   }, [load])
+
+  // Hỏi lại Goship: mã vận đơn của hãng thường đến sau lúc tạo (Goship xử lý bất đồng bộ), bấm để lấy về.
+  async function syncFromGoship() {
+    setSyncing(true)
+    setSyncMsg('')
+    try {
+      const data = await api.post(`/shipping/goship/shipments/${id}/sync`, {})
+      setShipment(data)
+      setSyncMsg(data.carrierCode ? 'Đã cập nhật: có mã vận đơn của hãng.' : 'Goship chưa cấp mã vận đơn của hãng, hãy thử lại sau ít phút.')
+    } catch (err) {
+      setSyncMsg(err.message)
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   async function handleUpdateStatus(note) {
     await api.patch(`/shipping/${id}/status`, { status: nextStatus, location, note })
@@ -122,11 +139,16 @@ export default function ShippingDetail() {
               Cập nhật trạng thái
             </button>
           )}
+          {shipment.carrier?.code === 'GOSHIP' && shipment.status !== 'NOT_CREATED' && (
+            <button className="dash-btn dash-btn-ghost" onClick={syncFromGoship} disabled={syncing}>{syncing ? 'Đang hỏi Goship…' : 'Cập nhật từ Goship'}</button>
+          )}
           <button className="dash-btn dash-btn-ghost" onClick={() => window.print()}>In shipping label</button>
           <button className="dash-btn dash-btn-ghost" onClick={() => navigate(`/dashboard/orders/${shipment.order.id}`)}>Xem đơn hàng</button>
           {canCancel && <button className="dash-btn dash-btn-ghost" onClick={() => setModal('cancel')}>Hủy vận đơn</button>}
         </div>
       </div>
+
+      {syncMsg && <p style={{ fontSize: '13px', margin: '0 0 12px', color: 'var(--dash-text)' }} role="status">{syncMsg}</p>}
 
       <div className="dash-card" style={{ marginBottom: '24px' }}>
         <h3 className="form-card-title">Hành trình vận chuyển</h3>

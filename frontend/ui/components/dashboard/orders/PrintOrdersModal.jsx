@@ -371,7 +371,7 @@ export default function PrintOrdersModal({ ids, onClose }) {
         {!orders && !error && <p>Đang tải phiếu…</p>}
         {format === 'label' && missing.length > 0 && (
           <p className="print-error print-noprint">
-            {missing.length} đơn chưa có mã vận đơn của hãng vận chuyển ({missing.map((o) => o.orderNumber).join(', ')}), nên tem của các đơn này đang được bỏ tích. Mã vận đơn do hãng cấp sau khi tạo vận đơn: ở danh sách đơn, chọn đơn rồi bấm "Chuẩn bị hàng" (tạo vận đơn với hãng), sau đó in lại.
+            {missing.length} đơn chưa có mã vận đơn của hãng vận chuyển ({missing.map((o) => o.orderNumber).join(', ')}), nên tem của các đơn này đang được bỏ tích. Mã vận đơn do hãng cấp sau khi tạo vận đơn: nếu đơn chưa có vận đơn, chọn đơn ở danh sách rồi bấm "Chuẩn bị hàng"; nếu đã có vận đơn mà Goship chưa trả mã, mở vận đơn (trang Vận chuyển) và bấm "Cập nhật từ Goship" sau ít phút. Sau đó in lại.
           </p>
         )}
         {orders && format === 'pick' && <PickingList orders={orders} shop={shop} skipped={skipped} onToggle={toggle} />}
