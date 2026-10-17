@@ -89,7 +89,8 @@ export async function getHandoverRecord(req, res) {
 export async function getShippingAlerts(req, res) {
   const { orders: rules } = await getSettings()
   const overdueBefore = rules.pickupAlertHours ? new Date(Date.now() - rules.pickupAlertHours * 3600000) : null
-  const [notCreated, failed, awaitingPickup, returning, pickupOverdue, notPacked, waitingHandover] = await Promise.all([
+  const stuckBefore = new Date(Date.now() - 10 * 60000) // quá 10 phút mà Goship vẫn chưa cấp mã hãng
+  const [notCreated, failed, awaitingPickup, returning, pickupOverdue, notPacked, waitingHandover, noCarrierCode] = await Promise.all([
     prisma.order.count({ where: { status: 'AWAITING_SHIPMENT', shipment: null } }),
     prisma.shipment.count({ where: { status: 'FAILED' } }),
     prisma.shipment.count({ where: { status: 'AWAITING_PICKUP' } }),
@@ -97,10 +98,12 @@ export async function getShippingAlerts(req, res) {
     overdueBefore ? prisma.shipment.count({ where: { status: 'AWAITING_PICKUP', createdAt: { lt: overdueBefore } } }) : 0,
     prisma.shipment.count({ where: { status: 'AWAITING_PICKUP', order: { is: { packedAt: null } } } }),
     prisma.shipment.count({ where: { status: 'AWAITING_PICKUP', handoverId: null, order: { is: { packedAt: { not: null } } } } }),
+    prisma.shipment.count({ where: { status: 'AWAITING_PICKUP', carrierCode: null, carrier: { is: { code: 'GOSHIP' } }, createdAt: { lt: stuckBefore } } }),
   ])
 
   const alerts = []
   if (notCreated > 0) alerts.push({ key: 'not_created', count: notCreated, message: `${notCreated} đơn chưa tạo vận đơn`, filter: { status: 'AWAITING_SHIPMENT' } })
+  if (noCarrierCode > 0) alerts.push({ key: 'no_carrier_code', count: noCarrierCode, message: `${noCarrierCode} vận đơn Goship hơn 10 phút vẫn chưa có mã của hãng (Goship chưa gửi đơn sang hãng). Mở cổng Goship kiểm tra Quỹ tạm ứng và trạng thái đơn, hoặc nhờ Goship hỗ trợ`, filter: { status: 'AWAITING_PICKUP' } })
   if (failed > 0) alerts.push({ key: 'failed', count: failed, message: `${failed} đơn giao thất bại`, filter: { status: 'FAILED' } })
   if (awaitingPickup > 0) alerts.push({ key: 'awaiting_pickup', count: awaitingPickup, message: `${awaitingPickup} đơn đang chờ lấy hàng`, filter: { status: 'AWAITING_PICKUP' } })
   if (pickupOverdue > 0) alerts.push({ key: 'pickup_overdue', count: pickupOverdue, message: `${pickupOverdue} đơn hãng chưa lấy hàng sau ${rules.pickupAlertHours} giờ, hãy nhắc hãng`, filter: { status: 'AWAITING_PICKUP' } })

@@ -164,7 +164,7 @@ export default function ShippingDetail() {
               <strong>Mã vận đơn của hãng:</strong>{' '}
               {codeDraft === null ? (
                 <>
-                  {shipment.carrierCode || <span style={{ color: 'var(--dash-muted)' }}>chưa có (khách đang thấy mã đơn)</span>}{' '}
+                  {shipment.carrierCode || <span style={{ color: 'var(--dash-muted)' }}>chưa có. Mã {shipment.trackingId} là mã nội bộ của Goship (cột "Vận đơn" trên cổng Goship), không phải mã hãng; hãng chỉ cấp mã sau khi Goship gửi đơn sang hãng (khách đang thấy mã đơn)</span>}{' '}
                   <button type="button" className="dash-btn dash-btn-ghost" style={{ fontSize: '11px', padding: '2px 8px' }} onClick={() => setCodeDraft(shipment.carrierCode || '')}>
                     {shipment.carrierCode ? 'Sửa' : 'Nhập mã'}
                   </button>

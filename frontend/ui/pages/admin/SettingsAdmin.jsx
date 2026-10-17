@@ -109,15 +109,15 @@ const ORDER_RULES = [
 ]
 
 function OrdersTab({ data, onSaved }) {
-  const [form, setForm] = useState(() => ({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, String(data[r.key])])), expressKeywords: data.expressKeywords ?? '', pickupCutoff: data.pickupCutoff ?? '', autoConfirmEnabled: !!data.autoConfirmEnabled }))
+  const [form, setForm] = useState(() => ({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, String(data[r.key])])), expressKeywords: data.expressKeywords ?? '', pickupCutoff: data.pickupCutoff ?? '', autoConfirmEnabled: !!data.autoConfirmEnabled, cancelOrderOnShipmentCancel: data.cancelOrderOnShipmentCancel !== false }))
   const [state, save] = useSave('orders', onSaved)
-  const dirty = ORDER_RULES.some((r) => form[r.key] !== String(data[r.key])) || form.expressKeywords !== (data.expressKeywords ?? '') || form.pickupCutoff !== (data.pickupCutoff ?? '') || form.autoConfirmEnabled !== !!data.autoConfirmEnabled
+  const dirty = ORDER_RULES.some((r) => form[r.key] !== String(data[r.key])) || form.expressKeywords !== (data.expressKeywords ?? '') || form.pickupCutoff !== (data.pickupCutoff ?? '') || form.autoConfirmEnabled !== !!data.autoConfirmEnabled || form.cancelOrderOnShipmentCancel !== (data.cancelOrderOnShipmentCancel !== false)
   return (
     <form
       className="dash-card set-card"
       onSubmit={(e) => {
         e.preventDefault()
-        save({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, Number(form[r.key])])), expressKeywords: form.expressKeywords.trim(), pickupCutoff: form.pickupCutoff.trim(), autoConfirmEnabled: form.autoConfirmEnabled })
+        save({ ...Object.fromEntries(ORDER_RULES.map((r) => [r.key, Number(form[r.key])])), expressKeywords: form.expressKeywords.trim(), pickupCutoff: form.pickupCutoff.trim(), autoConfirmEnabled: form.autoConfirmEnabled, cancelOrderOnShipmentCancel: form.cancelOrderOnShipmentCancel })
       }}
     >
       <h3 className="form-card-title">Quy tắc đơn hàng</h3>
@@ -129,6 +129,12 @@ function OrdersTab({ data, onSaved }) {
         ))}
         <Field label="Tự xác nhận đơn hợp lệ" hint="Bật thì đơn hợp lệ không cần nhân viên bấm xác nhận từng đơn.">
           <select className="dash-select" value={form.autoConfirmEnabled ? '1' : '0'} onChange={(e) => setForm({ ...form, autoConfirmEnabled: e.target.value === '1' })}>
+            <option value="1">Bật</option>
+            <option value="0">Tắt</option>
+          </select>
+        </Field>
+        <Field label="Hủy vận đơn trên Goship thì hủy luôn đơn hàng" hint="Bật: khi bạn hủy vận đơn ngay trên cổng Goship, đơn hàng trên website cũng tự hủy (chỉ đơn CHƯA thanh toán; đơn đã thanh toán giữ nguyên để nhân viên xử lý hoàn tiền). Tắt: đơn quay về Đang xử lý để tạo lại vận đơn. Hủy vận đơn bằng nút trên website không tự hủy đơn.">
+          <select className="dash-select" value={form.cancelOrderOnShipmentCancel ? '1' : '0'} onChange={(e) => setForm({ ...form, cancelOrderOnShipmentCancel: e.target.value === '1' })}>
             <option value="1">Bật</option>
             <option value="0">Tắt</option>
           </select>

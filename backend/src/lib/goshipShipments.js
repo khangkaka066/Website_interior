@@ -500,7 +500,7 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
   if (!label) return { handled: false, reason: 'no_status' }
   const note = [p.message, p.description].filter(Boolean).join(' · ') || null
 
-  return inTx(db, async (tx) => {
+  const outcome = await inTx(db, async (tx) => {
     const changes = {}
     let order = null
 
@@ -537,30 +537,40 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
     if (changes.status || order || !duplicate) {
       await tx.activityLog.create({ data: { entityType: 'shipment', shipmentId: shipment.id, orderId: shipment.orderId, action: `goship_${p.status || 'event'}`, actor: 'goship', note: `${trusted ? 'webhook' : 'đối chiếu API'}: ${label}` } })
     }
-    return { handled: true, status: changes.status || shipment.status, orderStatus: order, duplicate: Boolean(duplicate), verified: trusted }
+    return { handled: true, status: changes.status || shipment.status, orderStatus: order, duplicate: Boolean(duplicate), verified: trusted, cancelledRemote: Boolean(info.cancel && changes.status === 'NOT_CREATED') }
   })
+
+  // Hủy vận đơn ngay trên cổng Goship (không phải bấm hủy ở website): hủy luôn đơn hàng nếu bật trong Cài đặt, để hai bên không lệch nhau.
+  // Chỉ tự hủy đơn CHƯA thanh toán (COD, chuyển khoản chưa trả): đơn đã thu tiền cần hoàn tiền nên để nhân viên quyết định.
+  if (outcome.cancelledRemote) await cancelOrderAfterRemoteCancel(shipment.orderId, db)
+  return outcome
+}
+
+async function cancelOrderAfterRemoteCancel(orderId, db) {
+  try {
+    const { orders } = await getSettings()
+    if (orders.cancelOrderOnShipmentCancel === false) return
+    const { applyTransition, ORDER_INCLUDE } = await import('./orderFlow.js') // nhập khi cần: orderFlow cũng nhập file này
+    const order = await db.order.findUnique({ where: { id: orderId }, include: ORDER_INCLUDE })
+    if (!order || !['PROCESSING', 'CONFIRMED', 'AWAITING_SHIPMENT'].includes(order.status)) return
+    if (order.paymentStatus === 'PAID') {
+      await db.activityLog.create({ data: { entityType: 'order', orderId, action: 'shipment_cancelled_paid_order', actor: 'system', note: 'Vận đơn bị hủy bên Goship nhưng đơn đã thanh toán nên KHÔNG tự hủy đơn, nhân viên cần xử lý (tạo lại vận đơn hoặc hủy và hoàn tiền).' } })
+      return
+    }
+    await applyTransition(order, { to: 'CANCELLED', note: 'Vận đơn đã bị hủy bên Goship nên hủy đơn hàng', actor: 'goship' }, db)
+  } catch (err) {
+    console.warn('[goship] không tự hủy được đơn sau khi hủy vận đơn:', err.message)
+  }
 }
 
 // ----------------------------------------------------------------------------------------------------------------
 // Đối soát định kỳ (phòng khi webhook của Goship không tới được: chạy máy cá nhân, mất mạng, Goship gửi lỗi...)
 // ----------------------------------------------------------------------------------------------------------------
 
-const missingCount = new Map() // id vận đơn -> số lần đối soát liên tiếp mà Goship không còn tìm thấy
+// (Không suy ra "đã hủy" chỉ vì Goship không tìm thấy mã: chưa biết tra cứu có thấy cả đơn nháp "Đơn mới" hay không, đoán sai sẽ khiến nhân viên tạo trùng vận đơn.
+// Hủy bên Goship đã có webhook trạng thái 914 xử lý.)
 
-// Goship không còn thấy vận đơn (đã hủy bên Goship, dữ liệu quan sát được: tra mã của vận đơn đã hủy trả về rỗng): đưa về như hủy vận đơn và
-// trả đơn về "Đang xử lý" để nhân viên tạo lại.
-async function markCancelledOnGoship(db, shipment) {
-  await inTx(db, async (tx) => {
-    await tx.shipment.update({ where: { id: shipment.id }, data: { status: 'NOT_CREATED', trackingEvents: { create: { status: 'Đã hủy bên Goship', note: 'Goship không còn vận đơn này (đối soát tự động)' } } } })
-    if (shipment.order.status === 'AWAITING_SHIPMENT') {
-      await tx.order.update({ where: { id: shipment.orderId }, data: { status: 'PROCESSING', statusEvents: { create: { status: 'PROCESSING', note: 'Cập nhật từ vận chuyển (Goship): vận đơn đã bị hủy bên Goship' } } } })
-    }
-    await tx.activityLog.create({ data: { entityType: 'shipment', shipmentId: shipment.id, orderId: shipment.orderId, action: 'goship_cancelled_remote', actor: 'system', note: 'đối soát: Goship không còn vận đơn' } })
-  })
-}
-
-// Hỏi lại Goship về các vận đơn Goship đang chạy và cập nhật trạng thái / mã hãng. Vận đơn chờ lấy hàng mà Goship không còn tìm thấy
-// trong 2 lần đối soát liên tiếp thì coi là đã hủy bên Goship. Trả về số vận đơn có thay đổi.
+// Hỏi lại Goship về các vận đơn Goship đang chạy và cập nhật trạng thái / mã hãng. Trả về số vận đơn có thay đổi.
 export async function reconcileGoshipShipments(db = prisma, { limit = 30 } = {}) {
   if (!goshipConfigured()) return 0
   const active = await db.shipment.findMany({
@@ -573,18 +583,7 @@ export async function reconcileGoshipShipments(db = prisma, { limit = 30 } = {})
   for (const s of active) {
     try {
       const r = await processGoshipWebhook({ payload: { gcode: s.trackingId }, verified: false }, db)
-      if (r.handled) {
-        missingCount.delete(s.id)
-        if (!r.duplicate) changed++
-      } else if (r.reason === 'unverified_not_found') {
-        const k = (missingCount.get(s.id) || 0) + 1
-        missingCount.set(s.id, k)
-        if (k >= 2 && s.status === 'AWAITING_PICKUP') {
-          await markCancelledOnGoship(db, s)
-          missingCount.delete(s.id)
-          changed++
-        }
-      }
+      if (r.handled && !r.duplicate) changed++
     } catch (err) {
       console.warn('[goship] đối soát', s.trackingId, 'lỗi:', err.message)
     }

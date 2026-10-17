@@ -144,7 +144,8 @@ export default function OrderList() {
       const { results, done } = await request([...selected])
       const failed = results.filter((r) => !r.ok)
       setSelected(new Set(failed.map((r) => r.id || r.orderId)))
-      setBulkMsg({ ok: !failed.length, text: `${label}: thành công ${done}/${results.length} đơn.`, failed })
+      const warns = results.filter((r) => r.ok && r.warning)
+      setBulkMsg({ ok: !failed.length, text: `${label}: thành công ${done}/${results.length} đơn.`, failed, warns })
       await load()
     } catch (err) {
       setBulkMsg({ ok: false, text: err.message, failed: [] })
@@ -260,6 +261,9 @@ export default function OrderList() {
           {bulkMsg.text}
           {bulkMsg.failed.map((f) => (
             <div key={f.id || f.orderId}>• {f.orderNumber || f.id || f.orderId}: {f.error}</div>
+          ))}
+          {(bulkMsg.warns || []).map((w) => (
+            <div key={w.orderId} style={{ color: '#b26a00', marginTop: '4px' }}>⚠ {w.orderNumber}: {w.warning}</div>
           ))}
         </div>
       )}

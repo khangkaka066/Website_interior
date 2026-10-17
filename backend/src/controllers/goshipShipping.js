@@ -1,5 +1,5 @@
 import { getSettings } from '../lib/settingsStore.js'
-import { goshipConfigured } from '../lib/goship.js'
+import { goshipConfigured, searchGoshipShipment } from '../lib/goship.js'
 import { geocodeAddress, geocodeProvider } from '../lib/geocode.js'
 import { verifyGoshipSignature } from '../lib/goshipSignature.js'
 import { ShipmentError, ratesForOrder, createShipmentForOrder, processGoshipWebhook } from '../lib/goshipShipments.js'
@@ -67,7 +67,9 @@ export async function goshipBulkCreate(req, res) {
       const cheapest = usable.find((o) => o.preferred) || usable.reduce((a, b) => (b.fee < a.fee ? b : a))
       const shipment = await createShipmentForOrder({ orderId, rateId: cheapest.id, actor, pickupMethod })
       console.log(`[goship] (hàng loạt) đã tạo vận đơn ${shipment.trackingId} cho đơn ${shipment.order?.orderNumber} (${actor})`)
-      results.push({ orderId, orderNumber: shipment.order?.orderNumber, ok: true, carrier: cheapest.carrier, fee: cheapest.fee })
+      // Goship đã nhận đơn nhưng chưa trả mã hãng sau vài lần hỏi lại: nhiều khả năng Goship chưa gửi đơn sang hãng (nghi do Quỹ tạm ứng không đủ để trừ cước).
+      const warning = shipment.carrierCode ? undefined : 'Goship đã nhận đơn nhưng chưa có mã của hãng, tức chưa gửi sang hãng. Thường do Quỹ tạm ứng Goship không đủ để trừ cước: kiểm tra và nạp thêm, đừng hủy đơn.'
+      results.push({ orderId, orderNumber: shipment.order?.orderNumber, ok: true, carrier: cheapest.carrier, fee: cheapest.fee, ...(warning && { warning }) })
     } catch (err) {
       if (!(err instanceof ShipmentError)) throw err
       results.push({ orderId, ok: false, error: err.message })
@@ -118,8 +120,11 @@ export async function goshipSync(req, res) {
   if (!shipment) return res.status(404).json({ error: 'Không tìm thấy vận đơn.' })
   if (shipment.carrier?.code !== 'GOSHIP' || !shipment.trackingId) return res.status(400).json({ error: 'Chỉ cập nhật được vận đơn tạo qua Goship.' })
   if (!goshipConfigured()) return res.status(503).json({ error: 'Chưa có GOSHIP_TOKEN nên không hỏi được Goship.' })
+  // Câu trạng thái Goship đang hiển thị (ví dụ "Đơn đã lưu chưa được gửi đi") để nhân viên biết đơn đang kẹt ở đâu.
+  const remote = await searchGoshipShipment(shipment.trackingId).catch(() => null)
   const result = await processGoshipWebhook({ payload: { gcode: shipment.trackingId }, verified: false })
-  if (!result.handled) return res.status(502).json({ error: 'Goship chưa trả thông tin cho vận đơn này, vui lòng thử lại sau ít phút.' })
+  if (!result.handled && !remote) return res.status(502).json({ error: 'Goship chưa trả thông tin cho vận đơn này, vui lòng thử lại sau ít phút.' })
   const fresh = await prisma.shipment.findUnique({ where: { id: shipment.id }, include: { carrier: true, order: { include: { customer: true } }, trackingEvents: { orderBy: { createdAt: 'asc' } } } })
-  res.json(toPlain(fresh))
+  const goship = remote ? { statusCode: remote.status_code ?? remote.shipment_status ?? null, statusText: remote.shipment_status_txt ?? remote.status_text ?? null, message: remote.message ?? remote.description ?? null } : null
+  res.json({ ...toPlain(fresh), goship })
 }

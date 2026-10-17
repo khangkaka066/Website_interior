@@ -79,6 +79,8 @@ export const DEFAULTS = {
     autoConfirmDelayMinutes: 10,
     pickupCutoff: '15:30',
     pickupAlertHours: 24,
+    // Hủy vận đơn ngay trên cổng Goship thì hủy luôn đơn hàng (chỉ đơn chưa thanh toán). Tắt thì đơn quay về "Đang xử lý" để tạo lại vận đơn.
+    cancelOrderOnShipmentCancel: true,
   },
   // Quà chào mừng khi khách đăng ký email: tự tạo một mã giảm giá riêng (dùng 1 lần, hết hạn sau welcomeDays ngày) và gửi qua email.
   marketing: { welcomeEnabled: true, welcomeType: 'PERCENT', welcomeValue: 10, welcomeMaxDiscount: 30000, welcomeMinOrder: 0, welcomeDays: 30 },

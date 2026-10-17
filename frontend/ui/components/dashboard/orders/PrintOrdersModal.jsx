@@ -76,6 +76,7 @@ function LabelSheet({ order, shop, skipped, onToggle }) {
         <div className="lbl-codes">
           <Barcode value={code} height={38} width={1.3} fontSize={11} />
           {carrierCode ? <div>Mã vận đơn: <b>{carrierCode}</b></div> : <div className="lbl-warn">CHƯA CÓ MÃ VẬN ĐƠN CỦA HÃNG</div>}
+          {!carrierCode && ship?.trackingId && <div>Mã Goship: {ship.trackingId}</div>}
           <div>Mã đơn hàng: {order.orderNumber}</div>
         </div>
       </div>
@@ -358,16 +359,24 @@ export default function PrintOrdersModal({ ids, onClose }) {
     setSyncing(true)
     setSyncMsg('')
     let failed = 0
+    const said = new Set() // câu trạng thái Goship báo cho các đơn vẫn chưa có mã
     for (const o of syncable) {
       try {
-        await api.post(`/shipping/goship/shipments/${o.shipment.id}/sync`, {})
+        const r = await api.post(`/shipping/goship/shipments/${o.shipment.id}/sync`, {})
+        if (!r.carrierCode && r.goship?.statusText) said.add(r.goship.statusText + (r.goship.message ? ` (${r.goship.message})` : ''))
       } catch {
         failed++
       }
     }
     setReloadKey((k) => k + 1)
     setSyncing(false)
-    setSyncMsg(failed ? `${failed} vận đơn chưa hỏi được Goship, thử lại sau ít phút.` : 'Đã hỏi Goship. Đơn nào đã có mã hãng thì tự được tích để in.')
+    setSyncMsg(
+      failed
+        ? `${failed} vận đơn chưa hỏi được Goship, thử lại sau ít phút.`
+        : said.size
+          ? `Goship báo: ${[...said].join('; ')}. Nếu đơn vẫn "chưa được gửi đi" thì cần xử lý ở cổng Goship (thường là quỹ tạm ứng không đủ hoặc cần gửi đơn thủ công), không phải chờ thêm.`
+          : 'Đã hỏi Goship. Đơn nào đã có mã hãng thì tự được tích để in.',
+    )
   }
   const count = orders ? orders.filter((o) => !isSkipped(o)).length : 0
 
@@ -396,7 +405,7 @@ export default function PrintOrdersModal({ ids, onClose }) {
             </p>
             {syncable.length > 0 ? (
               <p>
-                Vận đơn đã được tạo trên Goship. Mã của hãng thường có sau vài chục giây đến vài phút (Goship xử lý bất đồng bộ, trạng thái "Đơn mới" lúc đầu là bình thường). <b>Đừng hủy vận đơn trên Goship</b>, hãy đợi rồi bấm nút bên dưới.
+                Vận đơn đã được tạo trên Goship. Goship chỉ có mã của hãng sau khi gửi đơn sang hãng; trạng thái "Đơn mới" nghĩa là chưa gửi. <b>Đừng hủy vận đơn trên Goship</b>, bấm nút bên dưới để xem Goship đang báo gì.
               </p>
             ) : (
               <p>Các đơn này chưa có vận đơn. Ở danh sách đơn, chọn đơn rồi bấm "Chuẩn bị hàng" để tạo vận đơn với hãng, sau đó in lại.</p>
