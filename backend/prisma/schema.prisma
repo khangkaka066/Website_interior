@@ -183,6 +183,12 @@ model Order {
   tax         Decimal @default(0) @db.Decimal(12, 2)
   total       Decimal @db.Decimal(12, 2)
   couponCode  String? // mã giảm giá khách đã dùng (số tiền giảm nằm ở discount)
+  // Thông tin nhận hoàn tiền (khách nhập khi hủy đơn đã thanh toán, hoặc nhân viên nhập). Sau khi hoàn, số tài khoản được che chỉ còn 4 số cuối; refundedAt: lúc nhân viên bấm Hoàn tiền.
+  refundBankBin       String?
+  refundBankName      String?
+  refundAccountNumber String?
+  refundAccountName   String?
+  refundedAt          DateTime?
 
   // Shipping address (snapshot at time of order)
   recipientName String

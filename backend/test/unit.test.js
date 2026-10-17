@@ -13,6 +13,7 @@ import { discountFor, checkCoupon, CouponError, normalizeCode } from '../src/lib
 import { couponSchema, couponPatchSchema } from '../src/schemas/coupons.js'
 import { welcomeConfigSchema, blastSchema, unsubscribeSchema } from '../src/schemas/subscribers.js'
 import { blastEmail, welcomeEmail } from '../src/lib/emailTemplates.js'
+import { refundInfoFields, cancelMyOrderSchema as cancelSchemaR } from '../src/schemas/orders.js'
 import { rowsOf } from '../src/lib/goship.js'
 import { applySurcharge } from '../src/lib/shippingRates.js'
 import { cleanPhone, carrierCodeOf } from '../src/lib/goshipShipments.js'
@@ -1237,10 +1238,15 @@ describe('vòng đời đơn kiểu Shopee', () => {
   })
 
   const base = { orderNumber: 'X', status: 'PENDING_CONFIRMATION', items: [{ id: 'i1', productId: 'p1', review: null }], statusEvents: [], recipientName: 'A B', cancelRequestedAt: null, receivedAt: null, returnRequest: null }
-  test('khách hủy ngay khi chờ xác nhận, gửi yêu cầu khi đã xác nhận, không hủy khi đang giao', () => {
+  test('chưa có vận đơn: khách hủy ngay mọi lúc; đã có vận đơn: không hủy được; đang giao: không hủy', () => {
     assert.equal(publicOrderView(base).actions.cancel, 'now')
-    assert.equal(publicOrderView({ ...base, status: 'CONFIRMED' }).actions.cancel, 'request')
-    assert.equal(publicOrderView({ ...base, status: 'PROCESSING', cancelRequestedAt: new Date() }).actions.cancel, null)
+    assert.equal(publicOrderView({ ...base, status: 'CONFIRMED' }).actions.cancel, 'now')
+    assert.equal(publicOrderView({ ...base, status: 'PROCESSING', cancelRequestedAt: new Date() }).actions.cancel, 'now')
+    const withShipment = { ...base, status: 'AWAITING_SHIPMENT', shipment: { status: 'AWAITING_PICKUP', trackingEvents: [] } }
+    assert.equal(publicOrderView(withShipment).actions.cancel, null)
+    assert.equal(publicOrderView(withShipment).actions.cancelBlocked, true)
+    // vận đơn đã hủy bên Goship (NOT_CREATED) thì coi như chưa có vận đơn
+    assert.equal(publicOrderView({ ...withShipment, shipment: { status: 'NOT_CREATED', trackingEvents: [] } }).actions.cancel, 'now')
     assert.equal(publicOrderView({ ...base, status: 'SHIPPING' }).actions.cancel, null)
   })
   test('đã giao: được xác nhận nhận hàng, đánh giá; trả hàng theo canReturn', () => {
@@ -1673,5 +1679,20 @@ describe('cộng thêm vào cước báo', () => {
   test('miễn phí vận chuyển thì giữ 0, giá gạch ngang cũng cộng', () => {
     const free = [{ id: 'a', fee: 0, originalFee: 22000 }]
     assert.deepEqual(applySurcharge(free, 1000, { free: true }), [{ id: 'a', fee: 0, originalFee: 23000 }])
+  })
+})
+
+describe('thông tin nhận hoàn tiền', () => {
+  const ok = { bankBin: '970436', bankName: 'Vietcombank', accountNumber: '0123456789', accountName: 'NGUYEN VAN A' }
+  test('hợp lệ', () => assert.equal(refundInfoFields.safeParse(ok).success, true))
+  test('BIN phải 6 số, số tài khoản 6-19 chữ số, có tên chủ tài khoản', () => {
+    assert.equal(refundInfoFields.safeParse({ ...ok, bankBin: '123' }).success, false)
+    assert.equal(refundInfoFields.safeParse({ ...ok, accountNumber: '12ab34' }).success, false)
+    assert.equal(refundInfoFields.safeParse({ ...ok, accountNumber: '123' }).success, false)
+    assert.equal(refundInfoFields.safeParse({ ...ok, accountName: '' }).success, false)
+  })
+  test('hủy đơn: refund không bắt buộc ở schema (máy chủ kiểm theo trạng thái thanh toán)', () => {
+    assert.equal(cancelSchemaR.safeParse({ orderNumber: 'X', phone: '0900000000', reason: 'Đổi ý' }).success, true)
+    assert.equal(cancelSchemaR.safeParse({ orderNumber: 'X', phone: '0900000000', reason: 'Đổi ý', refund: ok }).success, true)
   })
 })

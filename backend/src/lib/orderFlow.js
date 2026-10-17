@@ -40,6 +40,7 @@ const inTx = (db, fn) => (db.$transaction ? db.$transaction(fn) : fn(db))
 const logActivity = (db, orderId, action, actor, note) =>
   db.activityLog.create({ data: { entityType: 'order', orderId, action, actor, note } })
 
+export const SHIPPED_NO_CANCEL = 'Đơn đã được chuyển cho đơn vị vận chuyển nên không thể hủy trên website. Vui lòng liên hệ hotline của shop, hoặc từ chối nhận hàng khi nhân viên giao hàng liên hệ.'
 const hasActiveShipment = (order) => !!order.shipment && order.shipment.status !== 'NOT_CREATED'
 
 // Hạn nhân viên xử lý đơn (đếm ngược trong admin). null nếu đơn không còn việc hoặc quy tắc tắt.
@@ -113,17 +114,18 @@ export async function advanceToProcessing(order, actor = 'admin', db = prisma) {
 
 // ---------------------------------------------------------------------------------------------------------------
 // Khách hủy đơn: còn "Chờ xác nhận" thì hủy ngay; shop đã xác nhận nhưng chưa giao cho vận chuyển thì gửi yêu cầu để nhân viên duyệt.
-export async function customerCancel(order, reason, db = prisma) {
-  if (order.status === 'PENDING_CONFIRMATION') {
+export async function customerCancel(order, reason, db = prisma, refund = null) {
+  // Chưa giao cho hãng (chưa có vận đơn): khách hủy tùy ý, hủy ngay, không cần shop xác nhận. Đã có vận đơn (hãng đã nhận đơn): không hủy được trên website.
+  if (['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status)) {
+    if (hasActiveShipment(order)) throw new FlowError(SHIPPED_NO_CANCEL, 409, 'SHIPMENT_CREATED')
+    const paid = order.paymentStatus === 'PAID'
+    if (paid && !refund) throw new FlowError('Đơn đã thanh toán: vui lòng nhập thông tin tài khoản ngân hàng để shop hoàn tiền cho bạn.', 400, 'REFUND_INFO_REQUIRED')
     const updated = await applyTransition(order, { to: 'CANCELLED', note: `Khách hủy đơn: ${reason}`, actor: 'customer' }, db)
-    if (order.paymentStatus === 'PAID') await logActivity(db, order.id, 'cancel_needs_refund', 'system', 'Đơn đã thanh toán bị khách hủy, cần hoàn tiền.')
+    if (paid) {
+      await db.order.update({ where: { id: order.id }, data: { refundBankBin: refund.bankBin, refundBankName: refund.bankName, refundAccountNumber: refund.accountNumber, refundAccountName: refund.accountName } })
+      await logActivity(db, order.id, 'cancel_needs_refund', 'system', 'Đơn đã thanh toán bị khách hủy, cần hoàn tiền (khách đã nhập tài khoản nhận hoàn tiền).')
+    }
     return { result: 'cancelled', order: updated }
-  }
-  if (['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status)) {
-    if (order.cancelRequestedAt) throw new FlowError('Bạn đã gửi yêu cầu hủy, vui lòng chờ shop phản hồi.', 409)
-    await db.order.update({ where: { id: order.id }, data: { cancelRequestedAt: new Date(), cancelRequestReason: reason, cancelRejectedNote: null } })
-    await logActivity(db, order.id, 'cancel_requested', 'customer', `Khách yêu cầu hủy đơn: ${reason}`)
-    return { result: 'requested' }
   }
   if (order.status === 'SHIPPING') {
     throw new FlowError('Đơn đang được giao nên không thể hủy trên hệ thống. Bạn có thể từ chối nhận hàng khi nhân viên giao hàng liên hệ.')

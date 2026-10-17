@@ -9,6 +9,7 @@ import DeliveryBadge from '../../components/DeliveryBadge'
 import CreateShipmentModal from '../../components/dashboard/orders/CreateShipmentModal'
 import GoshipShipmentModal from '../../components/dashboard/orders/GoshipShipmentModal'
 import PrintOrdersModal from '../../components/dashboard/orders/PrintOrdersModal'
+import RefundPanel from '../../components/dashboard/orders/RefundPanel'
 import { paymentMethodLabel } from '../../constants/paymentMethod'
 import { PICKUP_LABEL } from '../../components/dashboard/orders/PickupMethod'
 import { api } from '../../api'
@@ -178,6 +179,8 @@ export default function OrderDetail() {
       {actionError && (
         <div className="dash-card" style={{ marginBottom: '16px', padding: '12px 16px', color: 'var(--dash-danger, #c0392b)', fontSize: '13px' }}>{actionError}</div>
       )}
+
+      <RefundPanel order={order} onChanged={load} />
 
       {cancelAsk && (
         <div className="dash-card" style={{ marginBottom: '24px', borderLeft: '4px solid var(--dash-danger, #c0392b)' }}>

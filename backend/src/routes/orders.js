@@ -12,6 +12,7 @@ import {
   confirmOrder,
   cancelOrder,
   refundOrder,
+  setRefundInfo,
   bulkOrderStatus,
   approveCancelRequest,
   rejectCancelRequest,
@@ -30,7 +31,7 @@ import { cancelMyOrder, receiveMyOrder, returnMyOrder, reviewMyOrder } from '../
 import { requirePermission } from '../middleware/auth.js'
 import { orderLimiter, trackLimiter, quoteLimiter } from '../middleware/security.js'
 import { validate } from '../middleware/validate.js'
-import { createOrderSchema, payosRelinkSchema, shippingQuoteSchema, cancelMyOrderSchema, receiveMyOrderSchema, returnMyOrderSchema, reviewMyOrderSchema } from '../schemas/orders.js'
+import { refundInfoFields, createOrderSchema, payosRelinkSchema, shippingQuoteSchema, cancelMyOrderSchema, receiveMyOrderSchema, returnMyOrderSchema, reviewMyOrderSchema } from '../schemas/orders.js'
 
 import { orderStatusSchema, noteOnlySchema, bulkOrderStatusSchema, optionalNoteSchema, requiredNoteSchema, reviewHiddenSchema, reviewReplySchema, scanPackSchema } from '../schemas/admin.js'
 
@@ -66,6 +67,7 @@ router.patch('/:id/status', guard, validate(orderStatusSchema), asyncHandler(upd
 router.post('/:id/prepare', guard, asyncHandler(prepareOrder))
 router.post('/:id/confirm', guard, validate(noteOnlySchema), asyncHandler(confirmOrder))
 router.post('/:id/cancel', guard, validate(noteOnlySchema), asyncHandler(cancelOrder))
+router.patch('/:id/refund-info', guard, validate(refundInfoFields), asyncHandler(setRefundInfo))
 router.post('/:id/refund', guard, validate(noteOnlySchema), asyncHandler(refundOrder))
 router.post('/:id/cancel-request/approve', guard, validate(optionalNoteSchema), asyncHandler(approveCancelRequest))
 router.post('/:id/cancel-request/reject', guard, validate(requiredNoteSchema), asyncHandler(rejectCancelRequest))

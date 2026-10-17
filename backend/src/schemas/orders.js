@@ -42,7 +42,14 @@ export const createOrderSchema = z.object({
 
 // Thao tác của khách với đơn của mình. orderNumber + phone dành cho khách chưa đăng nhập (đăng nhập thì mã đơn nằm trên đường dẫn).
 const ownerFields = { orderNumber: optionalText('mã đơn hàng', 30), phone: optionalText('số điện thoại', 20) }
-export const cancelMyOrderSchema = z.object({ ...ownerFields, reason: text('lý do hủy đơn', 300) })
+// Thông tin nhận hoàn tiền: mã BIN 6 số của ngân hàng (chuẩn VietQR), số tài khoản 6-19 chữ số, tên chủ tài khoản.
+export const refundInfoFields = z.object({
+  bankBin: z.string('Vui lòng chọn ngân hàng.').trim().regex(/^\d{6}$/, 'Vui lòng chọn ngân hàng.'),
+  bankName: text('tên ngân hàng', 80),
+  accountNumber: z.string('Số tài khoản không hợp lệ.').trim().regex(/^\d{6,19}$/, 'Số tài khoản gồm 6 đến 19 chữ số.'),
+  accountName: text('tên chủ tài khoản', 100),
+})
+export const cancelMyOrderSchema = z.object({ ...ownerFields, reason: text('lý do hủy đơn', 300), refund: refundInfoFields.optional() })
 export const receiveMyOrderSchema = z.object({ ...ownerFields })
 export const returnMyOrderSchema = z.object({ ...ownerFields, reason: text('lý do trả hàng', 300), note: optionalText('ghi chú', 500) })
 export const reviewMyOrderSchema = z.object({

@@ -25,6 +25,7 @@ export default function TodoList() {
 
   const items = [
     { id: 'orders', n: a.orders, to: '/dashboard/orders?needsAction=1', text: 'đơn hàng cần xử lý', warn: a.overdue > 0 && `${a.overdue} đơn quá hạn` },
+    { id: 'refunds', n: a.refunds, to: '/dashboard/orders?refund=1', text: 'đơn đã hủy / trả hàng cần hoàn tiền cho khách' },
     { id: 'reviews', n: a.reviews, to: '/dashboard/reviews?status=unanswered', text: 'đánh giá của khách chưa trả lời' },
     { id: 'messages', n: a.messages, to: '/dashboard/messages', text: 'tin nhắn khách chưa đọc' },
   ].filter((i) => i.n > 0 && dismissed[i.id] !== i.n)

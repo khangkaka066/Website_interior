@@ -304,6 +304,13 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
       }
     }
 
+    // Khách có thể vừa hủy đơn (hủy tự do khi chưa có vận đơn) trong lúc đang tạo: hủy luôn vận đơn vừa tạo bên Goship, không tạo cho đơn đã hủy.
+    const nowOrder = await db.order.findUnique({ where: { id: order.id }, select: { status: true } })
+    if (nowOrder && ['CANCELLED', 'RETURNED'].includes(nowOrder.status)) {
+      await cancelGoshipShipment(gcode).catch(() => {})
+      throw new ShipmentError('Khách vừa hủy đơn này nên đã hủy vận đơn vừa tạo bên Goship.', 409, 'ORDER_CANCELLED')
+    }
+
     const carrier = await ensureGoshipCarrier(db)
     const noteBits = [created.carrier ? `${created.carrier}${created.carrier_short_name ? ` (${created.carrier_short_name})` : ''}` : 'Goship', carrierCodeOf(created.tracking_number, gcode) ? `mã hãng: ${created.tracking_number}` : null].filter(Boolean)
     const note = `Goship · ${noteBits.join(' · ')}`

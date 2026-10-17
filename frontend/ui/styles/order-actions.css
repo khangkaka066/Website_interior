@@ -94,3 +94,23 @@
 .oa .btn-outline:hover {
   background: #f9f9f9;
 }
+
+/* Tài khoản nhận hoàn tiền (form hủy đơn đã thanh toán) */
+.oa-refund {
+  margin: 12px 0 0;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--border-soft, #e5e7eb);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.oa-refund legend {
+  padding: 0 6px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.oa-refund small {
+  color: var(--text-muted, #56657a);
+  font-size: 12px;
+}

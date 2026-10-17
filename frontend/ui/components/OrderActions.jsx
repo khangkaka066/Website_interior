@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { BANKS } from '../data/banks'
 import { api } from '../api'
 import { formatDateTime } from '../utils/format'
 import '../styles/order-actions.css'
@@ -38,7 +39,9 @@ export default function OrderActions({ order, owner, onChange }) {
   const [ratings, setRatings] = useState({}) // orderItemId -> { rating, comment }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [bank, setBank] = useState({ bin: '', account: '', holder: '' }) // tài khoản nhận hoàn tiền (chỉ cần khi đơn đã thanh toán)
   const a = order.actions || {}
+  const paid = order.paymentStatus === 'PAID'
 
   const open = (p) => {
     setPanel(p)
@@ -82,7 +85,7 @@ export default function OrderActions({ order, owner, onChange }) {
   }
 
   const unreviewed = order.items.filter((i) => i.productId && !i.review)
-  const hasButtons = a.cancel || a.received || a.return || a.review
+  const hasButtons = a.cancel || a.received || a.return || a.review || a.cancelBlocked
 
   return (
     <div className="oa">
@@ -91,6 +94,9 @@ export default function OrderActions({ order, owner, onChange }) {
           Bạn đã gửi yêu cầu hủy đơn{order.cancelRequest.reason ? ` (${order.cancelRequest.reason})` : ''}. Shop sẽ phản hồi sớm.
           {order.cancelRequest.autoApproveAt ? ` Nếu shop chưa phản hồi, yêu cầu sẽ tự được đồng ý lúc ${formatDateTime(order.cancelRequest.autoApproveAt)}.` : ''}
         </p>
+      )}
+      {a.cancelBlocked && (
+        <p className="oa-note">Đơn đã được chuyển cho đơn vị vận chuyển nên không thể hủy trên website. Vui lòng liên hệ hotline của shop, hoặc từ chối nhận hàng khi nhân viên giao hàng liên hệ.</p>
       )}
       {!order.cancelRequest?.pending && order.cancelRequest?.rejectedNote && <p className="oa-note">Shop chưa thể hủy đơn này: {order.cancelRequest.rejectedNote}</p>}
       {order.receivedAt && <p className="oa-note">Bạn đã xác nhận nhận hàng lúc {formatDateTime(order.receivedAt)}.</p>}
@@ -110,7 +116,7 @@ export default function OrderActions({ order, owner, onChange }) {
             <button type="button" className="btn btn-accent" onClick={() => open('review')}>Đánh giá sản phẩm</button>
           )}
           {a.cancel && (
-            <button type="button" className="btn btn-outline" onClick={() => open('cancel')}>{a.cancel === 'now' ? 'Hủy đơn hàng' : 'Yêu cầu hủy đơn'}</button>
+            <button type="button" className="btn btn-outline" onClick={() => open('cancel')}>Hủy đơn hàng</button>
           )}
           {a.return && <button type="button" className="btn btn-outline" onClick={() => open('return')}>Trả hàng / Hoàn tiền</button>}
         </div>
@@ -123,17 +129,22 @@ export default function OrderActions({ order, owner, onChange }) {
           onSubmit={(e) => {
             e.preventDefault()
             if (needReason()) return
-            if (panel === 'cancel') call('cancel', { reason: reasonText() })
+            if (panel === 'cancel') {
+              if (paid) {
+                const b = BANKS.find((x) => x.bin === bank.bin)
+                const acc = bank.account.replace(/\s/g, '')
+                if (!b) return setError('Vui lòng chọn ngân hàng nhận hoàn tiền.')
+                if (!/^\d{6,19}$/.test(acc)) return setError('Số tài khoản gồm 6 đến 19 chữ số.')
+                if (!bank.holder.trim()) return setError('Vui lòng nhập tên chủ tài khoản.')
+                call('cancel', { reason: reasonText(), refund: { bankBin: b.bin, bankName: b.name, accountNumber: acc, accountName: bank.holder.trim().toUpperCase() } })
+              } else call('cancel', { reason: reasonText() })
+            }
             else call('return', { reason: reasonText().slice(0, 300) })
           }}
         >
-          <h4>{panel === 'cancel' ? (a.cancel === 'now' ? 'Hủy đơn hàng' : 'Yêu cầu hủy đơn') : 'Yêu cầu trả hàng / hoàn tiền'}</h4>
+          <h4>{panel === 'cancel' ? 'Hủy đơn hàng' : 'Yêu cầu trả hàng / hoàn tiền'}</h4>
           {panel === 'cancel' && (
-            <p className="oa-hint">
-              {a.cancel === 'now'
-                ? 'Đơn sẽ được hủy ngay. Nếu đã thanh toán, shop sẽ liên hệ hoàn tiền.'
-                : 'Shop đã xác nhận đơn nên cần nhân viên đồng ý; nếu shop chưa phản hồi trong thời gian quy định, yêu cầu sẽ tự được đồng ý. Bạn sẽ thấy kết quả ngay trên trang này.'}
-            </p>
+            <p className="oa-hint">Đơn sẽ được hủy ngay, không cần shop xác nhận. Nếu đã thanh toán, shop sẽ liên hệ hoàn tiền.</p>
           )}
           <label>
             Lý do
@@ -146,6 +157,27 @@ export default function OrderActions({ order, owner, onChange }) {
             {reason === 'Khác' ? 'Nhập lý do' : 'Ghi chú thêm (không bắt buộc)'}
             <textarea value={note} maxLength={300} rows={3} onChange={(e) => { setNote(e.target.value); setError('') }} />
           </label>
+          {panel === 'cancel' && paid && (
+            <fieldset className="oa-refund">
+              <legend>Tài khoản nhận hoàn tiền</legend>
+              <label>
+                Ngân hàng
+                <select value={bank.bin} onChange={(e) => { setBank({ ...bank, bin: e.target.value }); setError('') }}>
+                  <option value="">— Chọn ngân hàng —</option>
+                  {BANKS.map((b) => <option key={b.bin} value={b.bin}>{b.name}</option>)}
+                </select>
+              </label>
+              <label>
+                Số tài khoản
+                <input inputMode="numeric" autoComplete="off" maxLength={24} value={bank.account} onChange={(e) => { setBank({ ...bank, account: e.target.value.replace(/[^\d\s]/g, '') }); setError('') }} />
+              </label>
+              <label>
+                Tên chủ tài khoản
+                <input autoComplete="off" maxLength={100} value={bank.holder} onChange={(e) => { setBank({ ...bank, holder: e.target.value }); setError('') }} />
+              </label>
+              <small>Chỉ dùng để shop chuyển hoàn tiền cho đơn này, và được che đi sau khi hoàn xong.</small>
+            </fieldset>
+          )}
           {error && <p className="oa-error">{error}</p>}
           <div className="oa-buttons">
             <button type="submit" className="btn btn-accent" disabled={busy}>{busy ? 'Đang gửi…' : 'Gửi'}</button>

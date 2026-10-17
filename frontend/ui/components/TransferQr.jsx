@@ -26,7 +26,7 @@ function CopyButton({ text, label }) {
 }
 
 // Mã QR VietQR + thông tin chuyển khoản. `note` là nội dung chuyển khoản đã điền sẵn.
-export default function TransferQr({ bank, amount, note, footnote }) {
+export default function TransferQr({ bank, amount, note, footnote, title = 'Quét mã bằng app ngân hàng để thanh toán' }) {
   const [src, setSrc] = useState('')
   const content = sanitizeTransferNote(note)
   const payload = buildVietQrPayload({ bin: bank?.bankCode, account: bank?.accountNumber, amount, content })
@@ -53,7 +53,7 @@ export default function TransferQr({ bank, amount, note, footnote }) {
         payload === null && <p className="tqr-miss">Chưa có đủ thông tin ngân hàng để tạo mã QR.</p>
       )}
       <div className="tqr-info">
-        <p className="tqr-title">Quét mã bằng app ngân hàng để thanh toán</p>
+        <p className="tqr-title">{title}</p>
         {bank?.bankName && <div>Ngân hàng: <strong>{bank.bankName}</strong></div>}
         {bank?.accountNumber && (
           <div>

@@ -66,6 +66,7 @@ export async function listOrders(req, res) {
     dateTo,
     needsAction,
     deliveryType,
+    refund,
     page = '1',
     pageSize = '10',
   } = req.query
@@ -93,6 +94,7 @@ export async function listOrders(req, res) {
       ],
     })
   }
+  if (refund === '1') and.push({ paymentStatus: 'PAID', status: { in: ['CANCELLED', 'RETURNED'] } }) // đơn đã hủy / trả hàng chờ hoàn tiền
   if (and.length) where.AND = and
   if (DELIVERY_TYPES.includes(deliveryType)) where.deliveryType = deliveryType
   if (status) {
@@ -427,8 +429,12 @@ export async function scanPackOrder(req, res) {
 export const packQueueOrders = async (req, res) => res.json(await packQueue())
 export const ordersWorkload = async (req, res) => {
   res.set('Cache-Control', 'no-store')
-  const [w, reviewsToReply] = await Promise.all([workload(), prisma.review.count({ where: { hidden: false, reply: null } })])
-  res.json({ ...w, reviewsToReply })
+  const [w, reviewsToReply, refundsPending] = await Promise.all([
+    workload(),
+    prisma.review.count({ where: { hidden: false, reply: null } }),
+    prisma.order.count({ where: { paymentStatus: 'PAID', status: { in: ['CANCELLED', 'RETURNED'] } } }), // đơn đã hủy / trả hàng mà tiền khách chưa hoàn
+  ])
+  res.json({ ...w, reviewsToReply, refundsPending })
 }
 
 // Nút "Chuẩn bị hàng": xác nhận (nếu cần) và chuyển đơn sang Đang xử lý để tạo vận đơn / in tem.
@@ -461,7 +467,12 @@ export async function refundOrder(req, res) {
   const updated = await prisma.$transaction(async (tx) => {
     const u = await tx.order.update({
       where: { id: order.id },
-      data: { paymentStatus: 'REFUNDED' },
+      data: {
+        paymentStatus: 'REFUNDED',
+        refundedAt: new Date(),
+        // Đã hoàn xong: che số tài khoản của khách, chỉ giữ 4 số cuối để đối chiếu.
+        ...(order.refundAccountNumber && { refundAccountNumber: `${'*'.repeat(Math.max(0, order.refundAccountNumber.length - 4))}${order.refundAccountNumber.slice(-4)}` }),
+      },
       include: ORDER_INCLUDE,
     })
     await tx.activityLog.create({
@@ -470,6 +481,21 @@ export async function refundOrder(req, res) {
     return u
   })
 
+  res.json(toPlain(updated))
+}
+
+// Nhân viên nhập / sửa tài khoản nhận hoàn tiền của khách (khi khách chưa tự nhập, hoặc nhập sai). Chỉ khi đơn đã thanh toán và chưa hoàn.
+export async function setRefundInfo(req, res) {
+  const order = await prisma.order.findUnique({ where: { id: req.params.id } })
+  if (!order) return res.status(404).json({ error: 'Không tìm thấy đơn hàng.' })
+  if (order.paymentStatus !== 'PAID') return res.status(400).json({ error: 'Chỉ nhập tài khoản hoàn tiền cho đơn đã thanh toán và chưa hoàn.' })
+  const b = req.body
+  const updated = await prisma.order.update({
+    where: { id: order.id },
+    data: { refundBankBin: b.bankBin, refundBankName: b.bankName, refundAccountNumber: b.accountNumber, refundAccountName: b.accountName },
+    include: ORDER_INCLUDE,
+  })
+  await prisma.activityLog.create({ data: { entityType: 'order', orderId: order.id, action: 'refund_info', actor: actorOf(req), note: 'Nhập / sửa tài khoản nhận hoàn tiền' } })
   res.json(toPlain(updated))
 }
 
@@ -555,7 +581,9 @@ export function publicOrderView(order, { masked = false, canReturn = false, deli
   const actions = masked
     ? {}
     : {
-        cancel: order.status === 'PENDING_CONFIRMATION' ? 'now' : ['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && !order.cancelRequestedAt ? 'request' : null,
+        // Chưa có vận đơn: khách hủy ngay không cần shop xác nhận. Đã có vận đơn (hãng đã nhận đơn): không hủy được (cancelBlocked để giao diện báo lý do).
+        cancel: ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && !(order.shipment && order.shipment.status !== 'NOT_CREATED') ? 'now' : null,
+        cancelBlocked: ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && Boolean(order.shipment && order.shipment.status !== 'NOT_CREATED'),
         received: order.status === 'DELIVERED' && !order.receivedAt,
         return: canReturn,
         review: order.status === 'DELIVERED' && order.items.some((i) => i.productId && !i.review),

@@ -52,6 +52,7 @@ export default function OrderList() {
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
   const [deliveryType, setDeliveryType] = useState(searchParams.get('deliveryType') || '')
+  const [refundOnly, setRefundOnly] = useState(searchParams.get('refund') === '1') // đơn đã hủy / trả hàng mà chưa hoàn tiền
   const [needsAction, setNeedsAction] = useState(searchParams.get('needsAction') === '1') // chỉ đơn nhân viên còn việc, đơn cũ nhất lên đầu
   const [bulkMsg, setBulkMsg] = useState(null) // { ok, text, failed: [...] } sau khi chạy thao tác hàng loạt
   const [bulkBusy, setBulkBusy] = useState(false)
@@ -80,6 +81,7 @@ export default function OrderList() {
       if (dateFrom) params.set('dateFrom', dateFrom)
       if (dateTo) params.set('dateTo', dateTo)
       if (needsAction) params.set('needsAction', '1')
+      if (refundOnly) params.set('refund', '1')
       if (deliveryType) params.set('deliveryType', deliveryType)
       params.set('page', String(page))
       params.set('pageSize', String(PAGE_SIZE))
@@ -92,7 +94,7 @@ export default function OrderList() {
     } finally {
       setLoading(false)
     }
-  }, [search, tab, paymentStatus, paymentMethod, dateFrom, dateTo, needsAction, deliveryType, page])
+  }, [search, tab, paymentStatus, paymentMethod, dateFrom, dateTo, needsAction, refundOnly, deliveryType, page])
 
   useEffect(() => {
     load()
@@ -207,6 +209,13 @@ export default function OrderList() {
           )
         })}
       </div>
+
+      {refundOnly && (
+        <div className="dash-card" style={{ padding: '10px 16px', marginBottom: '12px', fontSize: '13px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          Đang lọc: đơn đã hủy / trả hàng cần hoàn tiền cho khách. Mở từng đơn để quét mã QR chuyển hoàn.
+          <button type="button" className="dash-btn dash-btn-ghost" onClick={() => { setRefundOnly(false); setPage(1) }}>Bỏ lọc</button>
+        </div>
+      )}
 
       <div className="dash-toolbar">
         <input

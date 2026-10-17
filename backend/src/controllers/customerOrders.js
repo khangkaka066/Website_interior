@@ -34,7 +34,7 @@ const act = (run) => async (req, res) => {
 }
 
 export const cancelMyOrder = act(async (order, b) => {
-  const { result } = await customerCancel(order, b.reason)
+  const { result } = await customerCancel(order, b.reason, undefined, b.refund || null)
   return { result }
 })
 

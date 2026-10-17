@@ -8,7 +8,7 @@ const POLL_MS = 10000
 // Số việc đang chờ nhân viên: đơn cần xử lý, đánh giá chưa trả lời, tin nhắn khách chưa đọc. Mục nào không có quyền thì giữ 0.
 // Dùng chung cho thanh menu (huy hiệu số) và khối "Việc cần làm" ở trang Tổng quan.
 export function useAlerts({ orders, messages }) {
-  const [alerts, setAlerts] = useState({ orders: 0, overdue: 0, reviews: 0, messages: 0 })
+  const [alerts, setAlerts] = useState({ orders: 0, overdue: 0, reviews: 0, refunds: 0, messages: 0 })
 
   useEffect(() => {
     if (!orders && !messages) return undefined
@@ -24,6 +24,7 @@ export function useAlerts({ orders, messages }) {
         orders: w ? w.needsAction || 0 : prev.orders,
         overdue: w ? w.overdue || 0 : prev.overdue,
         reviews: w ? w.reviewsToReply || 0 : prev.reviews,
+        refunds: w ? w.refundsPending || 0 : prev.refunds,
         messages: c ? c.items.reduce((sum, x) => sum + x.unreadCount, 0) : prev.messages,
       }))
     }
