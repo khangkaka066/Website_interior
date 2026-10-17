@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { Link } from '@/lib/router'
 import { useProducts } from '../data/liveProducts'
 import PriceOld from './PriceOld'
+import { watchLayout } from '../utils/scrollRefresh'
 import { sized, IMG } from '../utils/image'
 import '../styles/collection-scroll.css'
 
@@ -45,7 +46,9 @@ export default function CollectionScroll() {
             invalidateOnRefresh: true,
           },
         })
+        const stop = watchLayout(ScrollTrigger)
         return () => {
+          stop()
           tween.scrollTrigger?.kill()
           tween.kill()
           gsap.set(el, { clearProps: 'transform' })

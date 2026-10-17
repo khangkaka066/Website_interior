@@ -77,42 +77,13 @@
   }
 }
 
-/* A1 + A2. Hiện dần từ dưới lên, lần lượt. Dùng thuộc tính `translate` riêng nên không đụng tới `transform` của hiệu ứng rê chuột sẵn có. */
-[data-rv='hide'],
-[data-rv='show'] {
-  transition: opacity 0.8s ease var(--rv-delay, 0s), translate 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-delay, 0s);
-}
-[data-rv='hide'] {
-  opacity: 0;
-  translate: 0 32px;
-}
-
-/* A3. Ba ô danh mục "mở rèm": ô hiện dần, ảnh co từ phóng to về vừa khung. */
-.category-grid .cat-card[data-rv] .cat-photo {
-  transition: transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-delay, 0s);
-}
-.category-grid .cat-card[data-rv='curtain'] {
-  opacity: 0;
-  translate: 0 32px;
-  transition: none;
-}
-.category-grid .cat-card[data-rv='curtain'] .cat-photo {
-  transform: scale(1.14);
-  transition: none;
-}
-.category-grid .cat-card[data-rv='show'] {
-  transition: opacity 0.9s ease var(--rv-delay, 0s), translate 1s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-delay, 0s);
-}
+/* A1 + A2 + A3. Hiện dần của các khối còn nằm dưới màn hình do ScrollEffects.jsx điều khiển hoàn toàn bằng Web Animations API
+   (giữ ẩn, rồi trượt lên + hiện dần khi cuộn tới; ô danh mục kèm ảnh co từ phóng to về vừa khung), nên không có quy tắc CSS nào ở đây. */
 
 @media (prefers-reduced-motion: reduce) {
-  [data-rv],
   .header,
   .to-top {
     transition: none;
-  }
-  [data-rv] {
-    opacity: 1;
-    translate: none;
   }
 }
 

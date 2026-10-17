@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import HeroVideo from './HeroVideo'
 import HeroStack from './HeroStack'
+import { watchLayout } from '../utils/scrollRefresh'
 
 // Máy tính + không bật "giảm chuyển động": khối được ghim lại một quãng cuộn, video thu nhỏ dần từ to về vừa khung, ảnh rèm trôi nhẹ.
 // GSAP nạp muộn (không nằm trong JS đầu trang); điện thoại / máy tính bảng / giảm chuyển động thì hiện tĩnh.
@@ -23,7 +24,11 @@ function useShowcaseScroll(ref) {
           scrollTrigger: { trigger: box, start: canPin ? 'center center' : 'top 80%', end: canPin ? '+=60%' : 'bottom top', pin: canPin, scrub: 0.6, invalidateOnRefresh: true },
         })
         tl.fromTo('.hero-video', { scale: 1.14 }, { scale: 1 }, 0).fromTo('.hero-visual', { y: 24 }, { y: -32 }, 0)
-        return () => tl.scrollTrigger?.kill()
+        const stop = watchLayout(ScrollTrigger)
+        return () => {
+          stop()
+          tl.scrollTrigger?.kill()
+        }
       }, ref)
     })()
     return () => {

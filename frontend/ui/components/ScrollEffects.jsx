@@ -8,8 +8,8 @@ import '../styles/scroll-effects.css'
 //  - Mọi trang: thanh tiến trình cuộn, header dính đầu trang (cuộn xuống thì trượt đi, cuộn lên thì hiện lại), nút "Lên đầu trang".
 //  - Trang chủ: hero trôi nhẹ theo cuộn khối hiện dần từ dưới lên, thẻ trong lưới hiện lần lượt trái -> phải,
 //    ba ô danh mục "mở rèm" từ giữa ra hai bên.
-// Nguyên tắc: chỉ dùng transform/opacity/clip-path (không đổi kích thước nên không giật bố cục); trạng thái ẩn đặt bằng thuộc tính data-rv
-// (React không đụng tới nên không bị xóa khi render lại); JS lỗi / "giảm chuyển động" thì nội dung vẫn hiện đầy đủ.
+// Nguyên tắc: chỉ dùng transform/opacity/clip-path (không đổi kích thước nên không giật bố cục); trạng thái ẩn giữ bằng Web Animations API
+// (không đổi thuộc tính DOM nào nên không lệch với HTML React đang nạp); JS lỗi / "giảm chuyển động" thì nội dung vẫn hiện đầy đủ.
 const REVEAL = [
   '.product-section .section-title',
   '.product-section .tabs',
@@ -79,52 +79,89 @@ export default function ScrollEffects() {
     }
   }, [pathname])
 
-  // Hiện dần / mở rèm khi cuộn tới (chỉ trang chủ).
+  // Hiện dần / mở rèm khi cuộn tới (chỉ trang chủ), chạy lại mỗi lần khối cuộn ra phía dưới rồi quay vào (cuộn ngược lên rồi xuống lại).
+  // Khi chuyển trang bằng link (không tải lại), nội dung trang chủ đến SAU khung chờ (loading.js) nên không có sẵn lúc hiệu ứng khởi động:
+  // MutationObserver theo dõi và gắn hiệu ứng cho khối mới xuất hiện, kể cả sản phẩm tải về muộn.
   useEffect(() => {
     if (pathname !== '/') return undefined
-    if (reducedMotion() || typeof IntersectionObserver === 'undefined') return undefined
+    if (reducedMotion() || typeof IntersectionObserver === 'undefined' || typeof MutationObserver === 'undefined') return undefined
 
-    const vh = window.innerHeight
-    const below = (el) => el.getBoundingClientRect().top > vh * 0.92 // chỉ ẩn phần còn nằm dưới màn hình
-    const reveals = [...new Set(REVEAL.flatMap((s) => [...document.querySelectorAll(s)]))].filter(below)
-    const curtains = [...document.querySelectorAll(CURTAINS)].filter(below)
-    const all = [...reveals, ...curtains]
-    reveals.forEach((el) => el.setAttribute('data-rv', 'hide'))
-    curtains.forEach((el) => el.setAttribute('data-rv', 'curtain'))
+    const managed = new Set()
+    const holds = new Map() // khối đang "chưa hiện" -> các animation giữ nó ở trạng thái ẩn (không đổi thuộc tính DOM nào, tránh lệch với HTML React đang nạp)
+    let scanQueued = false
+    const below = (el) => el.getBoundingClientRect().top > window.innerHeight * 0.92 // chỉ ẩn phần còn nằm dưới màn hình
 
-    const timers = []
+    // Giữ khối ở trạng thái ẩn bằng một animation 1ms có fill: forwards (hủy animation là khối trở lại bình thường).
+    function arm(el) {
+      if (holds.has(el)) return
+      const list = [el.animate([{ opacity: 0, translate: '0 32px' }], { duration: 1, fill: 'forwards' })]
+      if (el.matches(CURTAINS)) {
+        const photo = el.querySelector('.cat-photo')
+        if (photo) list.push(photo.animate([{ transform: 'scale(1.14)' }], { duration: 1, fill: 'forwards' }))
+      }
+      holds.set(el, list)
+    }
+
+    // Bỏ trạng thái ẩn và phát hiệu ứng vào (Web Animations API: không để lại thuộc tính nào nên không đè lên hiệu ứng rê chuột của thẻ).
+    function play(el, delay) {
+      holds.get(el)?.forEach((a) => a.cancel())
+      holds.delete(el)
+      const opts = { duration: REVEAL_MS, delay, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)', fill: 'backwards' }
+      el.animate([{ opacity: 0, translate: '0 32px' }, { opacity: 1, translate: '0 0' }], opts)
+      if (el.matches(CURTAINS)) {
+        el.querySelector('.cat-photo')?.animate([{ transform: 'scale(1.14)' }, { transform: 'scale(1)' }], { ...opts, duration: 1400 })
+      }
+    }
+
     const io = new IntersectionObserver(
       (entries) => {
         // Các thẻ cùng vào màn hình một lượt thì hiện cách nhau chút một, từ trên xuống và từ trái sang phải.
         entries
-          .filter((e) => e.isIntersecting || e.boundingClientRect.bottom < 0)
+          .filter((e) => e.isIntersecting && holds.has(e.target))
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top || a.boundingClientRect.left - b.boundingClientRect.left)
-          .forEach((e, k) => {
-            const el = e.target
-            const delay = e.isIntersecting ? Math.min(k, MAX_STAGGER) * STAGGER_MS : 0
-            el.style.setProperty('--rv-delay', `${delay}ms`)
-            el.setAttribute('data-rv', 'show')
-            io.unobserve(el)
-            // Hiện xong thì gỡ sạch để không đè lên hiệu ứng rê chuột sẵn có của thẻ.
-            timers.push(
-              setTimeout(() => {
-                el.removeAttribute('data-rv')
-                el.style.removeProperty('--rv-delay')
-              }, REVEAL_MS + delay + 200),
-            )
-          })
+          .forEach((e, k) => play(e.target, Math.min(k, MAX_STAGGER) * STAGGER_MS))
+        // Khối đã cuộn hẳn ra PHÍA DƯỚI màn hình (khách cuộn ngược lên) thì ẩn lại để lần cuộn xuống tới sẽ hiện dần lần nữa.
+        // Khối ra phía trên thì để yên: hiệu ứng mờ dần theo cuộn (scroll-effects.css) đã lo.
+        entries.forEach((e) => {
+          if (!e.isIntersecting && e.boundingClientRect.top > 0) arm(e.target)
+        })
       },
       { rootMargin: '0px 0px -8% 0px', threshold: 0.01 },
     )
-    all.forEach((el) => io.observe(el))
+
+    function scan() {
+      scanQueued = false
+      const found = new Set(REVEAL.flatMap((q) => [...document.querySelectorAll(q)]))
+      document.querySelectorAll(CURTAINS).forEach((el) => found.add(el))
+      found.forEach((el) => {
+        if (managed.has(el)) return
+        managed.add(el)
+        if (below(el)) arm(el) // đã nằm trong màn hình lúc xuất hiện thì để hiện sẵn
+        io.observe(el)
+      })
+      // Khối đã bị React gỡ khỏi trang thì thôi theo dõi.
+      managed.forEach((el) => {
+        if (!el.isConnected) {
+          io.unobserve(el)
+          managed.delete(el)
+          holds.delete(el)
+        }
+      })
+    }
+    const queueScan = () => {
+      if (!scanQueued) {
+        scanQueued = true
+        requestAnimationFrame(scan)
+      }
+    }
+    scan()
+    const mo = new MutationObserver(queueScan)
+    mo.observe(document.body, { childList: true, subtree: true })
 
     return () => {
+      mo.disconnect()
       io.disconnect()
-      timers.forEach(clearTimeout)
-      all.forEach((el) => {
-        el.removeAttribute('data-rv')
-        el.style.removeProperty('--rv-delay')
-      })
+      holds.forEach((list) => list.forEach((a) => a.cancel()))
     }
   }, [pathname])
 
