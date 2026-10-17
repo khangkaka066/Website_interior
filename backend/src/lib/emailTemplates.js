@@ -96,3 +96,42 @@ export async function passwordResetEmail(name, token) {
   )
   return { subject, html, text: `Đặt lại mật khẩu (hiệu lực 1 giờ): ${link}\nNếu không phải bạn yêu cầu, hãy bỏ qua email này.` }
 }
+
+// ---- Email marketing --------------------------------------------------------------------------
+const unsubUrl = (token) => `${shopUrl()}/unsubscribe?token=${encodeURIComponent(token)}`
+const paragraphs = (text) =>
+  String(text || '')
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 14px;line-height:1.6">${esc(p).replace(/\n/g, '<br>')}</p>`)
+    .join('')
+const unsubFooter = (token) =>
+  `<p style="color:#888;font-size:12px;margin-top:28px">Bạn nhận email này vì đã đăng ký nhận ưu đãi. <a href="${esc(unsubUrl(token))}" style="color:#888">Hủy đăng ký</a></p>`
+
+// Header List-Unsubscribe để Gmail/Outlook hiện nút "Hủy đăng ký" ngay trên email (giảm rủi ro bị đánh dấu thư rác).
+export const unsubHeaders = (token) => ({ 'List-Unsubscribe': `<${unsubUrl(token)}>` })
+
+// Email chào mừng kèm mã giảm giá riêng của người đăng ký.
+export async function welcomeEmail(subscriber, coupon) {
+  const { store } = await getSettings()
+  const off = coupon.type === 'FIXED' ? money(coupon.value) : `${coupon.value}%${coupon.maxDiscount ? ` (tối đa ${money(coupon.maxDiscount)})` : ''}`
+  const until = coupon.endsAt ? new Date(coupon.endsAt).toLocaleDateString('vi-VN') : null
+  const subject = `Quà chào mừng từ ${store.name}: giảm ${off}`
+  const html = layout(
+    store.name,
+    'Cảm ơn bạn đã đăng ký!',
+    `<p>Tặng bạn mã giảm giá <strong>${off}</strong> cho đơn hàng đầu tiên${coupon.minOrder ? ` (đơn từ ${money(coupon.minOrder)})` : ''}:</p>
+<p style="font-size:24px;font-weight:bold;letter-spacing:2px;background:#faf6ea;border:1px dashed #946b08;border-radius:12px;padding:14px;text-align:center">${esc(coupon.code)}</p>
+<p style="font-size:14px">Nhập mã ở bước thanh toán. Mã dùng một lần${until ? `, hết hạn ngày ${until}` : ''}.</p>
+<p><a href="${esc(shopUrl())}/products" style="background:#1e293b;color:#fff;padding:12px 22px;border-radius:24px;text-decoration:none;display:inline-block">Mua sắm ngay</a></p>${unsubFooter(subscriber.unsubToken)}`,
+  )
+  const text = `Cảm ơn bạn đã đăng ký tại ${store.name}! Mã giảm ${off}: ${coupon.code}${until ? ` (hết hạn ${until})` : ''}. Mua sắm: ${shopUrl()}/products. Hủy đăng ký: ${unsubUrl(subscriber.unsubToken)}`
+  return { subject, html, text, headers: unsubHeaders(subscriber.unsubToken) }
+}
+
+// Email chiến dịch: nội dung do nhân viên soạn (văn bản thường, dòng trống = đoạn mới) + nút hủy đăng ký.
+export async function blastEmail(subject, body, subscriber) {
+  const { store } = await getSettings()
+  const html = layout(store.name, subject, `${paragraphs(body)}${unsubFooter(subscriber.unsubToken)}`)
+  const text = `${body}\n\nHủy đăng ký: ${unsubUrl(subscriber.unsubToken)}`
+  return { subject, html, text, headers: unsubHeaders(subscriber.unsubToken) }
+}

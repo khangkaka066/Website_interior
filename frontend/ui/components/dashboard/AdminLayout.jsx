@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { id: 'products', label: 'Sản phẩm', to: '/dashboard/products', permKey: 'products' },
   { id: 'discounts', label: 'Giảm giá', to: '/dashboard/discounts', permKey: 'products' },
   { id: 'coupons', label: 'Mã giảm giá', to: '/dashboard/coupons', permKey: 'products' },
+  { id: 'subscribers', label: 'Email đăng ký', to: '/dashboard/subscribers', permKey: 'campaigns' },
   { id: 'seo', label: 'Từ khóa SEO', to: '/dashboard/seo', permKey: 'products' },
   { id: 'orders', label: 'Đơn hàng', to: '/dashboard/orders', permKey: 'orders' },
   { id: 'reviews', label: 'Đánh giá', to: '/dashboard/reviews', permKey: 'orders' },
@@ -36,7 +37,7 @@ const NAV_TREE = [
   { id: 'sales', label: 'Bán hàng', children: ['orders', 'reviews', 'payments', 'shipping'] },
   { id: 'catalog', label: 'Sản phẩm', children: ['products', 'discounts', 'coupons'] },
   { id: 'people', label: 'Khách hàng', children: ['customers', 'messages'] },
-  { id: 'marketing', label: 'Marketing', children: ['campaigns', 'seo', 'news', 'analytics'] },
+  { id: 'marketing', label: 'Marketing', children: ['campaigns', 'subscribers', 'seo', 'news', 'analytics'] },
   { id: 'settings' },
 ]
 

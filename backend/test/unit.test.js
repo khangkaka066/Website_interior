@@ -11,6 +11,8 @@ import { RATE_LIMIT_WAITS } from '../src/lib/openrouterClient.js'
 import { startJob, getJob, currentJob, cancelJob, jobView, JobLimitError } from '../src/lib/seoJobs.js'
 import { discountFor, checkCoupon, CouponError, normalizeCode } from '../src/lib/coupons.js'
 import { couponSchema, couponPatchSchema } from '../src/schemas/coupons.js'
+import { welcomeConfigSchema, blastSchema, unsubscribeSchema } from '../src/schemas/subscribers.js'
+import { blastEmail, welcomeEmail } from '../src/lib/emailTemplates.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { displayCode, normCode } from '../src/lib/orderCode.js'
 import { extractOrderNumber, extractOrderNumbers } from '../src/lib/paymentWebhook.js'
@@ -1585,5 +1587,34 @@ describe('mã giảm giá', () => {
     assert.equal(c.active, true)
     assert.equal(couponSchema.safeParse({ code: 'abc', type: 'PERCENT', value: 120 }).success, false)
     assert.equal(couponSchema.safeParse({ code: 'ab', type: 'FIXED', value: 1 }).success, false)
+  })
+})
+
+describe('email marketing', () => {
+  const cfg = { welcomeEnabled: true, welcomeType: 'PERCENT', welcomeValue: 10, welcomeMaxDiscount: 30000, welcomeMinOrder: 0, welcomeDays: 30 }
+  test('cấu hình quà chào mừng', () => {
+    assert.equal(welcomeConfigSchema.safeParse(cfg).success, true)
+    assert.equal(welcomeConfigSchema.safeParse({ ...cfg, welcomeValue: 150 }).success, false)
+    assert.equal(welcomeConfigSchema.safeParse({ ...cfg, welcomeType: 'FIXED', welcomeValue: 50000 }).success, true)
+  })
+  test('chiến dịch và hủy đăng ký', () => {
+    assert.equal(blastSchema.safeParse({ subject: '', body: 'x' }).success, false)
+    assert.equal(blastSchema.safeParse({ subject: 'Rèm mới', body: 'Nội dung' }).success, true)
+    assert.equal(unsubscribeSchema.safeParse({ token: 'ab' }).success, false)
+  })
+  test('email chiến dịch: escape HTML, có link hủy đăng ký và header List-Unsubscribe', async () => {
+    const m = await blastEmail('Giảm <b>giá</b>', 'Chào <script>x</script>\n\nĐoạn hai', { unsubToken: 'tok123456' })
+    assert.ok(!m.html.includes('<script>'))
+    assert.match(m.html, /&lt;script&gt;/)
+    assert.match(m.html, /unsubscribe\?token=tok123456/)
+    assert.match(m.text, /unsubscribe\?token=tok123456/)
+    assert.match(m.headers['List-Unsubscribe'], /tok123456/)
+    assert.equal((m.html.match(/<p style="margin:0 0 14px/g) || []).length, 2) // hai đoạn
+  })
+  test('email chào mừng có mã giảm giá', async () => {
+    const m = await welcomeEmail({ unsubToken: 'tok123456' }, { code: 'HELLO-ABC123', type: 'PERCENT', value: 10, maxDiscount: 30000, minOrder: 0, endsAt: new Date('2026-12-01') })
+    assert.match(m.subject, /10%/)
+    assert.match(m.html, /HELLO-ABC123/)
+    assert.match(m.text, /HELLO-ABC123/)
   })
 })

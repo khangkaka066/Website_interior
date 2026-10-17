@@ -15,9 +15,9 @@ export default function Footer() {
     e.preventDefault()
     setState({ status: 'busy', message: '' })
     try {
-      await api.post('/shop/subscribe', { email })
+      const res = await api.post('/shop/subscribe', { email })
       setEmail('')
-      setState({ status: 'ok', message: 'Cảm ơn bạn! Chúng tôi sẽ gửi ưu đãi mới qua email.' })
+      setState({ status: 'ok', message: res.welcome ? 'Cảm ơn bạn! Mã giảm giá chào mừng đã được gửi tới email của bạn (kiểm tra cả hộp thư rác).' : 'Cảm ơn bạn! Chúng tôi sẽ gửi ưu đãi mới qua email.' })
     } catch (err) {
       setState({ status: 'error', message: err.message })
     }

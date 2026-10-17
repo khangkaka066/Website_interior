@@ -80,6 +80,8 @@ export const DEFAULTS = {
     pickupCutoff: '15:30',
     pickupAlertHours: 24,
   },
+  // Quà chào mừng khi khách đăng ký email: tự tạo một mã giảm giá riêng (dùng 1 lần, hết hạn sau welcomeDays ngày) và gửi qua email.
+  marketing: { welcomeEnabled: true, welcomeType: 'PERCENT', welcomeValue: 10, welcomeMaxDiscount: 30000, welcomeMinOrder: 0, welcomeDays: 30 },
   // Giảm giá theo SKU (Dashboard > Giảm giá): [{ sku, percent }]. SKU của sản phẩm thì giảm mọi phân loại, SKU của phân loại thì chỉ giảm phân loại đó.
   discounts: { rules: [] },
   // Nội dung các trang Về chúng tôi / Liên hệ / FAQ (sửa ở Cài đặt > Nội dung trang).
@@ -130,6 +132,7 @@ function merge(saved) {
       },
     },
     orders: { ...DEFAULTS.orders, ...(s.orders || {}) },
+    marketing: { ...DEFAULTS.marketing, ...(s.marketing || {}) },
     discounts: { rules: Array.isArray(s.discounts?.rules) ? s.discounts.rules : [] },
     content: {
       about: { ...DEFAULTS.content.about, ...(s.content?.about || {}) },

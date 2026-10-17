@@ -9,7 +9,8 @@ import { productReviews, reviewSummaries } from '../lib/orderFlow.js'
 import { checkCoupon, CouponError } from '../lib/coupons.js'
 import { couponCheckSchema } from '../schemas/coupons.js'
 import { subscribeSchema } from '../schemas/shop.js'
-import { prisma } from '../lib/prisma.js'
+import { unsubscribeSchema } from '../schemas/subscribers.js'
+import { subscribe, unsubscribe } from '../lib/subscribers.js'
 import { quoteLimiter } from '../middleware/security.js'
 import { goshipConfigured, isGoshipId, listCities, listDistricts, listWards, GoshipError } from '../lib/goship.js'
 
@@ -93,10 +94,16 @@ router.post('/coupons/check', quoteLimiter, validate(couponCheckSchema), asyncHa
   }
 }))
 
-// Đăng ký nhận ưu đãi qua email. Đăng ký lại cùng email vẫn báo thành công (không lộ email nào đã có trong danh sách).
+// Đăng ký nhận ưu đãi qua email: email mới được tặng mã chào mừng qua email (nếu bật). Đăng ký lại cùng email vẫn báo thành công (không lộ email nào đã có).
 router.post('/subscribe', quoteLimiter, validate(subscribeSchema), asyncHandler(async (req, res) => {
-  await prisma.subscriber.upsert({ where: { email: req.body.email }, update: {}, create: { email: req.body.email } })
-  res.status(201).json({ ok: true })
+  const { welcome } = await subscribe(req.body.email)
+  res.status(201).json({ ok: true, welcome })
+}))
+
+// Hủy đăng ký từ link trong email (token riêng của từng người).
+router.post('/unsubscribe', quoteLimiter, validate(unsubscribeSchema), asyncHandler(async (req, res) => {
+  if (!(await unsubscribe(req.body.token))) return res.status(404).json({ error: 'Liên kết hủy đăng ký không hợp lệ hoặc đã hết hạn.' })
+  res.json({ ok: true })
 }))
 
 router.get('/products/:id/reviews', REVALIDATE, asyncHandler(async (req, res) => {

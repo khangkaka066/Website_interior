@@ -19,6 +19,7 @@ import seoRoutes from './routes/seo.js'
 import accountRoutes from './routes/account.js'
 import discountRoutes from './routes/discounts.js'
 import couponRoutes from './routes/coupons.js'
+import subscriberRoutes from './routes/subscribers.js'
 import seoKeywordRoutes from './routes/seo-keywords.js'
 import { authenticate } from './middleware/auth.js'
 import { securityHeaders, compress, globalLimiter, forceHttps } from './middleware/security.js'
@@ -62,6 +63,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/account', accountRoutes)
 app.use('/api/discounts', discountRoutes)
 app.use('/api/coupons', couponRoutes)
+app.use('/api/subscribers', subscriberRoutes)
 app.use('/api/seo', seoKeywordRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/shipping', shippingRoutes)

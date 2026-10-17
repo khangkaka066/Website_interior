@@ -16,9 +16,10 @@ function getTransport() {
   return transport
 }
 
+export const mailConfigured = configured
 export const shopUrl = () => (process.env.SHOP_URL || 'http://localhost:3000').replace(/\/$/, '')
 
-export async function sendMail({ to, subject, html, text }) {
+export async function sendMail({ to, subject, html, text, headers }) {
   if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return false
   if (!configured()) {
     console.log(`[mail:chưa cấu hình SMTP] tới ${to} | ${subject}\n${text}\n`)
@@ -31,6 +32,7 @@ export async function sendMail({ to, subject, html, text }) {
       subject,
       html,
       text,
+      ...(headers && { headers }),
     })
     return true
   } catch (err) {

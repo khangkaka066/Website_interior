@@ -673,9 +673,27 @@ model CouponRedemption {
   @@index([couponId, customerId])
 }
 
-// Email khách để lại ở ô "Đăng ký nhận ưu đãi" cuối trang (chỉ lưu để shop gửi thông tin khuyến mãi).
+// Email khách để lại ở ô "Đăng ký nhận ưu đãi" cuối trang. unsubToken: mã trong link "Hủy đăng ký" của mọi email gửi đi (không đoán được).
+// unsubscribedAt: khách đã hủy (không gửi chiến dịch nữa nhưng giữ dòng để không gửi lại và không tặng mã chào mừng lần nữa). welcomeCode: mã giảm giá đã tặng.
 model Subscriber {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
+  id             String    @id @default(cuid())
+  email          String    @unique
+  unsubToken     String    @unique @default(cuid())
+  unsubscribedAt DateTime?
+  welcomeCode    String?
+  createdAt      DateTime  @default(now())
+}
+
+// Một đợt gửi email khuyến mãi tới toàn bộ người đang đăng ký. status: SENDING | DONE.
+model EmailBlast {
+  id         String    @id @default(cuid())
+  subject    String
+  body       String
+  status     String    @default("SENDING")
+  total      Int       @default(0)
+  sent       Int       @default(0)
+  failed     Int       @default(0)
+  createdBy  String?
+  createdAt  DateTime  @default(now())
+  finishedAt DateTime?
 }
