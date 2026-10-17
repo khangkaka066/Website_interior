@@ -607,3 +607,110 @@
     transform: none;
   }
 }
+
+/* ---------- Trang trong: chi tiết sản phẩm, giỏ hàng, thanh toán, yêu thích ---------- */
+.pdp-back {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  color: var(--text-dark);
+  font-weight: 500;
+  transition: background-color 0.25s ease;
+}
+.pdp-back:hover {
+  background: #e9edf1;
+}
+.pdp-main-image {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.pdp-thumb {
+  border-radius: 14px;
+  overflow: hidden;
+}
+.pdp-size-pill {
+  border-radius: var(--radius-pill);
+  padding-left: 18px;
+  padding-right: 18px;
+}
+.pdp-qty {
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.pdp-info .btn,
+.pdp-actions .btn {
+  border-radius: var(--radius-pill);
+}
+
+.cart-items {
+  padding: 8px 20px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+.cart-row:last-child {
+  border-bottom: 0;
+}
+.cart-row-image {
+  border-radius: 12px;
+}
+.cart-summary {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  padding: 28px;
+}
+.cart-summary h3 {
+  font-size: 18px;
+  font-weight: 800;
+}
+.cart-checkout-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 16px;
+}
+.checkout-field input,
+.checkout-field select,
+.checkout-field textarea,
+.addr-combobox input {
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fff;
+}
+.checkout-field input:focus,
+.checkout-field select:focus,
+.addr-combobox input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(148, 107, 8, 0.15);
+}
+.checkout-payment-option,
+.checkout-ship-option {
+  border-radius: 14px;
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.checkout-payment-option:hover,
+.checkout-ship-option:hover {
+  border-color: var(--accent);
+}
+.checkout-payment-option.active {
+  background: #fbf4e0;
+}
+.checkout-section-title {
+  font-weight: 800;
+}
+.wishlist-empty,
+.shop-all-empty {
+  border-radius: var(--radius-lg);
+  background: var(--surface-soft);
+}
+.shop-all-hero-image img {
+  border-radius: var(--radius-lg);
+}
+.chat-error {
+  border-radius: 12px;
+}
+.search-suggest {
+  border-radius: 20px;
+}

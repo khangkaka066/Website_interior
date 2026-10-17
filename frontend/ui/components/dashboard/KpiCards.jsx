@@ -44,7 +44,6 @@ export default function KpiCards({ range = '7d' }) {
     { id: 'orders', label: 'Đơn hàng', value: String(o?.orderCount || 0), change: o?.orderChange, Icon: OrdersIcon },
     { id: 'aov', label: 'Giá trị đơn TB (AOV)', value: formatCurrency(o?.aov || 0), change: null, Icon: AovIcon },
     { id: 'customers', label: 'Khách hàng', value: String(data?.customers || 0), change: null, Icon: CustomersIcon },
-    { id: 'conversion', label: 'Tỷ lệ chuyển đổi', value: `${(data?.conversion || 0).toFixed(1)}%`, change: null, Icon: ConversionIcon },
   ]
 
   return (
@@ -53,7 +52,7 @@ export default function KpiCards({ range = '7d' }) {
         const hasChange = typeof change === 'number'
         const positive = hasChange && change >= 0
         return (
-          <div className="kpi-card" key={id}>
+          <div className={`kpi-card${id === 'revenue' ? ' kpi-card-hero' : ''}`} key={id}>
             <div className="kpi-card-top">
               <span className="kpi-icon">
                 <Icon />

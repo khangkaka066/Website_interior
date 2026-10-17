@@ -1309,7 +1309,8 @@
 /* ---------------------------------------------------------------------- */
 
 .pdp {
-  padding: 40px 0 96px;
+  padding-top: 40px; /* chỉ lề trên/dưới: lề ngang là của .container (viết gộp "padding: 40px 0 96px" làm mất lề ngang) */
+  padding-bottom: 96px;
 }
 
 .pdp-back {
@@ -1849,7 +1850,8 @@
 
 .cart-page,
 .checkout-page {
-  padding: 40px 0 96px;
+  padding-top: 40px;
+  padding-bottom: 96px;
 }
 
 .cart-title {
@@ -2253,7 +2255,7 @@ a.product-card {
 .wish-on { color: #d6336c; }
 .wish-link { position: relative; }
 .wish-count { position: absolute; top: -4px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-.wishlist-page { padding: 40px 0 64px; }
+.wishlist-page { padding-top: 40px; padding-bottom: 64px; }
 .wishlist-empty { padding: 48px 0; text-align: center; color: var(--text-muted); }
 .wishlist-empty .btn { margin-top: 12px; }
 
