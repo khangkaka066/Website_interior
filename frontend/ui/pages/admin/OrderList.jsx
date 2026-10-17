@@ -57,7 +57,6 @@ export default function OrderList() {
   const [bulkBusy, setBulkBusy] = useState(false)
   const [goshipReady, setGoshipReady] = useState(false)
   const [work, setWork] = useState(null) // khối lượng việc + giờ chốt đơn hôm nay
-  const [now, setNow] = useState(() => Date.now())
   const [prepareOpen, setPrepareOpen] = useState(false) // khung "Chuẩn bị hàng" hàng loạt
   const [pickup, setPickup] = usePickupMethod()
   const [feeOk, setFeeOk] = useState(false)
@@ -128,7 +127,6 @@ export default function OrderList() {
     const load = () => api.get('/orders/workload').then(setWork).catch(() => {})
     load()
     const t = setInterval(() => {
-      setNow(Date.now())
       if (document.visibilityState === 'visible') load()
     }, 60000)
     return () => clearInterval(t)
@@ -186,14 +184,6 @@ export default function OrderList() {
 
       {work && (
         <div className="dash-card" style={{ padding: '12px 16px', marginBottom: '12px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', fontSize: '13px' }}>
-          {work.cutoffAt && (() => {
-            const left = dueIn(work.cutoffAt, now)
-            return (
-              <span style={{ fontWeight: 600, color: left.overdue ? 'var(--dash-muted)' : left.soon ? '#b26a00' : 'inherit' }}>
-                ⏰ Chốt đơn lấy hàng hôm nay lúc {new Date(work.cutoffAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}: {left.overdue ? 'đã qua giờ chốt, đơn xử lý bây giờ sẽ được lấy vào ngày làm việc kế tiếp' : left.text}
-              </span>
-            )
-          })()}
           <span>Cần xử lý: <strong>{work.needsAction}</strong>{work.overdue > 0 && <> (<strong style={{ color: 'var(--dash-danger, #c0392b)' }}>{work.overdue} quá hạn</strong>)</>}</span>
           <span>Chưa chuẩn bị: <strong>{work.toPrepare}</strong></span>
           <span>Chờ đóng gói: <strong>{work.toPack}</strong></span>
