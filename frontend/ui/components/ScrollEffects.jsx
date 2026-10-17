@@ -11,7 +11,6 @@ import '../styles/scroll-effects.css'
 // Nguyên tắc: chỉ dùng transform/opacity/clip-path (không đổi kích thước nên không giật bố cục); trạng thái ẩn giữ bằng Web Animations API
 // (không đổi thuộc tính DOM nào nên không lệch với HTML React đang nạp); JS lỗi / "giảm chuyển động" thì nội dung vẫn hiện đầy đủ.
 const REVEAL = [
-  '.product-section .section-title',
   '.product-section .tabs',
   '.product-grid > *',
   '.product-section .view-all-link',
@@ -19,7 +18,6 @@ const REVEAL = [
   '.deal-content',
   '.product-columns > *',
   '.perks > .perk',
-  '.instagram-section .section-title',
   '.instagram-grid > *',
 ]
 const CURTAINS = '.category-grid .cat-card'
@@ -91,10 +89,16 @@ export default function ScrollEffects() {
     let scanQueued = false
     const below = (el) => el.getBoundingClientRect().top > window.innerHeight * 0.92 // chỉ ẩn phần còn nằm dưới màn hình
 
+    // Phần ảnh được "kéo rèm" mở từ giữa ra hai bên (clip-path) trong khi khối hiện dần. Gắn clip-path lên ảnh bên trong, không lên khối đang được
+    // theo dõi: khối bị cắt hết chiều ngang thì trình duyệt coi như không nằm trong màn hình và không bao giờ kích hoạt hiệu ứng.
+    const wipeOf = (el) => (el.matches(CURTAINS) ? el.querySelector('.cat-photo-wrap') : el.matches('.deal-visual') ? el.querySelector('img') : null)
+
     // Giữ khối ở trạng thái ẩn bằng một animation 1ms có fill: forwards (hủy animation là khối trở lại bình thường).
     function arm(el) {
       if (holds.has(el)) return
       const list = [el.animate([{ opacity: 0, translate: '0 32px' }], { duration: 1, fill: 'forwards' })]
+      const wipe = wipeOf(el)
+      if (wipe) list.push(wipe.animate([{ clipPath: 'inset(0 50% 0 50%)' }], { duration: 1, fill: 'forwards' }))
       if (el.matches(CURTAINS)) {
         const photo = el.querySelector('.cat-photo')
         if (photo) list.push(photo.animate([{ transform: 'scale(1.14)' }], { duration: 1, fill: 'forwards' }))
@@ -108,6 +112,7 @@ export default function ScrollEffects() {
       holds.delete(el)
       const opts = { duration: REVEAL_MS, delay, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)', fill: 'backwards' }
       el.animate([{ opacity: 0, translate: '0 32px' }, { opacity: 1, translate: '0 0' }], opts)
+      wipeOf(el)?.animate([{ clipPath: 'inset(0 50% 0 50%)' }, { clipPath: 'inset(0 0 0 0)' }], { ...opts, delay: delay + 150, duration: 1200, easing: 'cubic-bezier(0.7, 0, 0.2, 1)' })
       if (el.matches(CURTAINS)) {
         el.querySelector('.cat-photo')?.animate([{ transform: 'scale(1.14)' }, { transform: 'scale(1)' }], { ...opts, duration: 1400 })
       }

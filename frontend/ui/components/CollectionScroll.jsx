@@ -7,6 +7,7 @@ import PriceOld from './PriceOld'
 import { watchLayout } from '../utils/scrollRefresh'
 import { sized, IMG } from '../utils/image'
 import '../styles/collection-scroll.css'
+import Words from './Words'
 
 const MAX_ITEMS = 8
 const formatPrice = (n) => n.toLocaleString('vi-VN') + 'đ'
@@ -66,7 +67,7 @@ export default function CollectionScroll() {
   return (
     <section className="collection" ref={section} aria-label="Bộ sưu tập nổi bật">
       <div className="collection-head container">
-        <h2 className="section-title">Chọn rèm hợp không gian của bạn</h2>
+        <h2 className="section-title"><Words text="Chọn rèm hợp không gian của bạn" /></h2>
       </div>
       <div className="collection-track" ref={track}>
         {products.map((p) => (

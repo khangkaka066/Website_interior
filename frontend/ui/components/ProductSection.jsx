@@ -5,6 +5,7 @@ import { Link } from '@/lib/router'
 import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
 import ProductHoverCard from './ProductHoverCard'
+import Words from './Words'
 
 // Chỉ danh mục có ảnh (nhóm rèm) làm tab ở trang chủ; các nhóm khác xem ở menu Sản phẩm.
 const TABS = categories.filter((c) => c.image).map((c) => ({ id: c.id, label: c.name.toUpperCase() }))
@@ -17,7 +18,7 @@ export default function ProductSection() {
 
   return (
     <section className="container product-section" id="products">
-      <h2 className="section-title">Sản phẩm của chúng tôi</h2>
+      <h2 className="section-title"><Words text="Sản phẩm của chúng tôi" /></h2>
 
       <div className="tabs">
         {TABS.map((t) => (

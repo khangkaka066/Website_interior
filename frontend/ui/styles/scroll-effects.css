@@ -102,14 +102,12 @@
     .hero-center,
     .category-grid .cat-card,
     .showcase-head,
-    .product-section .section-title,
     .product-section .tabs,
     .product-section .product-grid > *,
     .deal-visual,
     .deal-content,
     .product-columns > *,
     .perks > .perk,
-    .instagram-section .section-title,
     .instagram-grid > *,
     .collection-head {
       animation: sx-exit linear forwards; /* forwards (không có backwards) để không đè trạng thái "chưa hiện" của hiệu ứng hiện dần */

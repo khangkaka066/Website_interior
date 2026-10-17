@@ -3,6 +3,8 @@
 import { Link } from '@/lib/router'
 import { shopInfo } from '../data/shop'
 import FilterBar from './FilterBar'
+import Words from './Words'
+import CountUp from './CountUp'
 
 // Hero căn giữa: dòng tin cậy (số liệu thật của shop), tiêu đề, hai nút, điểm đánh giá, rồi thanh lọc nhanh dẫn sang trang Sản phẩm.
 const rating = shopInfo.stats.find((s) => s.label === 'Đánh giá')
@@ -22,9 +24,11 @@ export default function Hero() {
         </span>
 
         <h1>
-          Giữ ánh sáng,
+          <Words text="Giữ ánh sáng," load />
           <br />
-          <span className="hero-accent">giữ không gian riêng</span>
+          <span className="hero-accent">
+            <Words text="giữ không gian riêng" start={2} load />
+          </span>
         </h1>
         <p className="hero-sub">Vải rèm dày dặn, cản sáng &amp; chống tia UV vượt trội, buông rủ mềm mại và lên màu sang trọng dưới mọi ánh đèn.</p>
 
@@ -41,7 +45,7 @@ export default function Hero() {
         {rating && (
           <div className="hero-rating">
             <span className="hero-stars" aria-hidden="true">★★★★★</span>
-            <strong>{rating.value.replace('★', '')}</strong>
+            <strong><CountUp value={rating.value.replace('★', '')} /></strong>
             <small>{rating.sub} trên Shopee</small>
           </div>
         )}

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import HeroVideo from './HeroVideo'
 import HeroStack from './HeroStack'
 import { watchLayout } from '../utils/scrollRefresh'
+import Words from './Words'
 
 // Máy tính + không bật "giảm chuyển động": khối được ghim lại một quãng cuộn, video thu nhỏ dần từ to về vừa khung, ảnh rèm trôi nhẹ.
 // GSAP nạp muộn (không nằm trong JS đầu trang); điện thoại / máy tính bảng / giảm chuyển động thì hiện tĩnh.
@@ -44,7 +45,7 @@ export default function Showcase() {
   return (
     <section className="showcase" ref={ref} aria-labelledby="showcase-title">
       <div className="container showcase-head">
-        <h2 className="section-title" id="showcase-title">Chất vải thật, màu thật</h2>
+        <h2 className="section-title" id="showcase-title"><Words text="Chất vải thật, màu thật" /></h2>
         <p>Ba mẫu rèm xếp chồng và video cận cảnh bề mặt vải.</p>
       </div>
       <div className="container hero-inner showcase-inner">
