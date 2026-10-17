@@ -41,10 +41,19 @@ async function goshipCall(method, path, body) {
   return { res, json }
 }
 
+// Goship trả danh sách (cước, tra cứu...) lúc là mảng [..], lúc là "từ điển" {"1": {...}, "2": {...}} (khi khóa không liền nhau từ 0, ví dụ một hãng
+// bị loại khỏi kết quả): cả hai đều là danh sách hợp lệ. Trả về mảng, hoặc null nếu không phải danh sách (lỗi: data là chuỗi / có khóa error).
+export function rowsOf(data) {
+  if (Array.isArray(data)) return data
+  if (data && typeof data === 'object' && !('error' in data) && !('errors' in data)) return Object.values(data)
+  return null
+}
+
 async function goshipRequest(path, body) {
   const { res, json } = await goshipCall(body ? 'POST' : 'GET', path, body)
-  if (!res.ok || !Array.isArray(json?.data)) throw new GoshipError(json?.data?.error || json?.message || `Goship trả lỗi (HTTP ${res.status}).`, 502)
-  return json.data
+  const rows = rowsOf(json?.data)
+  if (!res.ok || !rows) throw new GoshipError(json?.data?.error || json?.message || `Goship trả lỗi (HTTP ${res.status}).`, 502)
+  return rows
 }
 
 const goshipGet = (path) => goshipRequest(path)
@@ -105,8 +114,9 @@ export async function cancelGoshipShipment(id) {
 export async function searchGoshipShipment(code) {
   if (!isGoshipCode(code)) return null
   const { res, json } = await goshipCall('GET', `/shipments/search?code=${encodeURIComponent(code)}`)
-  if (!res.ok || !Array.isArray(json?.data)) throw new GoshipError(`Goship không tra cứu được vận đơn (HTTP ${res.status}).`, 502)
-  return json.data[0] || null
+  const rows = rowsOf(json?.data)
+  if (!res.ok || !rows) throw new GoshipError(`Goship không tra cứu được vận đơn (HTTP ${res.status}).`, 502)
+  return rows[0] || null
 }
 
 export const listCities = () => cachedGet('/cities', pick)
@@ -168,11 +178,12 @@ export function _resetGoshipCache() {
 // Báo cước hỏa tốc: body { paths: [{ lat, lng, kind: 1 }, { lat, lng, kind: 2, parcel }], services? }.
 export async function requestOndemandRates(body) {
   const { res, json } = await goshipCall('POST', '/ondemand-shipments/rates', body)
-  if (!res.ok || !Array.isArray(json?.data)) {
+  const rows = rowsOf(json?.data)
+  if (!res.ok || !rows) {
     const detail = json?.data?.errors ? Object.values(json.data.errors).flat().join('; ') : ''
     throw new GoshipError(detail || json?.message || `Goship hỏa tốc trả lỗi (HTTP ${res.status}).`, 502)
   }
-  return json.data
+  return rows
 }
 
 export async function createOndemandShipment(body) {

@@ -13,6 +13,7 @@ import { discountFor, checkCoupon, CouponError, normalizeCode } from '../src/lib
 import { couponSchema, couponPatchSchema } from '../src/schemas/coupons.js'
 import { welcomeConfigSchema, blastSchema, unsubscribeSchema } from '../src/schemas/subscribers.js'
 import { blastEmail, welcomeEmail } from '../src/lib/emailTemplates.js'
+import { rowsOf } from '../src/lib/goship.js'
 import { cleanPhone, carrierCodeOf } from '../src/lib/goshipShipments.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { displayCode, normCode } from '../src/lib/orderCode.js'
@@ -1641,5 +1642,20 @@ describe('mã vận đơn của hãng', () => {
   test('mã do hãng cấp được giữ', () => {
     assert.equal(carrierCodeOf('BEST123456789', 'GS6VJB3936'), 'BEST123456789')
     assert.equal(carrierCodeOf(' 85012345678 ', 'GS6VJB3936'), '85012345678')
+  })
+})
+
+describe('Goship trả danh sách dạng mảng hoặc từ điển', () => {
+  test('mảng giữ nguyên, từ điển (khóa không liền) thành mảng', () => {
+    assert.deepEqual(rowsOf([{ id: 'a' }, { id: 'b' }]), [{ id: 'a' }, { id: 'b' }])
+    assert.deepEqual(rowsOf({ 1: { id: 'a' }, 3: { id: 'b' } }), [{ id: 'a' }, { id: 'b' }])
+    assert.deepEqual(rowsOf([]), [])
+  })
+  test('lỗi (chuỗi, có khóa error/errors, rỗng) không phải danh sách', () => {
+    assert.equal(rowsOf('lỗi'), null)
+    assert.equal(rowsOf({ error: 'x' }), null)
+    assert.equal(rowsOf({ errors: { a: ['x'] } }), null)
+    assert.equal(rowsOf(null), null)
+    assert.equal(rowsOf(undefined), null)
   })
 })
