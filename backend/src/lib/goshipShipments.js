@@ -261,8 +261,16 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
     if (!gcode || status === 900 || created.carrier_error) {
       // Goship báo lỗi tạo (HTTP vẫn 200). Dọn đơn nháp nếu có, rồi báo lý do thật cho admin.
       if (gcode) await cancelGoshipShipment(gcode).catch(() => {})
-      const reason = typeof created.carrier_error === 'string' ? created.carrier_error : JSON.stringify(created.carrier_error || '')
-      throw new ShipmentError(`Hãng vận chuyển từ chối vận đơn${reason ? `: ${reason}` : '.'}`, 422, 'CARRIER_ERROR')
+      // Lý do có thể nằm ở nhiều trường tùy hãng; gom tất cả trường dạng chữ có nội dung. Cả phản hồi được ghi vào log máy chủ để tra cứu.
+      console.error(`[goship] vận đơn của ${order.orderNumber} bị từ chối:`, JSON.stringify(created))
+      const asText = (v) => (typeof v === 'string' ? v : v && typeof v === 'object' ? JSON.stringify(v) : '')
+      const reasons = [created.carrier_error, created.message, created.status_text, created.error, created.errors, created.description, created.note]
+        .map(asText)
+        .map((t) => t.trim())
+        .filter((t) => t && t !== '""' && t !== '{}' && t !== '[]')
+      const detail = reasons.length ? [...new Set(reasons)].join(' · ') : 'Goship không nêu lý do (xem log máy chủ để biết phản hồi gốc)'
+      const code = Number.isFinite(status) && status ? ` [mã trạng thái ${status}]` : ''
+      throw new ShipmentError(`Hãng vận chuyển từ chối vận đơn${code}: ${detail}`, 422, 'CARRIER_ERROR')
     }
 
     const carrier = await ensureGoshipCarrier(db)
