@@ -99,7 +99,7 @@
   .main-nav {
     order: 2;
     flex: 1;
-    justify-content: center;
+    justify-content: safe center; /* tràn thì dồn về trái, không đè lên logo */
     min-width: 0;
     gap: clamp(12px, 1.5vw, 26px); /* co lại theo bề rộng để khi đã đăng nhập (thêm Quản trị / Đăng xuất) vẫn vừa viên thuốc */
     font-size: 14px;
@@ -168,6 +168,24 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lift);
     overflow: hidden;
+  }
+}
+/* Màn hình vừa (laptop 1280–1439px): thu gọn viên thuốc để logo, menu, tìm kiếm và nút tài khoản không đè nhau */
+@media (min-width: 1100px) and (max-width: 1439px) {
+  .main-nav {
+    gap: clamp(10px, 1.1vw, 18px);
+    font-size: 13.5px;
+  }
+  .search-box {
+    flex-basis: 130px;
+    min-width: 110px;
+  }
+  .search-box:focus-within {
+    flex-basis: 220px;
+    max-width: 220px;
+  }
+  .logo-text {
+    font-size: 22px;
   }
 }
 @media (min-width: 1100px) and (max-width: 1279px) {

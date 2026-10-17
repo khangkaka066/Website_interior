@@ -24,7 +24,7 @@ export default function Hero() {
         <h1>
           Giữ ánh sáng,
           <br />
-          <span className="hero-accent">giữ không gian riêng.</span>
+          <span className="hero-accent">giữ không gian riêng</span>
         </h1>
         <p className="hero-sub">Vải rèm dày dặn, cản sáng &amp; chống tia UV vượt trội, buông rủ mềm mại và lên màu sang trọng dưới mọi ánh đèn.</p>
 
