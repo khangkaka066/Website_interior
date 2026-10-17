@@ -672,3 +672,10 @@ model CouponRedemption {
 
   @@index([couponId, customerId])
 }
+
+// Email khách để lại ở ô "Đăng ký nhận ưu đãi" cuối trang (chỉ lưu để shop gửi thông tin khuyến mãi).
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}

@@ -63,7 +63,6 @@ export default function CollectionScroll() {
   return (
     <section className="collection" ref={section} aria-label="Bộ sưu tập nổi bật">
       <div className="collection-head container">
-        <span className="collection-eyebrow">BỘ SƯU TẬP</span>
         <h2 className="section-title">Chọn rèm hợp không gian của bạn</h2>
       </div>
       <div className="collection-track" ref={track}>

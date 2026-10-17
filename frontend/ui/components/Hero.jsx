@@ -1,85 +1,52 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
 import { Link } from '@/lib/router'
-import HeroVideo from './HeroVideo'
-import HeroStack from './HeroStack'
+import { shopInfo } from '../data/shop'
+import FilterBar from './FilterBar'
 
-// Máy tính + không bật "giảm chuyển động": hero được ghim lại một quãng cuộn, video thu nhỏ dần từ to về vừa khung, khối chữ và ảnh rèm trôi nhẹ.
-// GSAP nạp muộn (không nằm trong JS đầu trang); điện thoại / máy tính bảng / giảm chuyển động thì không chạy gì, hero hiện tĩnh như cũ.
-function useHeroScroll(ref) {
-  useEffect(() => {
-    let mm
-    let dead = false
-    ;(async () => {
-      const [{ gsap }, { ScrollTrigger }] = await Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
-      if (dead || !ref.current) return
-      gsap.registerPlugin(ScrollTrigger)
-      mm = gsap.matchMedia()
-      mm.add('(min-width: 1100px) and (prefers-reduced-motion: no-preference)', () => {
-        const hero = ref.current
-        const canPin = hero.offsetHeight <= window.innerHeight // hero cao hơn màn hình thì không ghim, chỉ thu nhỏ khi cuộn qua
-        const tl = gsap.timeline({
-          defaults: { ease: 'none' },
-          scrollTrigger: {
-            trigger: hero,
-            start: 'top top',
-            end: canPin ? '+=70%' : 'bottom top',
-            pin: canPin,
-            scrub: 0.6,
-            invalidateOnRefresh: true,
-          },
-        })
-        tl.fromTo('.hero-video', { scale: 1.16 }, { scale: 1 }, 0)
-          .fromTo('.hero-text', { y: 0 }, { y: -28 }, 0)
-          .fromTo('.hero-visual', { y: 0 }, { y: -48 }, 0)
-          .fromTo('.hero-glow', { y: 0 }, { y: 60 }, 0)
-        return () => tl.scrollTrigger?.kill()
-      }, ref)
-    })()
-    return () => {
-      dead = true
-      mm?.revert()
-    }
-  }, [ref])
-}
+// Hero căn giữa: dòng tin cậy (số liệu thật của shop), tiêu đề, hai nút, điểm đánh giá, rồi thanh lọc nhanh dẫn sang trang Sản phẩm.
+const rating = shopInfo.stats.find((s) => s.label === 'Đánh giá')
+const years = shopInfo.stats.find((s) => s.label === 'Hoạt động')
 
 export default function Hero() {
-  const ref = useRef(null)
-  useHeroScroll(ref)
   return (
-    <section className="hero" id="home" ref={ref}>
-      <div className="hero-glow glow-1" />
-      <div className="hero-glow glow-2" />
+    <section className="hero" id="home">
+      <div className="container hero-center">
+        <span className="hero-trust">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z" />
+            <circle cx="7" cy="18" r="1.6" />
+            <circle cx="17" cy="18" r="1.6" />
+          </svg>
+          {years ? `${years.value} ${years.sub} · ` : ''}Giao hàng toàn quốc
+        </span>
 
-      <div className="container hero-inner">
-        {/* Khối chữ + ảnh rèm (cột trái trên máy tính); video ở cột phải, cùng hàng. */}
-        <div className="hero-main">
-          <div className="hero-text">
-            <span className="hero-eyebrow">CHẤT LIỆU CAO CẤP · CURTAIN PREMIUM</span>
-            <h1>
-              Ánh sáng đẹp,
-              <br />
-              <span className="hero-accent">rèm chuẩn form.</span>
-            </h1>
-            <p>
-              Vải rèm dày dặn, cản sáng &amp; chống tia UV vượt trội — buông rủ mềm mại,
-              lên màu sang trọng dưới mọi ánh đèn.
-            </p>
-            <div className="hero-cta">
-              <Link className="btn btn-hero" to="/products">
-                MUA NGAY
-              </Link>
-            </div>
-          </div>
+        <h1>
+          Ánh sáng đẹp,
+          <br />
+          <span className="hero-accent">rèm chuẩn form.</span>
+        </h1>
+        <p className="hero-sub">Vải rèm dày dặn, cản sáng &amp; chống tia UV vượt trội, buông rủ mềm mại và lên màu sang trọng dưới mọi ánh đèn.</p>
 
-          <div className="hero-visual">
-            <div className="hero-visual-glow" />
-            <HeroStack />
-          </div>
+        <div className="hero-cta">
+          <Link className="btn-pill btn-pill-dark" to="/products">
+            Mua sắm ngay
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9" /></svg>
+          </Link>
+          <a className="btn-pill btn-pill-light" href="#deal">
+            Xem ưu đãi
+          </a>
         </div>
 
-        <HeroVideo />
+        {rating && (
+          <div className="hero-rating">
+            <span className="hero-stars" aria-hidden="true">★★★★★</span>
+            <strong>{rating.value.replace('★', '')}</strong>
+            <small>{rating.sub} trên Shopee</small>
+          </div>
+        )}
+
+        <FilterBar />
       </div>
     </section>
   )

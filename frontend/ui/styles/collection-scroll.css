@@ -7,14 +7,6 @@
   text-align: center;
   margin-bottom: 32px;
 }
-.collection-eyebrow {
-  display: inline-block;
-  margin-bottom: 8px;
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-}
 
 /* Mặc định (điện thoại, giảm chuyển động): dải vuốt ngang có snap. */
 .collection-track {
@@ -31,6 +23,8 @@
   aspect-ratio: 3 / 4;
   overflow: hidden;
   background: var(--bg-cream);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
   scroll-snap-align: center;
 }
 .collection-card img {

@@ -8,6 +8,7 @@
 @import "../ui/styles/layout.css" layer(legacy);
 @import "../ui/styles/dashboard.css" layer(legacy);
 @import "../ui/styles/responsive.css" layer(legacy);
+@import "../ui/styles/storefront.css" layer(legacy);
 /* Tailwind chỉ quét thư mục viết bằng Tailwind. Không quét ui/ (mã giao diện cũ dùng class tự đặt như "container", "hidden"...):
    quét vào đó sẽ sinh tiện ích trùng tên (vd. `container`) và đè lên CSS cũ. */
 @import "tailwindcss/utilities.css" layer(utilities) source(none);

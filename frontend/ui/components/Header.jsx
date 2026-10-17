@@ -40,6 +40,7 @@ export default function Header() {
 
   return (
     <header className="header">
+      <div className="header-pill">
       <div className="container header-top">
         <Link to="/" className="logo" aria-label={`${shopInfo.name} - về trang chủ`}>
           <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
@@ -170,6 +171,7 @@ export default function Header() {
             ƯU ĐÃI HÔM NAY
           </a>
         </div>
+      </div>
       </div>
     </header>
   )

@@ -479,6 +479,19 @@ export const rejectCancelRequest = (req, res) => adminAction(req, res, (o) => re
 export const approveReturnRequest = (req, res) => adminAction(req, res, (o) => approveReturn(o, { note: req.body?.note, actor: actorOf(req) }))
 export const rejectReturnRequest = (req, res) => adminAction(req, res, (o) => rejectReturn(o, { note: req.body.note, actor: actorOf(req) }))
 
+// Hoạt động gần đây (xác nhận, hủy, đóng gói, đánh giá...) của các đơn, mới nhất trước, cho khối "Hoạt động gần đây" ở trang Tổng quan.
+export async function recentActivity(req, res) {
+  const take = Math.min(30, Math.max(1, Number(req.query.limit) || 8))
+  const rows = await prisma.activityLog.findMany({
+    where: { orderId: { not: null } },
+    orderBy: { createdAt: 'desc' },
+    take,
+    select: { id: true, action: true, actor: true, note: true, createdAt: true, order: { select: { id: true, orderNumber: true } } },
+  })
+  res.set('Cache-Control', 'no-store')
+  res.json({ items: rows })
+}
+
 // Nhân viên xem tất cả đánh giá (lọc theo sao / trạng thái / từ khóa).
 export async function listReviews(req, res) {
   const { rating, status, q, page, pageSize } = req.query

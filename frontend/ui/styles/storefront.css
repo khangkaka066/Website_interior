@@ -1,0 +1,609 @@
+/* ---------- Giao diện trang bán hàng kiểu mới: viên thuốc nổi, bo góc lớn, bóng mềm, nền trắng ---------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Nút dạng viên thuốc: tối (chính) và sáng (phụ). Chữ trắng trên #1e293b đạt tương phản > 14:1. */
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+}
+.btn-pill:hover {
+  transform: translateY(-2px);
+}
+.btn-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-pill-dark {
+  background: var(--text-dark);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(30, 41, 59, 0.28);
+}
+.btn-pill-dark:hover {
+  background: #0f172a;
+  box-shadow: 0 14px 28px rgba(30, 41, 59, 0.34);
+}
+.btn-pill-light {
+  background: #fff;
+  color: var(--text-dark);
+  box-shadow: var(--shadow-soft);
+}
+.btn-pill-light:hover {
+  box-shadow: var(--shadow-lift);
+}
+.btn-pill:focus-visible,
+.cat-card:focus-visible,
+.filter-field:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ---------- Header: viên thuốc nổi một hàng (máy tính). Dưới 1100px giữ bố cục hai hàng cũ. ---------- */
+@media (min-width: 1100px) {
+  .header {
+    background: transparent !important; /* scroll-effects.css (ngoài layer) đặt nền trắng cho header */
+    border-bottom: 0;
+    padding: 14px 24px 0;
+    box-shadow: none !important;
+  }
+  .header-pill {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 10px 14px 10px 24px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 6px 20px rgba(30, 41, 59, 0.06);
+    transition: box-shadow 0.3s ease, background-color 0.3s ease;
+  }
+  .header.is-scrolled .header-pill {
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--shadow-lift);
+    backdrop-filter: blur(12px);
+  }
+  /* Hai hàng cũ bị gỡ khỏi bố cục: logo, ô tìm kiếm, nút tài khoản/giỏ, menu và nút ưu đãi cùng nằm trên một hàng của viên thuốc. */
+  .header-top,
+  .header-bottom,
+  .header-bottom-inner {
+    display: contents;
+  }
+  .logo {
+    order: 1;
+  }
+  .main-nav {
+    order: 2;
+    flex: 1;
+    justify-content: center;
+    gap: 20px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .main-nav a,
+  .nav-products-link {
+    white-space: nowrap;
+  }
+  .search-box {
+    order: 3;
+    flex: 0 1 170px;
+    max-width: 170px;
+    min-width: 130px;
+    transition: flex-basis 0.3s ease, max-width 0.3s ease;
+  }
+  .search-box:focus-within {
+    flex-basis: 300px;
+    max-width: 300px;
+  }
+  .header-actions {
+    order: 4;
+    margin-left: 0;
+    gap: 14px;
+  }
+  .best-offer {
+    order: 5;
+    margin-left: 0;
+  }
+  .support,
+  .account-greeting,
+  .cart-word {
+    display: none;
+  }
+  .search-bar {
+    background: #fff;
+    box-shadow: inset 0 0 0 1px var(--border-soft);
+  }
+  .search-bar input {
+    padding: 9px 14px;
+    font-size: 13px;
+  }
+  .search-bar {
+    overflow: visible;
+  }
+  .search-bar input {
+    min-width: 0;
+  }
+  .search-bar button {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    background: var(--text-dark);
+  }
+  /* Nút ưu đãi cùng ngôn ngữ nút viên thuốc của trang: tối, chữ trắng. */
+  .best-offer {
+    background: var(--text-dark);
+    box-shadow: 0 8px 18px rgba(30, 41, 59, 0.25);
+    border-radius: var(--radius-pill);
+    padding: 11px 20px;
+    font-size: 13px;
+  }
+  .best-offer:hover {
+    background: #0f172a;
+    box-shadow: 0 12px 24px rgba(30, 41, 59, 0.32);
+  }
+  .best-offer svg {
+    color: #e8c05a;
+  }
+  /* Menu xổ "Sản phẩm" trải theo bề rộng viên thuốc, bo góc, hạ xuống dưới. */
+  .mega-menu {
+    top: calc(100% + 10px);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lift);
+    overflow: hidden;
+  }
+}
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .best-offer {
+    display: none;
+  }
+  .main-nav {
+    gap: 16px;
+    font-size: 13px;
+  }
+}
+
+/* ---------- Hero căn giữa ---------- */
+.hero {
+  background: #fff;
+  overflow: visible;
+}
+.hero-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 64px;
+  padding-bottom: 48px;
+  gap: 0;
+}
+.hero-trust {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  border: 1px solid var(--border-soft);
+  color: var(--text-dark);
+  font-size: 13px;
+  font-weight: 500;
+}
+.hero-trust svg {
+  color: var(--accent);
+}
+.hero-center h1 {
+  margin-top: 26px;
+  font-size: clamp(38px, 5.2vw, 64px);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
+  text-wrap: balance;
+}
+.hero-center .hero-accent {
+  color: var(--accent);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+.hero-sub {
+  max-width: 560px;
+  margin-top: 20px;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text-muted);
+}
+.hero-cta {
+  display: flex;
+  gap: 14px;
+  margin-top: 32px;
+}
+.hero-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 26px;
+  font-size: 14px;
+  color: var(--text-dark);
+}
+.hero-stars {
+  color: #e8a817;
+  letter-spacing: 2px;
+}
+.hero-rating small {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ---------- Thanh lọc nhanh ---------- */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 880px;
+  margin-top: 44px;
+}
+.filter-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 14px;
+  background: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  color: var(--text-dark);
+}
+.filter-field select {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dark);
+  cursor: pointer;
+  outline: none;
+  text-overflow: ellipsis;
+}
+.filter-submit {
+  padding: 14px 26px;
+  flex-shrink: 0;
+}
+
+/* ---------- Danh mục: thẻ ảnh bo góc, tên + nút mũi tên ---------- */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 22px;
+  margin: 56px auto 24px;
+}
+.cat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 10px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  isolation: auto;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.cat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lift);
+}
+.cat-photo-wrap {
+  display: block;
+  aspect-ratio: 4 / 5;
+  border-radius: calc(var(--radius-lg) - 8px);
+  overflow: hidden;
+  background: var(--surface-gray);
+}
+.cat-card .cat-photo {
+  position: static;
+  display: block;
+  width: 100%;
+  height: 100%;
+  z-index: auto;
+  padding: 0;
+  background: none;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.cat-card.photo-contain .cat-photo {
+  object-fit: contain;
+  padding: 18px;
+}
+.cat-card:hover .cat-photo {
+  transform: scale(1.05);
+}
+.cat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 6px 6px 8px;
+}
+.cat-name {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text-dark);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cat-go {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--text-dark);
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+.cat-card:hover .cat-go {
+  background: var(--text-dark);
+  color: #fff;
+  transform: rotate(45deg);
+}
+
+/* ---------- Showcase (ảnh xếp chồng + video) ---------- */
+.showcase {
+  margin: 72px 0 24px;
+}
+.showcase-head {
+  text-align: center;
+}
+.showcase-head p {
+  margin-top: 8px;
+  color: var(--text-muted);
+}
+.showcase-inner {
+  padding-top: 32px;
+  padding-bottom: 24px;
+}
+
+/* ---------- Khối sản phẩm, thẻ sản phẩm ---------- */
+.section-title {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.tabs {
+  gap: 10px;
+}
+.tab {
+  padding: 9px 20px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  color: var(--text-dark);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.tab:hover {
+  background: #e9edf1;
+}
+.tab-active,
+.tab.tab-active:hover {
+  background: var(--text-dark);
+  color: #fff;
+}
+.product-card {
+  background: #fff;
+  padding: 10px 10px 16px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lift);
+}
+.product-thumb {
+  border-radius: calc(var(--radius-lg) - 8px);
+  background-color: var(--surface-gray);
+}
+.product-card h4,
+.product-card .product-meta,
+.product-card .product-type,
+.product-card .rating-mini {
+  margin-left: 8px;
+  margin-right: 8px;
+}
+
+/* Cam kết: tiêu đề giữa và các ô bo góc đổ bóng */
+.perks {
+  border: 0;
+  gap: 18px;
+}
+.perk {
+  padding: 18px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+.perk-icon {
+  background: var(--surface-soft);
+  border-color: transparent;
+}
+
+/* ---------- Chân trang: ô đăng ký email dạng thẻ nổi + cột liên kết ---------- */
+.footer {
+  margin-top: 96px;
+  background: #fff;
+}
+.newsletter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 44px 32px 40px;
+  text-align: center;
+  background: #fff;
+  border: 0;
+  border-radius: 32px;
+  box-shadow: var(--shadow-lift);
+}
+.newsletter-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--surface-soft);
+  color: var(--text-dark);
+  box-shadow: var(--shadow-soft);
+  transform: rotate(-6deg);
+}
+.newsletter h3 {
+  margin-top: 22px;
+  font-size: 28px;
+  font-weight: 800;
+}
+.newsletter p {
+  margin-top: 8px;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+.newsletter-form {
+  display: flex;
+  width: 100%;
+  max-width: 520px;
+  margin: 24px 0 0;
+  padding: 6px;
+  background: #fff;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-soft), inset 0 0 0 1px var(--border-soft);
+}
+.newsletter-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 18px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+.newsletter-msg {
+  margin-top: 14px;
+  font-size: 14px;
+}
+.newsletter-ok {
+  color: var(--green-badge);
+}
+.newsletter-error {
+  color: var(--discount-red);
+}
+.footer-columns {
+  padding-top: 72px;
+}
+.footer-brand .logo-text {
+  font-size: 24px;
+  font-weight: 800;
+}
+.footer-col h4 {
+  font-weight: 700;
+}
+.footer-col a:hover {
+  color: var(--accent);
+}
+.footer-bottom {
+  border-top: 1px solid var(--border-soft);
+}
+
+/* Quy tắc cũ cho lưới danh mục dạng bento (ô đầu chiếm nhiều cột) không còn dùng. */
+.category-grid > :first-child {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+/* ---------- Tablet / điện thoại ---------- */
+@media (max-width: 1099px) {
+  .category-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .hero-center {
+    padding-top: 36px;
+  }
+  .hero-cta {
+    flex-direction: column;
+    width: 100%;
+    max-width: 320px;
+  }
+  .hero-cta .btn-pill {
+    width: 100%;
+  }
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 32px;
+  }
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .newsletter {
+    padding: 32px 18px;
+    border-radius: 24px;
+  }
+  .newsletter-form {
+    flex-direction: column;
+    border-radius: 24px;
+    gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-pill,
+  .cat-card,
+  .cat-go,
+  .cat-card .cat-photo,
+  .product-card,
+  .header-pill,
+  .search-box {
+    transition: none;
+  }
+  .btn-pill:hover,
+  .cat-card:hover,
+  .product-card:hover,
+  .cat-card:hover .cat-go {
+    transform: none;
+  }
+}

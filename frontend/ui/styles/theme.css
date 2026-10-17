@@ -16,9 +16,9 @@
   --hero-glow-soft: #b8860b;
   --hero-text-light: #f1f5f9;
   --hero-text-muted: #cbd5e1;
-  --radius-lg: 0;
-  --radius-md: 0;
-  --radius-pill: 0;
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-pill: 999px;
 }
 
 * {
@@ -109,4 +109,10 @@ button {
   font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+:root {
+  --shadow-soft: 0 10px 30px rgba(30, 41, 59, 0.08);
+  --shadow-lift: 0 18px 40px rgba(30, 41, 59, 0.14);
+  --surface-soft: #f6f8fa; /* nền viên thuốc header, ô lọc */
 }

@@ -8,6 +8,8 @@ import { getSettings, getPublicPaymentOptions, getPublicContent } from '../lib/s
 import { productReviews, reviewSummaries } from '../lib/orderFlow.js'
 import { checkCoupon, CouponError } from '../lib/coupons.js'
 import { couponCheckSchema } from '../schemas/coupons.js'
+import { subscribeSchema } from '../schemas/shop.js'
+import { prisma } from '../lib/prisma.js'
 import { quoteLimiter } from '../middleware/security.js'
 import { goshipConfigured, isGoshipId, listCities, listDistricts, listWards, GoshipError } from '../lib/goship.js'
 
@@ -89,6 +91,12 @@ router.post('/coupons/check', quoteLimiter, validate(couponCheckSchema), asyncHa
     if (err instanceof CouponError) return res.status(400).json({ error: err.message })
     throw err
   }
+}))
+
+// Đăng ký nhận ưu đãi qua email. Đăng ký lại cùng email vẫn báo thành công (không lộ email nào đã có trong danh sách).
+router.post('/subscribe', quoteLimiter, validate(subscribeSchema), asyncHandler(async (req, res) => {
+  await prisma.subscriber.upsert({ where: { email: req.body.email }, update: {}, create: { email: req.body.email } })
+  res.status(201).json({ ok: true })
 }))
 
 router.get('/products/:id/reviews', REVALIDATE, asyncHandler(async (req, res) => {

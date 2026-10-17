@@ -1,5 +1,7 @@
 import { prisma } from '../lib/prisma.js'
 import { toPlain } from '../utils/serialize.js'
+import { categories } from '../data/shop.js'
+import { getStorefrontProduct } from '../lib/productStore.js'
 
 function dateRangeFor(preset, from, to) {
   const now = new Date()
@@ -50,7 +52,7 @@ export async function getOverview(req, res) {
   const orderWhere = { createdAt: { gte: from, lte: to }, status: { not: 'CANCELLED' } }
 
   const [orders, prevOrders] = await Promise.all([
-    prisma.order.findMany({ where: orderWhere, select: { total: true, createdAt: true, campaignId: true, customerId: true } }),
+    prisma.order.findMany({ where: orderWhere, select: { total: true, createdAt: true, campaignId: true, customerId: true, paymentMethod: true } }),
     prisma.order.findMany({
       where: { createdAt: { gte: prevRange.from, lte: prevRange.to }, status: { not: 'CANCELLED' } },
       select: { total: true },
@@ -81,7 +83,27 @@ export async function getOverview(req, res) {
     }
   }
 
+  // Doanh thu theo danh mục (theo dòng hàng của các đơn trong kỳ) và theo phương thức thanh toán, cho các biểu đồ tròn ở trang Tổng quan.
+  const items = await prisma.orderItem.findMany({ where: { order: orderWhere }, select: { productId: true, lineTotal: true } })
+  const catRevenue = new Map()
+  for (const it of items) {
+    const id = (it.productId && getStorefrontProduct(it.productId)?.categoryId) || 'khac'
+    catRevenue.set(id, (catRevenue.get(id) || 0) + Number(it.lineTotal))
+  }
+  const topCategories = [...catRevenue.entries()]
+    .map(([id, value]) => ({ id, name: categories.find((c) => c.id === id)?.name || 'Khác', revenue: value }))
+    .sort((a, b) => b.revenue - a.revenue)
+  const payCount = new Map()
+  for (const o of orders) {
+    const cur = payCount.get(o.paymentMethod) || { method: o.paymentMethod, orders: 0, revenue: 0 }
+    cur.orders += 1
+    cur.revenue += Number(o.total)
+    payCount.set(o.paymentMethod, cur)
+  }
+
   res.json({
+    topCategories,
+    byPayment: [...payCount.values()].sort((a, b) => b.orders - a.orders),
     range: { from, to },
     revenue,
     revenueChange,

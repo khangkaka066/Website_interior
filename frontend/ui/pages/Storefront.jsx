@@ -1,6 +1,7 @@
 'use client'
 
 import Hero from '../components/Hero'
+import Showcase from '../components/Showcase'
 import CategoryGrid from '../components/CategoryGrid'
 import ProductSection from '../components/ProductSection'
 import DealOfTheDay from '../components/DealOfTheDay'
@@ -15,6 +16,7 @@ export default function Storefront() {
       <main>
         <Hero />
         <CategoryGrid />
+        <Showcase />
         <ProductSection />
         <DealOfTheDay />
         <ProductColumns />
