@@ -184,6 +184,14 @@ export const cleanPhone = (v) => {
   return d.startsWith('+84') ? `0${d.slice(3)}` : d.startsWith('84') && d.length >= 11 ? `0${d.slice(2)}` : d.replace(/\D/g, '')
 }
 
+// Mã do HÃNG vận chuyển cấp (khác mã của Goship dạng GS...). Goship có lúc trả chính mã của họ ở trường tracking_number khi hãng chưa cấp mã:
+// mã đó không quét được ở bưu cục nên không được lưu thành "mã vận đơn của hãng".
+export const carrierCodeOf = (code, gcode) => {
+  const c = String(code ?? '').trim()
+  if (!c || (gcode && c === String(gcode)) || /^GS[A-Z0-9]{6,}$/i.test(c)) return ''
+  return c
+}
+
 // Phần thân gửi Goship (thuần, kiểm thử được).
 export function buildShipmentBody({ order, settings, rateId, from, to, weightGrams }) {
   const g = settings.shipping.goship
@@ -283,20 +291,20 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
     }
 
     // Chưa có mã hãng: hỏi lại Goship vài lần ngắn (thường vài giây là có). Vẫn chưa có thì lưu trước, mã tự cập nhật qua webhook hoặc nút "Cập nhật từ Goship".
-    if (!normCode(created.tracking_number)) {
+    if (!carrierCodeOf(created.tracking_number, gcode)) {
       for (let i = 0; i < 3; i++) {
         await new Promise((r) => setTimeout(r, 1500))
         const found = await searchGoshipShipment(gcode).catch(() => null)
         if (found) {
           const t = found.tracking_number ?? found.carrier_code
-          if (normCode(t)) created = { ...created, tracking_number: t, sorting_code: found.sorting_code || created.sorting_code, shipment_status: found.status_code ?? found.shipment_status ?? created.shipment_status, fee: found.fee ?? created.fee }
-          if (normCode(t)) break
+          if (carrierCodeOf(t, gcode)) created = { ...created, tracking_number: t, sorting_code: found.sorting_code || created.sorting_code, shipment_status: found.status_code ?? found.shipment_status ?? created.shipment_status, fee: found.fee ?? created.fee }
+          if (carrierCodeOf(t, gcode)) break
         }
       }
     }
 
     const carrier = await ensureGoshipCarrier(db)
-    const noteBits = [created.carrier ? `${created.carrier}${created.carrier_short_name ? ` (${created.carrier_short_name})` : ''}` : 'Goship', created.tracking_number ? `mã hãng: ${created.tracking_number}` : null].filter(Boolean)
+    const noteBits = [created.carrier ? `${created.carrier}${created.carrier_short_name ? ` (${created.carrier_short_name})` : ''}` : 'Goship', carrierCodeOf(created.tracking_number, gcode) ? `mã hãng: ${created.tracking_number}` : null].filter(Boolean)
     const note = `Goship · ${noteBits.join(' · ')}`
     status = Number(created.shipment_status)
     const local = mapGoshipStatus(status).local || 'AWAITING_PICKUP'
@@ -305,7 +313,7 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
       trackingId: gcode,
       sortingCode: str(created.sorting_code) || null,
       pickupMethod: pickupMethod || null, // ghi rõ cả khi rỗng: bản ghi dùng lại của vận đơn đã hủy phải bỏ lựa chọn cũ
-      carrierCode: normCode(created.tracking_number) || null, // ghi rõ cả khi rỗng: bản ghi dùng lại của vận đơn đã hủy phải bỏ mã cũ
+      carrierCode: normCode(carrierCodeOf(created.tracking_number, gcode)) || null, // ghi rõ cả khi rỗng: bản ghi dùng lại của vận đơn đã hủy phải bỏ mã cũ
       onDemand: false,
       carrierId: carrier.id,
       status: local,
@@ -498,6 +506,8 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
 
     if (info.cancel) {
       if (!['DELIVERED', 'RETURNED', 'NOT_CREATED'].includes(shipment.status)) changes.status = 'NOT_CREATED' // đã hủy bên Goship: đưa về như hủy vận đơn
+      // Đơn đang "Chờ giao hàng" mà vận đơn đã bị hủy: đưa đơn về "Đang xử lý" để nhân viên tạo lại vận đơn (nếu không đơn kẹt ở Chờ giao hàng mà không có vận đơn).
+      if (shipment.order.status === 'AWAITING_SHIPMENT') order = 'PROCESSING'
     } else {
       const next = nextShippingStatus(shipment.status, info.local)
       if (next) {
@@ -507,9 +517,10 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
       }
     }
     if (p.fee !== null && p.fee > 0 && Number(shipment.shippingFee) !== p.fee) changes.shippingFee = p.fee // cước thực tế hãng tính
-    if (p.code && normCode(p.code) !== shipment.carrierCode) changes.carrierCode = normCode(p.code)
-    if (p.code && !String(shipment.note || '').includes(p.code)) {
-      changes.note = `${String(shipment.note || 'Goship').replace(/\s·\smã hãng:.*$/, '')} · mã hãng: ${p.code}`
+    const realCode = carrierCodeOf(p.code, shipment.trackingId)
+    if (realCode && normCode(realCode) !== shipment.carrierCode) changes.carrierCode = normCode(realCode)
+    if (realCode && !String(shipment.note || '').includes(realCode)) {
+      changes.note = `${String(shipment.note || 'Goship').replace(/\s·\smã hãng:.*$/, '')} · mã hãng: ${realCode}`
     }
 
     // Goship gửi lại khi không nhận được 200: không ghi trùng cùng một dòng lịch sử.
@@ -528,4 +539,55 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
     }
     return { handled: true, status: changes.status || shipment.status, orderStatus: order, duplicate: Boolean(duplicate), verified: trusted }
   })
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+// Đối soát định kỳ (phòng khi webhook của Goship không tới được: chạy máy cá nhân, mất mạng, Goship gửi lỗi...)
+// ----------------------------------------------------------------------------------------------------------------
+
+const missingCount = new Map() // id vận đơn -> số lần đối soát liên tiếp mà Goship không còn tìm thấy
+
+// Goship không còn thấy vận đơn (đã hủy bên Goship, dữ liệu quan sát được: tra mã của vận đơn đã hủy trả về rỗng): đưa về như hủy vận đơn và
+// trả đơn về "Đang xử lý" để nhân viên tạo lại.
+async function markCancelledOnGoship(db, shipment) {
+  await inTx(db, async (tx) => {
+    await tx.shipment.update({ where: { id: shipment.id }, data: { status: 'NOT_CREATED', trackingEvents: { create: { status: 'Đã hủy bên Goship', note: 'Goship không còn vận đơn này (đối soát tự động)' } } } })
+    if (shipment.order.status === 'AWAITING_SHIPMENT') {
+      await tx.order.update({ where: { id: shipment.orderId }, data: { status: 'PROCESSING', statusEvents: { create: { status: 'PROCESSING', note: 'Cập nhật từ vận chuyển (Goship): vận đơn đã bị hủy bên Goship' } } } })
+    }
+    await tx.activityLog.create({ data: { entityType: 'shipment', shipmentId: shipment.id, orderId: shipment.orderId, action: 'goship_cancelled_remote', actor: 'system', note: 'đối soát: Goship không còn vận đơn' } })
+  })
+}
+
+// Hỏi lại Goship về các vận đơn Goship đang chạy và cập nhật trạng thái / mã hãng. Vận đơn chờ lấy hàng mà Goship không còn tìm thấy
+// trong 2 lần đối soát liên tiếp thì coi là đã hủy bên Goship. Trả về số vận đơn có thay đổi.
+export async function reconcileGoshipShipments(db = prisma, { limit = 30 } = {}) {
+  if (!goshipConfigured()) return 0
+  const active = await db.shipment.findMany({
+    where: { carrier: { code: GOSHIP_CARRIER_CODE }, onDemand: false, trackingId: { not: null }, status: { in: ['AWAITING_PICKUP', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'FAILED', 'RETURNING'] } },
+    orderBy: { updatedAt: 'asc' },
+    take: limit,
+    include: { order: true },
+  })
+  let changed = 0
+  for (const s of active) {
+    try {
+      const r = await processGoshipWebhook({ payload: { gcode: s.trackingId }, verified: false }, db)
+      if (r.handled) {
+        missingCount.delete(s.id)
+        if (!r.duplicate) changed++
+      } else if (r.reason === 'unverified_not_found') {
+        const k = (missingCount.get(s.id) || 0) + 1
+        missingCount.set(s.id, k)
+        if (k >= 2 && s.status === 'AWAITING_PICKUP') {
+          await markCancelledOnGoship(db, s)
+          missingCount.delete(s.id)
+          changed++
+        }
+      }
+    } catch (err) {
+      console.warn('[goship] đối soát', s.trackingId, 'lỗi:', err.message)
+    }
+  }
+  return changed
 }

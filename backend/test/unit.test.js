@@ -13,7 +13,7 @@ import { discountFor, checkCoupon, CouponError, normalizeCode } from '../src/lib
 import { couponSchema, couponPatchSchema } from '../src/schemas/coupons.js'
 import { welcomeConfigSchema, blastSchema, unsubscribeSchema } from '../src/schemas/subscribers.js'
 import { blastEmail, welcomeEmail } from '../src/lib/emailTemplates.js'
-import { cleanPhone } from '../src/lib/goshipShipments.js'
+import { cleanPhone, carrierCodeOf } from '../src/lib/goshipShipments.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { displayCode, normCode } from '../src/lib/orderCode.js'
 import { extractOrderNumber, extractOrderNumbers } from '../src/lib/paymentWebhook.js'
@@ -1628,5 +1628,18 @@ describe('số điện thoại gửi Goship', () => {
     assert.equal(cleanPhone('84356789749'), '0356789749')
     assert.equal(cleanPhone('0963603157'), '0963603157')
     assert.equal(cleanPhone(null), '')
+  })
+})
+
+describe('mã vận đơn của hãng', () => {
+  test('mã Goship (GS...) không phải mã hãng', () => {
+    assert.equal(carrierCodeOf('GS6VJB3936', 'GS6VJB3936'), '')
+    assert.equal(carrierCodeOf('GS6VJB3936', 'OTHER'), '')
+    assert.equal(carrierCodeOf(null, 'GS1'), '')
+    assert.equal(carrierCodeOf('', 'GS1'), '')
+  })
+  test('mã do hãng cấp được giữ', () => {
+    assert.equal(carrierCodeOf('BEST123456789', 'GS6VJB3936'), 'BEST123456789')
+    assert.equal(carrierCodeOf(' 85012345678 ', 'GS6VJB3936'), '85012345678')
   })
 })

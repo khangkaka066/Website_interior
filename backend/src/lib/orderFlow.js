@@ -4,7 +4,7 @@ import { canTransitionOrder } from '../constants/workflow.js'
 import { releaseStock, loadProducts } from './productStore.js'
 import { getSettings, COD_METHOD_ID } from './settingsStore.js'
 import { sendMail } from './mailer.js'
-import { cancelShipmentById, ShipmentError } from './goshipShipments.js'
+import { cancelShipmentById, ShipmentError, reconcileGoshipShipments } from './goshipShipments.js'
 import { classifyDelivery } from './deliveryType.js'
 import { orderStatusEmail, NOTIFY_STATUSES } from './emailTemplates.js'
 
@@ -416,6 +416,8 @@ export function startOrderJobs({ intervalMs = Number(process.env.ORDER_JOBS_INTE
       const approved = await autoApproveCancels()
       const received = await autoReceive()
       await backfillDeliveryTypes()
+      const synced = await reconcileGoshipShipments() // đồng bộ vận đơn với Goship phòng khi webhook không tới
+      if (synced) console.log(`[goship] đối soát: ${synced} vận đơn có thay đổi`)
       if (confirmed || cancelled || approved || received) console.log(`[orders] tự xác nhận ${confirmed} đơn, tự hủy ${cancelled} đơn chưa thanh toán, tự đồng ý ${approved} yêu cầu hủy, tự xác nhận nhận hàng ${received} đơn`)
     } catch (err) {
       console.warn('[orders] tác vụ nền lỗi:', err.message)

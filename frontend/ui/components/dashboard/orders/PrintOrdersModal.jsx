@@ -300,6 +300,9 @@ export default function PrintOrdersModal({ ids, onClose }) {
   const [shop, setShop] = useState({ name: '' })
   const [error, setError] = useState('')
   const [skipped, setSkipped] = useState(() => new Set())
+  const [reloadKey, setReloadKey] = useState(0)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState('')
   const [forceIn, setForceIn] = useState(() => new Set()) // đơn chưa có mã vận đơn mà nhân viên vẫn chủ động tích để in tem
   const [format, setFormat] = useState(() => {
     try {
@@ -325,7 +328,7 @@ export default function PrintOrdersModal({ ids, onClose }) {
     return () => {
       cancelled = true
     }
-  }, [idsKey])
+  }, [idsKey, reloadKey])
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -349,6 +352,23 @@ export default function PrintOrdersModal({ ids, onClose }) {
   const toggleOrder = (o) => (format === 'label' && noCode(o) ? setForceIn((s) => flip(s, o.id)) : setSkipped((s) => flip(s, o.id)))
   const toggle = (id) => setSkipped((s) => flip(s, id)) // dùng cho phiếu nhặt hàng gộp (không cần mã vận đơn)
   const missing = orders ? orders.filter(noCode) : []
+  // Hỏi lại Goship mã vận đơn của hãng cho các đơn đã có vận đơn Goship nhưng chưa có mã, rồi tải lại phiếu.
+  const syncable = missing.filter((o) => o.shipment?.id && o.shipment.status !== 'NOT_CREATED')
+  async function refreshCodes() {
+    setSyncing(true)
+    setSyncMsg('')
+    let failed = 0
+    for (const o of syncable) {
+      try {
+        await api.post(`/shipping/goship/shipments/${o.shipment.id}/sync`, {})
+      } catch {
+        failed++
+      }
+    }
+    setReloadKey((k) => k + 1)
+    setSyncing(false)
+    setSyncMsg(failed ? `${failed} vận đơn chưa hỏi được Goship, thử lại sau ít phút.` : 'Đã hỏi Goship. Đơn nào đã có mã hãng thì tự được tích để in.')
+  }
   const count = orders ? orders.filter((o) => !isSkipped(o)).length : 0
 
   // Cổng (portal) gắn thẳng vào <body> để CSS in ẩn được toàn bộ giao diện admin, chỉ giữ lại phiếu.
@@ -370,9 +390,22 @@ export default function PrintOrdersModal({ ids, onClose }) {
         {error && <p className="print-error">{error}</p>}
         {!orders && !error && <p>Đang tải phiếu…</p>}
         {format === 'label' && missing.length > 0 && (
-          <p className="print-error print-noprint">
-            {missing.length} đơn chưa có mã vận đơn của hãng vận chuyển ({missing.map((o) => o.orderNumber).join(', ')}), nên tem của các đơn này đang được bỏ tích. Mã vận đơn do hãng cấp sau khi tạo vận đơn: nếu đơn chưa có vận đơn, chọn đơn ở danh sách rồi bấm "Chuẩn bị hàng"; nếu đã có vận đơn mà Goship chưa trả mã, mở vận đơn (trang Vận chuyển) và bấm "Cập nhật từ Goship" sau ít phút. Sau đó in lại.
-          </p>
+          <div className="print-error print-noprint">
+            <p>
+              {missing.length} đơn chưa có mã vận đơn của hãng ({missing.map((o) => o.orderNumber).join(', ')}), nên tem của các đơn này đang được bỏ tích.
+            </p>
+            {syncable.length > 0 ? (
+              <p>
+                Vận đơn đã được tạo trên Goship. Mã của hãng thường có sau vài chục giây đến vài phút (Goship xử lý bất đồng bộ, trạng thái "Đơn mới" lúc đầu là bình thường). <b>Đừng hủy vận đơn trên Goship</b>, hãy đợi rồi bấm nút bên dưới.
+              </p>
+            ) : (
+              <p>Các đơn này chưa có vận đơn. Ở danh sách đơn, chọn đơn rồi bấm "Chuẩn bị hàng" để tạo vận đơn với hãng, sau đó in lại.</p>
+            )}
+            {syncable.length > 0 && (
+              <button type="button" className="print-btn" onClick={refreshCodes} disabled={syncing}>{syncing ? 'Đang hỏi Goship…' : 'Lấy mã vận đơn của hãng từ Goship'}</button>
+            )}
+            {syncMsg && <p role="status">{syncMsg}</p>}
+          </div>
         )}
         {orders && format === 'pick' && <PickingList orders={orders} shop={shop} skipped={skipped} onToggle={toggle} />}
         {format !== 'pick' && orders?.map((o) => {
