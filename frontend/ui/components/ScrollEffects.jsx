@@ -6,7 +6,7 @@ import '../styles/scroll-effects.css'
 
 // Hiệu ứng cuộn trang cho khu khách hàng:
 //  - Mọi trang: thanh tiến trình cuộn, header dính đầu trang (cuộn xuống thì trượt đi, cuộn lên thì hiện lại), nút "Lên đầu trang".
-//  - Trang chủ: hero trôi nhẹ theo cuộn (thị sai), khối hiện dần từ dưới lên, thẻ trong lưới hiện lần lượt trái -> phải,
+//  - Trang chủ: hero trôi nhẹ theo cuộn khối hiện dần từ dưới lên, thẻ trong lưới hiện lần lượt trái -> phải,
 //    ba ô danh mục "mở rèm" từ giữa ra hai bên.
 // Nguyên tắc: chỉ dùng transform/opacity/clip-path (không đổi kích thước nên không giật bố cục); trạng thái ẩn đặt bằng thuộc tính data-rv
 // (React không đụng tới nên không bị xóa khi render lại); JS lỗi / "giảm chuyển động" thì nội dung vẫn hiện đầy đủ.
@@ -37,7 +37,6 @@ export default function ScrollEffects() {
   // Một bộ lắng nghe cuộn duy nhất, mỗi khung hình cập nhật tối đa một lần.
   useEffect(() => {
     const header = document.querySelector('.header')
-    const hero = pathname === '/' && !reducedMotion() ? document.querySelector('.hero') : null
     let ticking = false
     let lastY = window.scrollY
     let anchorY = lastY // mốc để đo quãng cuộn theo một chiều, tránh nhấp nháy khi lăn chuột nhẹ
@@ -63,12 +62,6 @@ export default function ScrollEffects() {
         if (y < h + 40 || (dir < 0 && travelled > 12)) header.classList.remove('is-hidden')
         else if (dir > 0 && travelled > 12 && !header.contains(document.activeElement)) header.classList.add('is-hidden')
       }
-
-      if (hero) {
-        const r = hero.getBoundingClientRect()
-        const p = r.bottom > 0 ? Math.min(1, Math.max(0, -r.top / Math.max(1, r.height))) : 1
-        hero.style.setProperty('--hero-p', p.toFixed(3))
-      }
     }
     const onScroll = () => {
       if (!ticking) {
@@ -83,7 +76,6 @@ export default function ScrollEffects() {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
       header?.classList.remove('is-scrolled', 'is-hidden')
-      hero?.style.removeProperty('--hero-p')
     }
   }, [pathname])
 

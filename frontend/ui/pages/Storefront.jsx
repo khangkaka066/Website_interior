@@ -5,6 +5,7 @@ import CategoryGrid from '../components/CategoryGrid'
 import ProductSection from '../components/ProductSection'
 import DealOfTheDay from '../components/DealOfTheDay'
 import ProductColumns from '../components/ProductColumns'
+import CollectionScroll from '../components/CollectionScroll'
 import Perks from '../components/Perks'
 import InstagramGrid from '../components/InstagramGrid'
 
@@ -17,6 +18,7 @@ export default function Storefront() {
         <ProductSection />
         <DealOfTheDay />
         <ProductColumns />
+        <CollectionScroll />
         <Perks />
         <InstagramGrid />
       </main>

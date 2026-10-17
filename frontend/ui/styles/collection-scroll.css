@@ -1,0 +1,92 @@
+/* ---------- Bộ sưu tập cuộn ngang (xem CollectionScroll.jsx) ---------- */
+.collection {
+  margin: 80px 0;
+  overflow: hidden;
+}
+.collection-head {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.collection-eyebrow {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+/* Mặc định (điện thoại, giảm chuyển động): dải vuốt ngang có snap. */
+.collection-track {
+  display: flex;
+  gap: 20px;
+  padding: 4px 20px 24px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.collection-card {
+  position: relative;
+  flex: 0 0 min(78vw, 340px);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--bg-cream);
+  scroll-snap-align: center;
+}
+.collection-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.collection-card:hover img {
+  transform: scale(1.05);
+}
+.collection-card-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 48px 18px 18px;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(20, 14, 9, 0), rgba(20, 14, 9, 0.7));
+}
+.collection-card-body h3 {
+  font-size: 16px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.collection-price {
+  display: block;
+  margin-top: 6px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Máy tính: GSAP ghim khung và trượt dải ảnh; chiếm vừa một màn hình. */
+@media (min-width: 1100px) {
+  .collection[data-hscroll='on'] {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: linear-gradient(180deg, #fff, var(--bg-cream));
+  }
+  .collection[data-hscroll='on'] .collection-track {
+    width: max-content;
+    overflow: visible;
+    scroll-snap-type: none;
+    gap: 28px;
+    padding: 8px 64px;
+    will-change: transform;
+  }
+  .collection[data-hscroll='on'] .collection-card {
+    flex-basis: 360px;
+    aspect-ratio: 3 / 4;
+    max-height: 62vh;
+  }
+}

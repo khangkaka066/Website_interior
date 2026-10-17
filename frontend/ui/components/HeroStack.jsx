@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-// Ba ảnh rèm xếp chồng 3D ở hero, TỰ ĐỔI CHỖ theo vòng như xếp lại bộ bài: ảnh đang ở trước bay ra sau, ảnh giữa tiến lên trước, ảnh sau tiến lên giữa.
+// Ba ảnh rèm xếp chồng 3D ở hero, TỰ ĐỔI CHỖ theo vòng như xếp lại bộ bài: một ảnh ngẫu nhiên ở phía sau nhảy lên trước.
 // order = [sau, giữa, trước]. Chuyển động nằm hết trong CSS (transition + keyframes); ở đây chỉ quyết định ai đứng ở vị trí nào.
 const CARDS = {
   blue: { src: '/images/curtains/blue.webp', alt: 'Rèm xanh dương', label: 'Xem rèm xanh dương' },
@@ -42,17 +42,17 @@ export default function HeroStack() {
     return () => io.disconnect()
   }, [])
 
-  // Tự xoay một nấc sau mỗi chu kỳ. Mỗi lần thứ tự đổi (kể cả do khách bấm) là hẹn lại từ đầu, nên sau khi bấm luôn có đủ thời gian để ngắm.
+  // Sau mỗi chu kỳ, một ảnh ngẫu nhiên (trong hai ảnh phía sau) nhảy lên trước. Mỗi lần thứ tự đổi (kể cả do khách bấm) là hẹn lại từ đầu, nên sau khi bấm luôn có đủ thời gian để ngắm.
   // Dừng khi rê chuột / không nhìn thấy / tab ẩn / khách bật "giảm chuyển động".
   const paused = hover || !visible || !tabOn || reduced
   useEffect(() => {
     if (paused) return undefined
     const t = setTimeout(() => {
-      setOrder(([back, mid, front]) => [front, back, mid]) // trước -> sau, sau -> giữa, giữa -> trước
-      setLeaving(order[2])
+      // Chọn ngẫu nhiên một trong hai ảnh phía sau để đưa lên trước.
+      bringToFront(order[Math.random() < 0.5 ? 0 : 1])
     }, CYCLE_MS)
     return () => clearTimeout(t)
-  }, [order, paused])
+  }, [order, paused]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Bấm một ảnh ở sau/giữa thì kéo nó lên trước (các ảnh còn lại xoay theo vòng).
   function bringToFront(id) {

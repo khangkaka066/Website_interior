@@ -104,20 +104,6 @@
   transition: opacity 0.9s ease var(--rv-delay, 0s), translate 1s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-delay, 0s);
 }
 
-/* D. Hero trôi nhẹ theo cuộn (--hero-p từ 0 đến 1 do ScrollEffects đặt): chữ và ảnh rèm trôi chậm hơn trang, video thu nhỏ dần. */
-.hero-visual {
-  translate: 0 calc(var(--hero-p, 0) * 48px);
-}
-.hero-text {
-  translate: 0 calc(var(--hero-p, 0) * 24px);
-}
-.hero-video {
-  scale: calc(1 - var(--hero-p, 0) * 0.05);
-}
-.hero-glow {
-  translate: 0 calc(var(--hero-p, 0) * -60px);
-}
-
 @media (prefers-reduced-motion: reduce) {
   [data-rv],
   .header,
@@ -127,13 +113,6 @@
   [data-rv] {
     opacity: 1;
     translate: none;
-  }
-  .hero-visual,
-  .hero-text,
-  .hero-video,
-  .hero-glow {
-    translate: none;
-    scale: none;
   }
 }
 
