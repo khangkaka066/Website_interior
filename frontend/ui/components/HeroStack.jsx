@@ -10,7 +10,7 @@ const CARDS = {
   gold: { src: '/images/curtains/gold.webp', alt: 'Rèm vàng gold', label: 'Xem rèm vàng gold' },
 }
 const SLOTS = ['back', 'mid', 'front']
-const CYCLE_MS = 4700 // 3,5 giây đứng yên + 1,2 giây chuyển động (khớp thời gian trong CSS)
+const CYCLE_MS = 2000 // 0,8 giây đứng yên + 1,2 giây chuyển động (khớp thời gian trong CSS)
 
 export default function HeroStack() {
   const root = useRef(null)
