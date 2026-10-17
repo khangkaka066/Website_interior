@@ -1,11 +1,12 @@
 :root {
   --bg-cream: #f9f9f9;
   --bg-blush: #f3f4f6;
-  --bg-white: #ffffff;
+  --bg-white: #ffffff; /* nền của thẻ, header, ô nhập: giữ trắng để nổi lên trên nền trang */
+  --page-bg: #f2f2f2; /* nền trang (xám trung tính nhạt, từ Nippon GR-31/GR-25) */
   --accent: #946b08;
   --accent-dark: #7a5806;
   --text-dark: #1e293b;
-  --text-muted: #64748b;
+  --text-muted: #56657a; /* đậm hơn một chút để chữ phụ đủ tương phản (≥4.5:1) trên nền trang xám nhạt */
   --surface-gray: #f3f4f6;
   --green-badge: #3e8e4f;
   --discount-red: #d14343;
@@ -29,7 +30,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg-white);
+  background: var(--page-bg);
   color: var(--text-dark);
   font-family: var(--font-be-vietnam), 'Be Vietnam Pro', sans-serif;
   min-width: 1280px;

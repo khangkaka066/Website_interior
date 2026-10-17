@@ -76,7 +76,7 @@
     max-width: 1560px; /* viên thuốc dài gần hết bề ngang màn hình */
     margin: 0 auto;
     padding: 10px 16px 10px 24px;
-    background: var(--surface-soft);
+    background: #fff;
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-pill);
     box-shadow: 0 6px 20px rgba(30, 41, 59, 0.06);
@@ -217,7 +217,7 @@
 .hero {
   position: relative;
   z-index: 5; /* danh sách chọn của thanh lọc phải nổi lên trên các thẻ danh mục bên dưới */
-  background: #fff;
+  background: transparent;
   overflow: visible;
 }
 .hero-center {
@@ -574,7 +574,7 @@
 /* ---------- Chân trang: ô đăng ký email dạng thẻ nổi + cột liên kết ---------- */
 .footer {
   margin-top: 96px;
-  background: #fff;
+  background: transparent;
 }
 .newsletter {
   display: flex;
