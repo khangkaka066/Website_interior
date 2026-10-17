@@ -389,3 +389,20 @@
   background: #000;
   color: #fff;
 }
+
+/* Tem chưa có mã vận đơn của hãng: dòng cảnh báo đậm để không ai dán nhầm tem này lên kiện hàng giao cho hãng. */
+.lbl-warn {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 2px 6px;
+  border: 1.5px solid #b91c1c;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+@media print {
+  .print-noprint {
+    display: none !important;
+  }
+}

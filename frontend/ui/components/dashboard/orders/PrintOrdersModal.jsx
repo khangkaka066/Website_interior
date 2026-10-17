@@ -44,6 +44,9 @@ function Qr({ value }) {
   return src ? <img className="lbl-qr" src={src} alt={`QR ${value}`} /> : null
 }
 
+// Mã vận đơn là mã DO HÃNG VẬN CHUYỂN cấp (có sau khi tạo vận đơn). Chưa có thì tem chỉ có mã đơn của shop, hãng không quét được.
+const hasCarrierCode = (o) => Boolean(o.shipment && o.shipment.status !== 'NOT_CREATED' && o.shipment.carrierCode)
+
 const MAX_LABEL_ITEMS = 8
 const vnd = (n) => `${Math.round(Number(n) || 0).toLocaleString('vi-VN')} VND`
 
@@ -51,7 +54,8 @@ const vnd = (n) => `${Math.round(Number(n) || 0).toLocaleString('vi-VN')} VND`
 function LabelSheet({ order, shop, skipped, onToggle }) {
   const ship = order.shipment && order.shipment.status !== 'NOT_CREATED' ? order.shipment : null
   const addr = [order.addressLine, order.ward, order.district, order.province].filter(Boolean).join(', ')
-  const code = ship?.carrierCode || order.orderNumber // có vận đơn thì quét mã hãng, chưa có thì quét mã đơn
+  const carrierCode = hasCarrierCode(order) ? ship.carrierCode : null
+  const code = carrierCode || order.orderNumber // chưa có mã hãng thì mã vạch chỉ là mã đơn của shop (dùng nội bộ)
   const collect = order.paymentMethod === 'COD' && order.paymentStatus !== 'PAID' ? Math.round(Number(order.total)) : 0
   const totalQty = order.items.reduce((n, it) => n + (Number(it.quantity) || 0), 0)
   const shown = order.items.slice(0, MAX_LABEL_ITEMS)
@@ -71,7 +75,7 @@ function LabelSheet({ order, shop, skipped, onToggle }) {
         </div>
         <div className="lbl-codes">
           <Barcode value={code} height={38} width={1.3} fontSize={11} />
-          <div>Mã vận đơn: <b>{code}</b></div>
+          {carrierCode ? <div>Mã vận đơn: <b>{carrierCode}</b></div> : <div className="lbl-warn">CHƯA CÓ MÃ VẬN ĐƠN CỦA HÃNG</div>}
           <div>Mã đơn hàng: {order.orderNumber}</div>
         </div>
       </div>
@@ -90,7 +94,7 @@ function LabelSheet({ order, shop, skipped, onToggle }) {
         </div>
       </div>
 
-      <div className="lbl-sort">{ship?.sortingCode || order.code || order.orderNumber}</div>
+      <div className="lbl-sort">{ship?.sortingCode || carrierCode || order.code || order.orderNumber}</div>
 
       <div className="lbl-body">
         <div className="lbl-items">
@@ -296,6 +300,7 @@ export default function PrintOrdersModal({ ids, onClose }) {
   const [shop, setShop] = useState({ name: '' })
   const [error, setError] = useState('')
   const [skipped, setSkipped] = useState(() => new Set())
+  const [forceIn, setForceIn] = useState(() => new Set()) // đơn chưa có mã vận đơn mà nhân viên vẫn chủ động tích để in tem
   const [format, setFormat] = useState(() => {
     try {
       const f = localStorage.getItem('clevinum_print_format')
@@ -337,8 +342,14 @@ export default function PrintOrdersModal({ ids, onClose }) {
     }
   }
 
-  const toggle = (id) => setSkipped((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
-  const count = orders ? orders.filter((o) => !skipped.has(o.id)).length : 0
+  // Tem giao hàng cần mã vận đơn của hãng: đơn chưa có thì mặc định KHÔNG in (nhân viên vẫn tích được nếu cần tem tạm).
+  const noCode = (o) => !hasCarrierCode(o)
+  const isSkipped = (o) => skipped.has(o.id) || (format === 'label' && noCode(o) && !forceIn.has(o.id))
+  const flip = (set, id) => { const n = new Set(set); if (n.has(id)) n.delete(id); else n.add(id); return n }
+  const toggleOrder = (o) => (format === 'label' && noCode(o) ? setForceIn((s) => flip(s, o.id)) : setSkipped((s) => flip(s, o.id)))
+  const toggle = (id) => setSkipped((s) => flip(s, id)) // dùng cho phiếu nhặt hàng gộp (không cần mã vận đơn)
+  const missing = orders ? orders.filter(noCode) : []
+  const count = orders ? orders.filter((o) => !isSkipped(o)).length : 0
 
   // Cổng (portal) gắn thẳng vào <body> để CSS in ẩn được toàn bộ giao diện admin, chỉ giữ lại phiếu.
   return createPortal(
@@ -358,10 +369,15 @@ export default function PrintOrdersModal({ ids, onClose }) {
       <div className={`print-page${format === 'label' ? ' print-page-label' : ''}`} onClick={(e) => e.stopPropagation()}>
         {error && <p className="print-error">{error}</p>}
         {!orders && !error && <p>Đang tải phiếu…</p>}
+        {format === 'label' && missing.length > 0 && (
+          <p className="print-error print-noprint">
+            {missing.length} đơn chưa có mã vận đơn của hãng vận chuyển ({missing.map((o) => o.orderNumber).join(', ')}), nên tem của các đơn này đang được bỏ tích. Mã vận đơn do hãng cấp sau khi tạo vận đơn: ở danh sách đơn, chọn đơn rồi bấm "Chuẩn bị hàng" (tạo vận đơn với hãng), sau đó in lại.
+          </p>
+        )}
         {orders && format === 'pick' && <PickingList orders={orders} shop={shop} skipped={skipped} onToggle={toggle} />}
         {format !== 'pick' && orders?.map((o) => {
           const Comp = format === 'label' ? LabelSheet : Sheet
-          return <Comp key={o.id} order={o} shop={shop} skipped={skipped.has(o.id)} onToggle={() => toggle(o.id)} />
+          return <Comp key={o.id} order={o} shop={shop} skipped={isSkipped(o)} onToggle={() => toggleOrder(o)} />
         })}
       </div>
     </div>,
