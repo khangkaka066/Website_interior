@@ -6,6 +6,7 @@ import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
 import { useCart } from '../context/CartContext'
 import { trackEvent } from '../analytics'
+import { pixelTrack } from '../pixels'
 import { sized, IMG } from '../utils/image'
 
 function formatPrice(n) {
@@ -70,6 +71,13 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
   const [added, setAdded] = useState(false)
   const [showSizeGuide, setShowSizeGuide] = useState(false)
 
+  // Khách xem một sản phẩm: báo cho pixel quảng cáo (ViewContent) để chạy quảng cáo tiếp thị lại đúng sản phẩm đã xem.
+  const viewedId = product?.id
+  useEffect(() => {
+    if (viewedId) pixelTrack('VIEW_CONTENT', { value: product.price, items: [{ id: product.id, name: product.name, price: product.price, quantity: 1 }] })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewedId])
+
   if (!product) {
     return (
       <>
@@ -107,6 +115,7 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
   function addToCart() {
     addItem(product, { size: variant?.label, quantity, price, image: optionImage || undefined })
     trackEvent('ADD_TO_CART', { productId: product.id })
+    pixelTrack('ADD_TO_CART', { value: price * quantity, items: [{ id: product.id, name: product.name, price, quantity }] })
   }
 
   return (

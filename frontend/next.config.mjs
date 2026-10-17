@@ -3,14 +3,31 @@ const BACKEND = process.env.BACKEND_URL || 'http://localhost:4000'
 // Content Security Policy (chỉ production: dev cần 'unsafe-eval' cho hot reload). Next chèn script inline để hydrate nên script-src còn
 // 'unsafe-inline' (CSP chặt hơn bằng nonce cần render động mọi trang, mất cache tĩnh). Các chỉ thị còn lại vẫn chặn script/iframe/form lạ.
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_BASE_URL || ''
+// Nền tảng quảng cáo chỉ được thêm vào CSP khi đã khai báo ID tương ứng (không khai báo = không mở thêm tên miền nào).
+const adSrc = []
+const adConnect = []
+const adFrame = []
+if (process.env.NEXT_PUBLIC_META_PIXEL_ID) {
+  adSrc.push('https://connect.facebook.net')
+  adConnect.push('https://www.facebook.com', 'https://connect.facebook.net')
+}
+if (process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID) {
+  adSrc.push('https://analytics.tiktok.com')
+  adConnect.push('https://analytics.tiktok.com', 'https://analytics-ipv6.tiktokw.us', 'https://business-api.tiktok.com')
+}
+if (process.env.NEXT_PUBLIC_GOOGLE_TAG_ID) {
+  adSrc.push('https://www.googletagmanager.com', 'https://www.google-analytics.com')
+  adConnect.push('https://www.googletagmanager.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.doubleclick.net', 'https://www.google.com', 'https://*.googleadservices.com')
+  adFrame.push('https://www.googletagmanager.com', 'https://td.doubleclick.net')
+}
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://accounts.google.com",
+  `script-src 'self' 'unsafe-inline' https://accounts.google.com ${adSrc.join(' ')}`.trim(),
   "style-src 'self' 'unsafe-inline' https://accounts.google.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self' https://accounts.google.com ${API_ORIGIN}`.trim(),
-  "frame-src 'self' https://accounts.google.com https://www.google.com",
+  `connect-src 'self' https://accounts.google.com ${API_ORIGIN} ${adConnect.join(' ')}`.trim(),
+  `frame-src 'self' https://accounts.google.com https://www.google.com ${adFrame.join(' ')}`.trim(),
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

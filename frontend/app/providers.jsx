@@ -7,6 +7,8 @@ import { useWishlistStore } from '@/ui/context/WishlistContext'
 import { Suspense } from 'react'
 import { trackEvent } from '@/ui/analytics'
 import TopLoader from '@/ui/components/TopLoader'
+import AdPixels from '@/ui/components/AdPixels'
+import { pixelTrack } from '@/ui/pixels'
 
 // Việc cần làm một lần ở trình duyệt cho mọi trang: nạp giỏ hàng/yêu thích từ localStorage và ghi nhận lượt xem trang.
 export default function Providers({ children }) {
@@ -18,7 +20,10 @@ export default function Providers({ children }) {
   }, [])
 
   useEffect(() => {
-    if (!pathname.startsWith('/dashboard')) trackEvent('PAGE_VIEW')
+    if (!pathname.startsWith('/dashboard')) {
+      trackEvent('PAGE_VIEW')
+      pixelTrack('PAGE_VIEW')
+    }
   }, [pathname])
 
   return (
@@ -26,6 +31,7 @@ export default function Providers({ children }) {
       <Suspense fallback={null}>
         <TopLoader />
       </Suspense>
+      <AdPixels />
       {children}
     </>
   )

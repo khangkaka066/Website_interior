@@ -5,6 +5,7 @@ import { useNavigate, Link } from '@/lib/router'
 import { useCart } from '../context/CartContext'
 import { api } from '../api'
 import { trackEvent, getAttribution } from '../analytics'
+import { pixelTrack } from '../pixels'
 import TransferQr from '../components/TransferQr'
 import { fillTransferNote } from '../utils/vietqr'
 import AddressFields from '../components/AddressFields'
@@ -70,7 +71,10 @@ export default function Checkout() {
   }, [])
 
   useEffect(() => {
-    if (hydrated && items.length > 0) trackEvent('CHECKOUT_START')
+    if (hydrated && items.length > 0) {
+      trackEvent('CHECKOUT_START')
+      pixelTrack('CHECKOUT_START', { value: totalPrice, items: items.map((i) => ({ id: i.productId, name: i.name, price: i.price, quantity: i.quantity })) })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated])
 
@@ -155,6 +159,7 @@ export default function Checkout() {
       })
 
       trackEvent('PURCHASE', { orderId: order.id })
+      pixelTrack('PURCHASE', { value: Number(order.total), orderId: order.orderNumber, items: items.map((i) => ({ id: i.productId, name: i.name, price: i.price, quantity: i.quantity })) })
       try {
         // trang xác nhận dùng để hiện lại mã QR (đúng số tiền máy chủ đã tính và mã đơn)
         sessionStorage.setItem(`clevinum_order_${order.orderNumber}`, JSON.stringify({ paymentMethod: form.paymentMethod, total: Number(order.total) }))
