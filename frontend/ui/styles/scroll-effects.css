@@ -18,42 +18,20 @@
   background: linear-gradient(90deg, var(--accent), #e0a559);
 }
 
-/* C1. Header dính đầu trang; cuộn xuống thì gọn lại (thu thanh trên, ẩn thanh menu), cuộn lên thì hiện đầy đủ. */
+/* C1. Header dính đầu trang, không đổi chiều cao (nên không giật bố cục): cuộn xuống thì trượt lên khuất, cuộn lên thì trượt xuống lại. */
 .header {
   position: sticky;
   top: 0;
   z-index: 90;
   background: var(--bg-white);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition: box-shadow 0.3s ease, transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .header.is-scrolled {
   box-shadow: 0 8px 24px rgba(43, 33, 28, 0.1);
 }
-.header-top {
-  transition: padding 0.3s ease;
-}
-.header-bottom {
-  max-height: 120px;
-  transition: max-height 0.3s ease, opacity 0.25s ease, border-color 0.3s ease;
-}
-@media (min-width: 769px) {
-  .header.is-compact .header-top {
-    padding-top: 10px;
-    padding-bottom: 10px;
-  }
-  .header.is-compact .header-bottom {
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    border-top-color: transparent;
-    border-bottom-color: transparent;
-  }
-}
-/* Điện thoại: header cao nên không chiếm chỗ khi đọc: cuộn xuống thì trượt đi, cuộn lên thì hiện lại. */
-@media (max-width: 768px) {
-  .header.is-compact {
-    transform: translateY(-100%);
-  }
+.header.is-hidden {
+  transform: translateY(-101%);
+  box-shadow: none;
 }
 
 /* C2. Nút lên đầu trang (góc trái dưới, tránh nút gọi và chat ở góc phải). */
@@ -100,62 +78,62 @@
 }
 
 /* A1 + A2. Hiện dần từ dưới lên, lần lượt. Dùng thuộc tính `translate` riêng nên không đụng tới `transform` của hiệu ứng rê chuột sẵn có. */
-.rv {
-  transition: opacity 0.7s ease var(--rv-delay, 0s), translate 0.75s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-delay, 0s);
+[data-rv='hide'],
+[data-rv='show'] {
+  transition: opacity 0.8s ease var(--rv-delay, 0s), translate 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-delay, 0s), clip-path 1.1s cubic-bezier(0.7, 0, 0.2, 1) var(--rv-delay, 0s);
 }
-.rv-hide {
+[data-rv='hide'] {
   opacity: 0;
-  translate: 0 26px;
+  translate: 0 32px;
 }
 
-/* A3. Ba ô danh mục "mở ra như kéo rèm": hai tấm vải che kín ô rồi trượt sang hai bên khi cuộn tới. */
-.category-grid .cat-card::before,
-.category-grid .cat-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50.5%;
-  z-index: 3;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.14) 12%, rgba(0, 0, 0, 0.08) 24%, rgba(255, 255, 255, 0.1) 36%, rgba(0, 0, 0, 0.1) 48%),
-    linear-gradient(180deg, #d9a766, #b5602f);
-  background-size: 56px 100%, 100% 100%;
-  transition: transform 1.15s cubic-bezier(0.7, 0, 0.2, 1) var(--rv-delay, 0s);
+/* A3. Ba ô danh mục "mở rèm": ảnh mở từ giữa ra hai bên, kèm chút phóng nhẹ. */
+.category-grid .cat-card[data-rv] .cat-photo {
+  transition: transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-delay, 0s);
 }
-.category-grid .cat-card::before {
-  left: 0;
-  transform: translateX(-101%);
+.category-grid .cat-card[data-rv='curtain'] {
+  clip-path: inset(0 50% 0 50%);
+  transition: none;
 }
-.category-grid .cat-card::after {
-  right: 0;
-  transform: translateX(101%);
+.category-grid .cat-card[data-rv='curtain'] .cat-photo {
+  transform: scale(1.14);
+  transition: none;
 }
-.category-grid .cat-card.cc-closed::before,
-.category-grid .cat-card.cc-closed::after {
-  transform: none;
-  transition: none; /* trạng thái đóng được đặt ngay, không chạy hiệu ứng */
+.category-grid .cat-card[data-rv='show'] {
+  clip-path: inset(0 0 0 0);
+}
+
+/* D. Hero trôi nhẹ theo cuộn (--hero-p từ 0 đến 1 do ScrollEffects đặt): chữ và ảnh rèm trôi chậm hơn trang, video thu nhỏ dần. */
+.hero-visual {
+  translate: 0 calc(var(--hero-p, 0) * 48px);
+}
+.hero-text {
+  translate: 0 calc(var(--hero-p, 0) * 24px);
+}
+.hero-video {
+  scale: calc(1 - var(--hero-p, 0) * 0.05);
+}
+.hero-glow {
+  translate: 0 calc(var(--hero-p, 0) * -60px);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rv,
-  .rv-hide,
-  .category-grid .cat-card::before,
-  .category-grid .cat-card::after,
+  [data-rv],
   .header,
-  .header-top,
-  .header-bottom,
   .to-top {
     transition: none;
   }
-  .rv-hide {
+  [data-rv] {
     opacity: 1;
     translate: none;
+    clip-path: none;
   }
-  .category-grid .cat-card::before,
-  .category-grid .cat-card::after {
-    display: none;
+  .hero-visual,
+  .hero-text,
+  .hero-video,
+  .hero-glow {
+    translate: none;
+    scale: none;
   }
 }
 
