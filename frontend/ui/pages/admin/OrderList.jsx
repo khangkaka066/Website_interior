@@ -19,6 +19,7 @@ const TABS = [
   { key: 'pack', label: 'Chờ lấy hàng / đóng gói', statuses: ['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'] },
   { key: 'shipping', label: 'Đang giao', statuses: ['SHIPPING'] },
   { key: 'done', label: 'Đã giao', statuses: ['DELIVERED'] },
+  { key: 'completed', label: 'Hoàn thành', statuses: ['COMPLETED'] },
   { key: 'closed', label: 'Đơn hủy / hoàn trả', statuses: ['CANCELLED', 'RETURNED'] },
 ]
 const tabOfStatus = (st) => TABS.find((t) => t.statuses.includes(st))?.key || ''

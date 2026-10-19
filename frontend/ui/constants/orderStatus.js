@@ -5,6 +5,7 @@ export const ORDER_STATUS = {
   AWAITING_SHIPMENT: { label: 'Chờ giao hàng', cls: 'status-ready' },
   SHIPPING: { label: 'Đang giao', cls: 'status-shipping' },
   DELIVERED: { label: 'Đã giao', cls: 'status-delivered' },
+  COMPLETED: { label: 'Hoàn thành', cls: 'status-delivered' },
   CANCELLED: { label: 'Đã hủy', cls: 'status-cancelled' },
   RETURNED: { label: 'Đã trả hàng', cls: 'status-returned' },
 }
@@ -25,6 +26,7 @@ export const ORDER_TIMELINE_STEPS = [
   'AWAITING_SHIPMENT',
   'SHIPPING',
   'DELIVERED',
+  'COMPLETED',
 ]
 
 export function orderStatusLabel(status) {
@@ -43,7 +45,8 @@ export const ORDER_TRANSITIONS = {
   PROCESSING: ['AWAITING_SHIPMENT', 'CANCELLED'],
   AWAITING_SHIPMENT: ['SHIPPING', 'CANCELLED'],
   SHIPPING: ['DELIVERED', 'CANCELLED'],
-  DELIVERED: ['RETURNED'],
+  DELIVERED: ['RETURNED', 'COMPLETED'],
+  COMPLETED: [],
   CANCELLED: [],
   RETURNED: [],
 }

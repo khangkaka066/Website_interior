@@ -30,6 +30,7 @@ const TIMELINE_LABELS = {
   AWAITING_SHIPMENT: 'Đã đóng gói / chờ bàn giao vận chuyển',
   SHIPPING: 'Đang giao',
   DELIVERED: 'Đã giao',
+  COMPLETED: 'Hoàn thành',
 }
 
 export default function OrderDetail() {
@@ -38,6 +39,7 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [faultParty, setFaultParty] = useState('SHOP')
   const [modal, setModal] = useState(null) // 'cancel' | 'confirm' | 'refund' | 'create-shipment' | 'goship-shipment' | 'print' | 'cancel-approve' | 'cancel-reject' | 'return-approve' | 'return-reject'
   const [actionError, setActionError] = useState('')
   const [preparing, setPreparing] = useState(false)
@@ -92,8 +94,8 @@ export default function OrderDetail() {
   }
 
   // Duyệt / từ chối yêu cầu hủy hoặc trả hàng của khách.
-  async function respond(path, note) {
-    await api.post(`/orders/${id}/${path}`, { note })
+  async function respond(path, note, extra = {}) {
+    await api.post(`/orders/${id}/${path}`, { note, ...extra })
     setModal(null)
     await load()
   }
@@ -133,7 +135,7 @@ export default function OrderDetail() {
     )
   }
 
-  const canCancel = !['CANCELLED', 'DELIVERED', 'RETURNED'].includes(order.status)
+  const canCancel = !['CANCELLED', 'DELIVERED', 'COMPLETED', 'RETURNED'].includes(order.status)
   const canRefund = order.paymentStatus === 'PAID'
   const hasActiveShipment = !!order.shipment && order.shipment.status !== 'NOT_CREATED'
   const canPrepare = !hasActiveShipment && ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && !order.cancelRequestedAt
@@ -206,6 +208,7 @@ export default function OrderDetail() {
             <div>Gửi lúc {formatDateTime(ret.createdAt)}. Lý do: <strong>{ret.reason}</strong></div>
             {ret.note && <div>Ghi chú của khách: {ret.note}</div>}
             {ret.adminNote && <div>Phản hồi của shop: {ret.adminNote}</div>}
+            {ret.faultParty && <div>Lỗi thuộc về: <strong>{{ SHOP: 'Shop', CARRIER: 'Vận chuyển', CUSTOMER: 'Khách' }[ret.faultParty]}</strong>{ret.faultParty === 'CARRIER' && order.shipment ? ' — mở trang vận đơn để gửi yêu cầu đền bù Goship.' : ''}</div>}
             {ret.status === 'APPROVED' && order.paymentStatus === 'PAID' && <div>Đơn đã thanh toán: bấm <strong>Hoàn tiền</strong> khi đã nhận lại hàng.</div>}
           </div>
           {ret.status === 'REQUESTED' && (
@@ -220,6 +223,13 @@ export default function OrderDetail() {
       {order.status === 'DELIVERED' && (
         <div className="dash-card" style={{ marginBottom: '24px', fontSize: '13px' }}>
           {order.receivedAt ? <>Khách đã xác nhận nhận hàng lúc {formatDateTime(order.receivedAt)}.</> : <>Khách chưa xác nhận đã nhận hàng (hệ thống tự xác nhận theo quy tắc trong Cài đặt).</>}
+        </div>
+      )}
+
+      {order.status === 'COMPLETED' && (
+        <div className="dash-card" style={{ marginBottom: '24px', fontSize: '13px' }}>
+          Đơn đã hoàn thành{order.completedAt ? ` lúc ${formatDateTime(order.completedAt)}` : ''}: hết thời hạn đổi trả, doanh thu được ghi nhận thực tế.
+          {order.shipment?.reconciledAt ? <> Vận đơn đã đối soát với Goship lúc {formatDateTime(order.shipment.reconciledAt)}.</> : order.shipment?.reconcileNote ? <> Đối soát vận chuyển đang lệch: {order.shipment.reconcileNote}.</> : <> Vận đơn chưa đối soát với Goship.</>}
         </div>
       )}
 
@@ -396,7 +406,16 @@ export default function OrderDetail() {
         <ConfirmModal title="Từ chối yêu cầu hủy" message="Khách sẽ thấy lý do này trên trang theo dõi đơn." requireNote confirmLabel="Từ chối" onConfirm={(note) => respond('cancel-request/reject', note)} onClose={() => setModal(null)} />
       )}
       {modal === 'return-approve' && (
-        <ConfirmModal title="Đồng ý trả hàng" message={`Đơn ${order.orderNumber} chuyển sang Đã trả hàng và tồn kho được cộng lại. Hoàn tiền (nếu đã thanh toán) bạn bấm riêng.`} confirmLabel="Đồng ý trả hàng" onConfirm={(note) => respond('return/approve', note)} onClose={() => setModal(null)} />
+        <ConfirmModal title="Đồng ý trả hàng" message={`Đơn ${order.orderNumber} chuyển sang Đã trả hàng và tồn kho được cộng lại. Hoàn tiền (nếu đã thanh toán) bạn bấm riêng.`} confirmLabel="Đồng ý trả hàng" onConfirm={(note) => respond('return/approve', note, { faultParty })} onClose={() => setModal(null)}>
+          <div className="dash-form-field full">
+            <label>Lỗi thuộc về</label>
+            <select value={faultParty} onChange={(e) => setFaultParty(e.target.value)}>
+              <option value="SHOP">Shop (gửi sai, hàng lỗi)</option>
+              <option value="CARRIER">Vận chuyển (mất, hỏng) — sẽ đòi Goship đền bù</option>
+              <option value="CUSTOMER">Khách (đổi ý)</option>
+            </select>
+          </div>
+        </ConfirmModal>
       )}
       {modal === 'return-reject' && (
         <ConfirmModal title="Từ chối trả hàng" message="Khách sẽ thấy lý do này trên trang theo dõi đơn." requireNote confirmLabel="Từ chối" onConfirm={(note) => respond('return/reject', note)} onClose={() => setModal(null)} />

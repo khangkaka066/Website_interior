@@ -178,7 +178,7 @@ export const reviewHiddenSchema = z.object({ hidden: z.boolean('Giá trị khôn
 
 export const orderStatusSchema = z.object({
   status: z.enum(
-    ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT', 'SHIPPING', 'DELIVERED', 'CANCELLED', 'RETURNED'],
+    ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'RETURNED'],
     'Trạng thái không hợp lệ.',
   ),
   note: noteField,
@@ -263,4 +263,26 @@ export const goshipCreateShipmentSchema = z.object({
   pickupMethod,
   rateId: z.string('Chưa chọn đơn vị vận chuyển.').trim().min(1, 'Chưa chọn đơn vị vận chuyển.').max(200, 'Mã lựa chọn không hợp lệ.'),
   confirm: z.literal(true, 'Cần xác nhận đây là vận đơn thật.'),
+})
+
+// File đối soát Goship đã đọc thành các dòng (tên cột linh hoạt, xem lib/shipmentReconcile.js). Tối đa 500 dòng mỗi lần.
+export const reconcileSchema = z.object({
+  rows: z
+    .array(z.record(z.string(), z.union([z.string().max(100), z.number(), z.null()])), 'Dữ liệu đối soát không hợp lệ.')
+    .min(1, 'File đối soát không có dòng nào.')
+    .max(500, 'Mỗi lần chỉ nạp tối đa 500 dòng.'),
+})
+
+// Duyệt trả hàng: lỗi thuộc về ai (mặc định shop) quyết định cách hạch toán chi phí hoàn hàng.
+export const approveReturnSchema = z.object({
+  note: optionalText('ghi chú', 300),
+  faultParty: z.enum(['SHOP', 'CARRIER', 'CUSTOMER'], 'Hãy chọn lỗi thuộc về ai.').optional().default('SHOP'),
+})
+
+// Đền bù từ Goship: gửi yêu cầu (amount = số tiền đòi) rồi ghi kết quả (COMPENSATED kèm số tiền thực nhận, hoặc REJECTED).
+export const claimOpenSchema = z.object({ amount: num('số tiền đòi đền bù', { min: 1 }), note: text('lý do đòi đền bù', 300) })
+export const claimResolveSchema = z.object({
+  status: z.enum(['COMPENSATED', 'REJECTED'], 'Kết quả không hợp lệ.'),
+  amount: num('số tiền được đền bù', { min: 0 }).optional(),
+  note: optionalText('ghi chú', 300),
 })

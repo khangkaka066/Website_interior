@@ -33,7 +33,7 @@ import { orderLimiter, trackLimiter, quoteLimiter } from '../middleware/security
 import { validate } from '../middleware/validate.js'
 import { refundInfoFields, createOrderSchema, payosRelinkSchema, shippingQuoteSchema, cancelMyOrderSchema, receiveMyOrderSchema, returnMyOrderSchema, reviewMyOrderSchema } from '../schemas/orders.js'
 
-import { orderStatusSchema, noteOnlySchema, bulkOrderStatusSchema, optionalNoteSchema, requiredNoteSchema, reviewHiddenSchema, reviewReplySchema, scanPackSchema } from '../schemas/admin.js'
+import { orderStatusSchema, noteOnlySchema, bulkOrderStatusSchema, optionalNoteSchema, requiredNoteSchema, reviewHiddenSchema, reviewReplySchema, scanPackSchema, approveReturnSchema } from '../schemas/admin.js'
 
 const router = Router()
 const guard = requirePermission('orders')
@@ -71,7 +71,7 @@ router.patch('/:id/refund-info', guard, validate(refundInfoFields), asyncHandler
 router.post('/:id/refund', guard, validate(noteOnlySchema), asyncHandler(refundOrder))
 router.post('/:id/cancel-request/approve', guard, validate(optionalNoteSchema), asyncHandler(approveCancelRequest))
 router.post('/:id/cancel-request/reject', guard, validate(requiredNoteSchema), asyncHandler(rejectCancelRequest))
-router.post('/:id/return/approve', guard, validate(optionalNoteSchema), asyncHandler(approveReturnRequest))
+router.post('/:id/return/approve', guard, validate(approveReturnSchema), asyncHandler(approveReturnRequest))
 router.post('/:id/return/reject', guard, validate(requiredNoteSchema), asyncHandler(rejectReturnRequest))
 
 export default router

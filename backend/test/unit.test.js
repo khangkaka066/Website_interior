@@ -17,6 +17,10 @@ import { refundInfoFields, cancelMyOrderSchema as cancelSchemaR } from '../src/s
 import { rowsOf } from '../src/lib/goship.js'
 import { applySurcharge } from '../src/lib/shippingRates.js'
 import { cleanPhone, carrierCodeOf } from '../src/lib/goshipShipments.js'
+import { normalizeRow, judgeRow } from '../src/lib/shipmentReconcile.js'
+import { assertCanOpenClaim, ClaimError } from '../src/lib/shipmentClaims.js'
+import { approveReturnSchema, claimOpenSchema, claimResolveSchema } from '../src/schemas/admin.js'
+import { canTransitionOrder } from '../src/constants/workflow.js'
 import { verifyWebhookSignature } from '../src/lib/payos.js'
 import { displayCode, normCode } from '../src/lib/orderCode.js'
 import { extractOrderNumber, extractOrderNumbers } from '../src/lib/paymentWebhook.js'
@@ -32,7 +36,6 @@ import { ordersSchema } from '../src/schemas/settings.js'
 import { reviewMyOrderSchema, cancelMyOrderSchema } from '../src/schemas/orders.js'
 import { bulkOrderStatusSchema } from '../src/schemas/admin.js'
 import { orderCreatedEmail, orderStatusEmail, passwordResetEmail } from '../src/lib/emailTemplates.js'
-import { canTransitionOrder } from '../src/constants/workflow.js'
 import { publishChat, openStream, customerChannel, ADMIN_CHANNEL, _stats } from '../src/lib/chatEvents.js'
 import { chatTokenFor, isValidChatToken, isLegacyConversation, canAccessConversation } from '../src/lib/chatToken.js'
 import { startConversationSchema } from '../src/schemas/chat.js'
@@ -1700,5 +1703,54 @@ describe('thông tin nhận hoàn tiền', () => {
   test('hủy đơn: refund không bắt buộc ở schema (máy chủ kiểm theo trạng thái thanh toán)', () => {
     assert.equal(cancelSchemaR.safeParse({ orderNumber: 'X', phone: '0900000000', reason: 'Đổi ý' }).success, true)
     assert.equal(cancelSchemaR.safeParse({ orderNumber: 'X', phone: '0900000000', reason: 'Đổi ý', refund: ok }).success, true)
+  })
+})
+
+describe('đối soát vận chuyển với Goship', () => {
+  test('đọc dòng file với tên cột tiếng Việt có dấu / tiếng Anh, số tiền có dấu chấm ngăn cách', () => {
+    assert.deepEqual(normalizeRow({ 'Mã vận đơn': ' GS123ABC ', 'Tiền thu hộ': '1.250.000', 'Cước': 32000, 'Phụ phí': '' }), { code: 'GS123ABC', cod: 1250000, fee: 32000, extraFee: 0 })
+    assert.deepEqual(normalizeRow({ gcode: 'GS1', cod: 0, fee: '25000', extra_fee: '5.000' }), { code: 'GS1', cod: 0, fee: 25000, extraFee: 5000 })
+    assert.equal(normalizeRow({ cod: 5 }), null)
+  })
+  const ship = (o = {}) => ({ status: 'DELIVERED', codAmount: 500000, shippingFee: 30000, ...o })
+  test('khớp: đúng COD, đúng cước, không truy thu', () => {
+    assert.deepEqual(judgeRow(ship(), { cod: 500000, fee: 30000, extraFee: 0 }), { ok: true, final: true, issues: [] })
+    assert.equal(judgeRow(ship({ codAmount: 0 }), { cod: 0, fee: 30000, extraFee: 0 }).ok, true)
+  })
+  test('lệch: sai COD, sai cước, truy thu lệch cân đều thành lý do riêng', () => {
+    const r = judgeRow(ship(), { cod: 400000, fee: 35000, extraFee: 7000 })
+    assert.equal(r.ok, false)
+    assert.equal(r.issues.length, 3)
+    assert.match(r.issues[2], /truy thu/)
+  })
+  test('chưa giao xong thì chưa đối soát; đơn hoàn về không có COD', () => {
+    assert.equal(judgeRow(ship({ status: 'IN_TRANSIT' }), { cod: 0, fee: 30000, extraFee: 0 }).final, false)
+    assert.equal(judgeRow(ship({ status: 'RETURNED' }), { cod: 0, fee: 30000, extraFee: 0 }).ok, true)
+    assert.equal(judgeRow(ship(), { cod: NaN, fee: 30000, extraFee: 0 }).ok, false)
+  })
+  test('workflow: Đã giao -> Hoàn thành; Hoàn thành là bước cuối', () => {
+    assert.ok(canTransitionOrder('DELIVERED', 'COMPLETED'))
+    assert.ok(!canTransitionOrder('COMPLETED', 'RETURNED'))
+    assert.ok(!canTransitionOrder('SHIPPING', 'COMPLETED'))
+  })
+})
+
+describe('đền bù Goship và phân loại lỗi trả hàng', () => {
+  test('chỉ đòi đền bù được khi đã bàn giao hãng, chưa có yêu cầu đang chờ / đã đền bù', () => {
+    assert.doesNotThrow(() => assertCanOpenClaim({ status: 'FAILED', claimStatus: null }))
+    assert.doesNotThrow(() => assertCanOpenClaim({ status: 'RETURNED', claimStatus: 'REJECTED' })) // bị từ chối thì gửi lại được
+    assert.throws(() => assertCanOpenClaim({ status: 'NOT_CREATED' }), ClaimError)
+    assert.throws(() => assertCanOpenClaim({ status: 'FAILED', claimStatus: 'REQUESTED' }), /đang chờ/)
+    assert.throws(() => assertCanOpenClaim({ status: 'DELIVERED', claimStatus: 'COMPENSATED' }), /đã được Goship đền bù/)
+  })
+  test('schema: duyệt trả hàng mặc định lỗi shop; đòi đền bù cần số tiền dương và lý do', () => {
+    assert.equal(approveReturnSchema.parse({}).faultParty, 'SHOP')
+    assert.equal(approveReturnSchema.parse({ faultParty: 'CARRIER' }).faultParty, 'CARRIER')
+    assert.ok(!approveReturnSchema.safeParse({ faultParty: 'ADMIN' }).success)
+    assert.ok(claimOpenSchema.safeParse({ amount: 250000, note: 'Hàng thất lạc' }).success)
+    assert.ok(!claimOpenSchema.safeParse({ amount: 0, note: 'x' }).success)
+    assert.ok(!claimOpenSchema.safeParse({ amount: 1000 }).success)
+    assert.ok(claimResolveSchema.safeParse({ status: 'COMPENSATED', amount: 200000 }).success)
+    assert.ok(!claimResolveSchema.safeParse({ status: 'PENDING' }).success)
   })
 })

@@ -41,6 +41,8 @@ export default function KpiCards({ range = '7d' }) {
   const o = data?.overview
   const kpis = [
     { id: 'revenue', label: 'Doanh thu', value: formatCurrency(o?.revenue || 0), change: o?.revenueChange, Icon: RevenueIcon },
+    { id: 'revenue-actual', label: 'Doanh thu thực tế (đã hoàn thành)', value: formatCurrency(o?.revenueActual || 0), change: null, Icon: RevenueIcon },
+    { id: 'revenue-pending', label: 'Doanh thu tạm tính (chờ hết hạn đổi trả)', value: formatCurrency(o?.revenuePending || 0), change: null, Icon: RevenueIcon },
     { id: 'orders', label: 'Đơn hàng', value: String(o?.orderCount || 0), change: o?.orderChange, Icon: OrdersIcon },
     { id: 'aov', label: 'Giá trị đơn TB (AOV)', value: formatCurrency(o?.aov || 0), change: null, Icon: AovIcon },
     { id: 'customers', label: 'Khách hàng', value: String(data?.customers || 0), change: null, Icon: CustomersIcon },

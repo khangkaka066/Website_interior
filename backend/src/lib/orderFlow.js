@@ -85,6 +85,7 @@ export async function applyTransition(order, { to, note, actor = 'admin' }, db =
     }
     if (to === 'CANCELLED' || to === 'RETURNED') await releaseCoupon(tx, order.id) // trả lại lượt dùng mã giảm giá
     if (to === 'CANCELLED') await tx.order.update({ where: { id: order.id }, data: { cancelRequestedAt: null } })
+    if (to === 'COMPLETED') await tx.order.update({ where: { id: order.id }, data: { completedAt: new Date() } })
     await logActivity(tx, order.id, `status_${to.toLowerCase()}`, actor, note)
     return tx.order.findUniqueOrThrow({ where: { id: order.id }, include: ORDER_INCLUDE })
   })
@@ -197,10 +198,12 @@ export async function createReturnRequest(order, { reason, note }, rules, db = p
   return rr
 }
 
-export async function approveReturn(order, { note, actor = 'admin' }, db = prisma) {
+export async function approveReturn(order, { note, faultParty = 'SHOP', actor = 'admin' }, db = prisma) {
   if (order.returnRequest?.status !== 'REQUESTED') throw new FlowError('Đơn này không có yêu cầu trả hàng đang chờ.')
   const updated = await applyTransition(order, { to: 'RETURNED', note: `Đồng ý trả hàng: ${order.returnRequest.reason}`, actor }, db)
-  await db.returnRequest.update({ where: { orderId: order.id }, data: { status: 'APPROVED', adminNote: note || null, resolvedAt: new Date() } })
+  await db.returnRequest.update({ where: { orderId: order.id }, data: { status: 'APPROVED', adminNote: note || null, faultParty, resolvedAt: new Date() } })
+  const who = { SHOP: 'lỗi shop', CARRIER: 'lỗi vận chuyển', CUSTOMER: 'khách đổi ý' }[faultParty]
+  await logActivity(db, order.id, 'return_fault', actor, `Phân loại trả hàng: ${who}${faultParty === 'CARRIER' ? '. Hãy gửi yêu cầu đền bù lên Goship ở trang vận đơn.' : ''}`)
   return db.order.findUniqueOrThrow({ where: { id: updated.id }, include: ORDER_INCLUDE })
 }
 
@@ -216,7 +219,7 @@ export async function rejectReturn(order, { note, actor = 'admin' }, db = prisma
 const maskName = (name) => String(name || 'Khách').split(/\s+/).filter(Boolean).map((w) => `${w[0]}***`).join(' ')
 
 export async function createReviews(order, entries, db = prisma) {
-  if (order.status !== 'DELIVERED') throw new FlowError('Chỉ đánh giá được khi đã nhận hàng.')
+  if (!['DELIVERED', 'COMPLETED'].includes(order.status)) throw new FlowError('Chỉ đánh giá được khi đã nhận hàng.')
   const byId = new Map(order.items.map((i) => [i.id, i]))
   const seen = new Set()
   const rows = entries.map((e) => {
@@ -423,6 +426,35 @@ export async function autoReceive(db = prisma, now = new Date(), opts = {}) {
   return n
 }
 
+// Hoàn thành đơn (như Shopee Guarantee): hết thời hạn đổi trả kể từ lúc Đã giao mà khách không khiếu nại thì đơn sang Hoàn thành, doanh thu được ghi nhận thực tế.
+// Thời hạn = returnWindowDays; shop tắt đổi trả (0) thì lấy autoReceiveDays. Đơn đang có yêu cầu trả hàng chờ xử lý hoặc đã duyệt thì không hoàn thành.
+export async function autoComplete(db = prisma, now = new Date(), opts = {}) {
+  const rules = opts.rules || (await getSettings()).orders
+  const days = rules.returnWindowDays || rules.autoReceiveDays
+  if (!days) return 0
+  const cutoff = new Date(now.getTime() - days * DAY)
+  const due = await db.order.findMany({
+    where: {
+      status: 'DELIVERED',
+      OR: [{ returnRequest: null }, { returnRequest: { status: 'REJECTED' } }],
+      statusEvents: { some: { status: 'DELIVERED', createdAt: { lt: cutoff } } },
+      ...(opts.where || {}),
+    },
+    include: ORDER_INCLUDE,
+    take: 100,
+  })
+  let n = 0
+  for (const order of due) {
+    try {
+      await applyTransition(order, { to: 'COMPLETED', note: `Hết ${days} ngày đổi trả, khách không khiếu nại`, actor: 'system' }, db)
+      n++
+    } catch (err) {
+      if (!(err instanceof FlowError)) console.warn('[orders] hoàn thành đơn', order.orderNumber, 'lỗi:', err.message)
+    }
+  }
+  return n
+}
+
 let jobTimer = null
 export function startOrderJobs({ intervalMs = Number(process.env.ORDER_JOBS_INTERVAL_MS) || 5 * 60 * 1000 } = {}) {
   if (jobTimer) return
@@ -435,10 +467,11 @@ export function startOrderJobs({ intervalMs = Number(process.env.ORDER_JOBS_INTE
       const cancelled = await autoCancelUnpaid()
       const approved = await autoApproveCancels()
       const received = await autoReceive()
+      const completed = await autoComplete()
       await backfillDeliveryTypes()
       const synced = await reconcileGoshipShipments() // đồng bộ vận đơn với Goship phòng khi webhook không tới
       if (synced) console.log(`[goship] đối soát: ${synced} vận đơn có thay đổi`)
-      if (confirmed || cancelled || approved || received) console.log(`[orders] tự xác nhận ${confirmed} đơn, tự hủy ${cancelled} đơn chưa thanh toán, tự đồng ý ${approved} yêu cầu hủy, tự xác nhận nhận hàng ${received} đơn`)
+      if (confirmed || cancelled || approved || received || completed) console.log(`[orders] tự xác nhận ${confirmed} đơn, tự hủy ${cancelled} đơn chưa thanh toán, tự đồng ý ${approved} yêu cầu hủy, tự xác nhận nhận hàng ${received} đơn, hoàn thành ${completed} đơn`)
     } catch (err) {
       console.warn('[orders] tác vụ nền lỗi:', err.message)
     } finally {

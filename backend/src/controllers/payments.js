@@ -56,7 +56,7 @@ export async function paymentSummary(req, res) {
       _sum: { total: true },
     }),
     prisma.order.groupBy({ by: ['paymentMethod'], where: { paymentStatus: 'PAID' }, _count: { _all: true }, _sum: { total: true } }),
-    prisma.order.count({ where: { paymentMethod: 'COD', status: 'DELIVERED', paymentStatus: 'AWAITING_PAYMENT' } }),
+    prisma.order.count({ where: { paymentMethod: 'COD', status: { in: ['DELIVERED', 'COMPLETED'] }, paymentStatus: 'AWAITING_PAYMENT' } }),
     prisma.order.count({
       where: { paymentMethod: { not: 'COD' }, paymentStatus: 'AWAITING_PAYMENT', status: { notIn: ['CANCELLED', 'RETURNED'] }, createdAt: { lt: dayAgo } },
     }),

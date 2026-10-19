@@ -6,6 +6,7 @@ import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
 import { SHIPPING_STATUS, shippingStatusLabel } from '../../constants/shippingStatus'
 import { formatCurrency, formatDate } from '../../utils/format'
+import ShippingReconcile from '../../components/dashboard/ShippingReconcile'
 
 const PAGE_SIZE = 10
 
@@ -82,6 +83,8 @@ export default function ShippingDashboard() {
 
   return (
     <AdminLayout activeNav="shipping" pageTitle="Vận chuyển">
+      <ShippingReconcile />
+
       {kpi && (
         <section className="kpi-grid" style={{ marginBottom: '20px' }}>
           {kpiItems.map((item) => (

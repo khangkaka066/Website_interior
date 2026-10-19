@@ -5,6 +5,8 @@ import { verifyGoshipSignature } from '../lib/goshipSignature.js'
 import { ShipmentError, ratesForOrder, createShipmentForOrder, processGoshipWebhook } from '../lib/goshipShipments.js'
 import { toPlain } from '../utils/serialize.js'
 import { prisma } from '../lib/prisma.js'
+import { reconcileRows, accountingSummary } from '../lib/shipmentReconcile.js'
+import { openClaim, resolveClaim, ClaimError } from '../lib/shipmentClaims.js'
 import { ORDER_INCLUDE, FlowError, advanceToProcessing } from '../lib/orderFlow.js'
 
 const fail = (res, err) => res.status(err.status || 400).json({ error: err.message, ...(err.code ? { code: err.code } : {}) })
@@ -128,3 +130,25 @@ export async function goshipSync(req, res) {
   const goship = remote ? { statusCode: remote.status_code ?? remote.shipment_status ?? null, statusText: remote.shipment_status_txt ?? remote.status_text ?? null, message: remote.message ?? remote.description ?? null } : null
   res.json({ ...toPlain(fresh), goship })
 }
+
+// Nạp file đối soát của Goship (đã đọc thành các dòng): khớp thì đánh dấu "Đã đối soát vận chuyển", lệch thì ghi lý do.
+export async function reconcileUpload(req, res) {
+  res.set('Cache-Control', 'no-store')
+  res.json(await reconcileRows(req.body.rows, { actor: req.user?.email || 'admin' }))
+}
+
+export async function accountingOverview(req, res) {
+  res.set('Cache-Control', 'no-store')
+  res.json(await accountingSummary())
+}
+
+const claimAction = (run) => async (req, res) => {
+  try {
+    res.json(await run(req.params.id, { ...req.body, actor: req.user?.email || 'admin' }))
+  } catch (err) {
+    if (err instanceof ClaimError) return res.status(err.status).json({ error: err.message })
+    throw err
+  }
+}
+export const claimOpen = claimAction(openClaim)
+export const claimResolve = claimAction(resolveClaim)

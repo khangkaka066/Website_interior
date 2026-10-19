@@ -52,7 +52,7 @@ export async function getOverview(req, res) {
   const orderWhere = { createdAt: { gte: from, lte: to }, status: { not: 'CANCELLED' } }
 
   const [orders, prevOrders] = await Promise.all([
-    prisma.order.findMany({ where: orderWhere, select: { total: true, createdAt: true, campaignId: true, customerId: true, paymentMethod: true } }),
+    prisma.order.findMany({ where: orderWhere, select: { total: true, createdAt: true, campaignId: true, customerId: true, paymentMethod: true, status: true, paymentStatus: true } }),
     prisma.order.findMany({
       where: { createdAt: { gte: prevRange.from, lte: prevRange.to }, status: { not: 'CANCELLED' } },
       select: { total: true },
@@ -62,6 +62,12 @@ export async function getOverview(req, res) {
   const revenue = orders.reduce((sum, o) => sum + Number(o.total), 0)
   const prevRevenue = prevOrders.reduce((sum, o) => sum + Number(o.total), 0)
   const revenueChange = prevRevenue > 0 ? ((revenue - prevRevenue) / prevRevenue) * 100 : null
+
+  // Doanh thu thực tế = đơn đã Hoàn thành (hết thời hạn đổi trả). Tạm tính = đơn còn đang chạy mà tiền đã về (đã thanh toán) hoặc sẽ thu khi giao (COD): chưa chắc giữ được vì còn có thể hủy / trả hàng.
+  const revenueActual = orders.filter((o) => o.status === 'COMPLETED').reduce((sum, o) => sum + Number(o.total), 0)
+  const revenuePending = orders
+    .filter((o) => !['COMPLETED', 'RETURNED'].includes(o.status) && (o.paymentStatus === 'PAID' || o.paymentMethod === 'COD'))
+    .reduce((sum, o) => sum + Number(o.total), 0)
 
   const orderCount = orders.length
   const prevOrderCount = prevOrders.length
@@ -106,6 +112,8 @@ export async function getOverview(req, res) {
     byPayment: [...payCount.values()].sort((a, b) => b.orders - a.orders),
     range: { from, to },
     revenue,
+    revenueActual,
+    revenuePending,
     revenueChange,
     orderCount,
     orderChange,

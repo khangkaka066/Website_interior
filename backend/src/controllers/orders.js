@@ -53,7 +53,7 @@ function priceLine(it) {
 }
 
 
-const ORDER_STATUSES = ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT', 'SHIPPING', 'DELIVERED', 'CANCELLED', 'RETURNED']
+const ORDER_STATUSES = ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'RETURNED']
 
 export async function listOrders(req, res) {
   const {
@@ -502,7 +502,7 @@ export async function setRefundInfo(req, res) {
 // Nhân viên duyệt / từ chối yêu cầu của khách (hủy đơn, trả hàng).
 export const approveCancelRequest = (req, res) => adminAction(req, res, (o) => approveCancel(o, { note: req.body?.note, actor: actorOf(req) }))
 export const rejectCancelRequest = (req, res) => adminAction(req, res, (o) => rejectCancel(o, { note: req.body.note, actor: actorOf(req) }))
-export const approveReturnRequest = (req, res) => adminAction(req, res, (o) => approveReturn(o, { note: req.body?.note, actor: actorOf(req) }))
+export const approveReturnRequest = (req, res) => adminAction(req, res, (o) => approveReturn(o, { note: req.body?.note, faultParty: req.body?.faultParty, actor: actorOf(req) }))
 export const rejectReturnRequest = (req, res) => adminAction(req, res, (o) => rejectReturn(o, { note: req.body.note, actor: actorOf(req) }))
 
 // Hoạt động gần đây (xác nhận, hủy, đóng gói, đánh giá...) của các đơn, mới nhất trước, cho khối "Hoạt động gần đây" ở trang Tổng quan.
@@ -592,7 +592,7 @@ export function publicOrderView(order, { masked = false, canReturn = false, deli
         cancelBlocked: cancelAction(order) === null && ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && Boolean(order.shipment && order.shipment.status !== 'NOT_CREATED') && !order.cancelRequestedAt,
         received: order.status === 'DELIVERED' && !order.receivedAt,
         return: canReturn,
-        review: order.status === 'DELIVERED' && order.items.some((i) => i.productId && !i.review),
+        review: ['DELIVERED', 'COMPLETED'].includes(order.status) && order.items.some((i) => i.productId && !i.review),
       }
   return toPlain({
     actions,

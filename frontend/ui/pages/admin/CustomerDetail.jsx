@@ -24,6 +24,7 @@ const METRICS = [
 const HISTORY_FILTERS = [
   { id: '', label: 'Tất cả' },
   { id: 'DELIVERED', label: 'Đã giao' },
+  { id: 'COMPLETED', label: 'Hoàn thành' },
   { id: 'PROCESSING', label: 'Đang xử lý' },
   { id: 'CANCELLED', label: 'Đã hủy' },
   { id: 'RETURNED', label: 'Đã trả hàng' },

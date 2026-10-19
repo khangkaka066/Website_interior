@@ -225,7 +225,7 @@ export async function getCustomer(req, res) {
         orderId: o.id,
         orderNumber: o.orderNumber,
       })
-      if (o.status === 'DELIVERED') {
+      if (o.status === 'DELIVERED' || o.status === 'COMPLETED') {
         timeline.push({ event: 'Nhận hàng thành công', timestamp: o.updatedAt, orderId: o.id, orderNumber: o.orderNumber })
       }
     })

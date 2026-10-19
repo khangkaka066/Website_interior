@@ -5,7 +5,7 @@ import { useState } from 'react'
 // Shared confirmation dialog for dangerous actions (cancel order, refund,
 // cancel shipment...). When `requireNote` is set, a reason must be typed
 // before the confirm button is enabled.
-export default function ConfirmModal({ title, message, requireNote = false, confirmLabel = 'Xác nhận', onConfirm, onClose }) {
+export default function ConfirmModal({ title, message, requireNote = false, confirmLabel = 'Xác nhận', children = null, onConfirm, onClose }) {
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -33,6 +33,7 @@ export default function ConfirmModal({ title, message, requireNote = false, conf
           <button className="dash-modal-close" onClick={onClose}>✕</button>
         </div>
         <p style={{ fontSize: '13px', color: 'var(--dash-text)' }}>{message}</p>
+        {children}
         {requireNote && (
           <div className="dash-form-field full">
             <label>Lý do</label>

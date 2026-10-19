@@ -11,7 +11,7 @@ import DeliveryBadge from '../components/DeliveryBadge'
 
 const money = (n) => Number(n || 0).toLocaleString('vi-VN') + 'đ'
 // Đơn đã kết thúc (vào mục Lịch sử); còn lại là đơn đang xử lý.
-const FINISHED = ['DELIVERED', 'CANCELLED', 'RETURNED']
+const FINISHED = ['DELIVERED', 'COMPLETED', 'CANCELLED', 'RETURNED']
 const when = (d) => new Date(d).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
 
 // Khách tự tra cứu đơn bằng mã đơn HOẶC số điện thoại đặt hàng (không cần tài khoản). Nhập cả hai thì xem đầy đủ thông tin giao hàng;

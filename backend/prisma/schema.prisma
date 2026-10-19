@@ -139,6 +139,7 @@ enum OrderStatus {
   AWAITING_SHIPMENT // Chờ giao hàng
   SHIPPING // Đang giao
   DELIVERED // Đã giao
+  COMPLETED // Hoàn thành: hết thời hạn đổi trả mà khách không khiếu nại, doanh thu được ghi nhận thực tế
   CANCELLED // Đã hủy
   RETURNED // Đã trả hàng
 }
@@ -164,6 +165,7 @@ model Order {
   cancelRequestReason String?
   cancelRejectedNote  String?
   receivedAt          DateTime?
+  completedAt         DateTime? // lúc đơn chuyển sang Hoàn thành
   // Cách giao: EXPRESS (hỏa tốc) | INTRACITY (nội thành) | INTERPROVINCE (liên tỉnh), chốt lúc đặt hàng; shippingService: dịch vụ vận chuyển khách đã chọn.
   deliveryType        String?
   shippingService     String?
@@ -248,6 +250,20 @@ enum ReturnRequestStatus {
 }
 
 // Yêu cầu trả hàng/hoàn tiền của khách sau khi nhận hàng (mỗi đơn một yêu cầu).
+// Lỗi thuộc về ai khi duyệt trả hàng: quyết định chi phí hoàn hàng hạch toán vào đâu và có đòi hãng vận chuyển đền bù không.
+enum FaultParty {
+  SHOP // lỗi shop (gửi sai, hàng lỗi): chi phí ship hai chiều là chi phí rủi ro
+  CARRIER // lỗi vận chuyển (mất, hỏng): shop hoàn tiền khách rồi đòi Goship đền bù
+  CUSTOMER // khách đổi ý: không phải lỗi của shop hay hãng
+}
+
+// Yêu cầu đền bù gửi Goship cho vận đơn mất / hỏng.
+enum ClaimStatus {
+  REQUESTED // đã gửi, chờ Goship trả lời
+  COMPENSATED // Goship đã đền bù (ghi nhận Thu nhập khác)
+  REJECTED // Goship từ chối
+}
+
 model ReturnRequest {
   id         String              @id @default(cuid())
   orderId    String              @unique
@@ -256,6 +272,7 @@ model ReturnRequest {
   note       String?
   status     ReturnRequestStatus @default(REQUESTED)
   adminNote  String?
+  faultParty FaultParty?
   createdAt  DateTime            @default(now())
   resolvedAt DateTime?
 
@@ -365,6 +382,20 @@ model Shipment {
   shippingFee Decimal @db.Decimal(12, 2)
   codAmount   Decimal @default(0) @db.Decimal(12, 2)
   note        String?
+
+  // Đối soát vận chuyển với Goship (nạp file đối soát): cước thực tế hãng tính, phụ phí truy thu (lệch cân...), tiền COD hãng đã thu, lúc hai bên khớp số liệu.
+  actualFee     Decimal?  @db.Decimal(12, 2)
+  extraFee      Decimal?  @db.Decimal(12, 2)
+  codCollected  Decimal?  @db.Decimal(12, 2)
+  reconciledAt  DateTime?
+  reconcileNote String?
+
+  // Đền bù từ Goship khi hàng mất / hỏng: claimAmount = số tiền đòi, claimCompensation = số tiền Goship thực trả.
+  claimStatus       ClaimStatus?
+  claimAmount       Decimal?     @db.Decimal(12, 2)
+  claimCompensation Decimal?     @db.Decimal(12, 2)
+  claimNote         String?
+  claimAt           DateTime?
 
   trackingEvents TrackingEvent[]
   activityLogs   ActivityLog[]

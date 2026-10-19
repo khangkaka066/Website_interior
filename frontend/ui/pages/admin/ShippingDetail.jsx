@@ -8,6 +8,7 @@ import ConfirmModal from '../../components/dashboard/ConfirmModal'
 import { api } from '../../api'
 import { SHIPPING_STATUS, SHIPPING_TIMELINE_STEPS, SHIPPING_TRANSITIONS, shippingStatusLabel } from '../../constants/shippingStatus'
 import { formatCurrency, formatDateTime } from '../../utils/format'
+import ClaimCard from '../../components/dashboard/ClaimCard'
 import { PICKUP_LABEL } from '../../components/dashboard/orders/PickupMethod'
 
 const TIMELINE_LABELS = {
@@ -161,6 +162,16 @@ export default function ShippingDetail() {
           <div style={{ fontSize: '13px', lineHeight: '1.9' }}>
             <div><strong>Mã đơn:</strong> {shipment.order.orderNumber}</div>
             <div>
+              <strong>Đối soát với Goship:</strong>{' '}
+              {shipment.reconciledAt ? (
+                <>Đã khớp lúc {formatDateTime(shipment.reconciledAt)} (cước thực tế {formatCurrency(shipment.actualFee || 0)}{Number(shipment.codCollected) > 0 ? `, COD ${formatCurrency(shipment.codCollected)}` : ''})</>
+              ) : shipment.reconcileNote ? (
+                <span style={{ color: 'var(--dash-danger, #c0392b)' }}>Lệch: {shipment.reconcileNote}</span>
+              ) : (
+                <span style={{ color: 'var(--dash-muted)' }}>chưa đối soát</span>
+              )}
+            </div>
+            <div>
               <strong>Mã vận đơn của hãng:</strong>{' '}
               {codeDraft === null ? (
                 <>
@@ -200,6 +211,8 @@ export default function ShippingDetail() {
           </div>
         </div>
       </div>
+
+      <ClaimCard shipment={shipment} onChanged={load} />
 
       <div className="dash-card dash-card-wide">
         <h3 className="form-card-title">Lịch sử cập nhật</h3>
