@@ -8,8 +8,15 @@ import { api } from '../api'
 //  'fixed'   không dùng Goship (tắt, địa chỉ chưa khớp, Goship lỗi): dùng phí cố định trong Cài đặt
 // Máy chủ tự tính tiền hàng từ giỏ và kiểm tra lại cước lúc đặt hàng, nên số này chỉ để hiển thị.
 // Hãng được chọn sẵn khi khách chưa tự chọn: Best Inc (BEST Express). Hãng không báo giá cho địa chỉ này thì lấy lựa chọn rẻ nhất (options đã xếp rẻ trước).
-const DEFAULT_CARRIER = /\bbest\b/i
-export const defaultShippingOption = (options) => options.find((o) => DEFAULT_CARRIER.test(o.carrier)) || options[0] || null
+// Nhận hãng theo mã ổn định của Goship (carrierCode = 'best'); báo giá cũ chưa có mã thì mới đoán theo tên. Hãng này có thể có nhiều dòng:
+// ưu tiên dòng của tài khoản Goship (không phải hợp đồng riêng của shop), rồi lấy dòng rẻ nhất.
+const DEFAULT_CARRIER_CODE = 'best'
+const DEFAULT_CARRIER_NAME = /\bbest\b/i
+const isDefaultCarrier = (o) => (o.carrierCode ? o.carrierCode === DEFAULT_CARRIER_CODE : DEFAULT_CARRIER_NAME.test(o.carrier))
+export const defaultShippingOption = (options) =>
+  options
+    .filter(isDefaultCarrier)
+    .sort((a, b) => Number(!!a.ownAccount) - Number(!!b.ownAccount) || a.fee - b.fee)[0] || options[0] || null
 
 export function useShippingQuote({ items, paymentMethod, province, district, ward }) {
   const [state, setState] = useState({ status: 'idle', options: [] })

@@ -29,6 +29,8 @@ function toOption(row, free, expressKeywords) {
   return {
     id: String(row.id),
     carrier: String(row.carrier_name || ''),
+    carrierCode: String(row.carrier_short_name || '').toLowerCase(), // mã hãng ổn định của Goship (best, ghnv3, jnt...), không phụ thuộc cách đặt tên hiển thị
+    ownAccount: row.own_account === 1 || row.own_account === true, // dòng cước theo hợp đồng riêng của shop với hãng (khác dòng của tài khoản Goship)
     logo: row.carrier_logo ? String(row.carrier_logo) : null,
     service: String(row.service || ''),
     express: isExpressService(row.service, expressKeywords), // dịch vụ hỏa tốc (theo từ khóa trong Cài đặt)

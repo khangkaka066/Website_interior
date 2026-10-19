@@ -173,8 +173,7 @@ export async function ratesForOrder(orderId, db = prisma, settingsIn, opts = {})
   if (quote.status === 'incomplete') throw new ShipmentError('Địa chỉ của đơn chưa khớp danh sách tỉnh/quận/phường của Goship. Hãy sửa địa chỉ đơn rồi thử lại.', 422, 'ADDRESS_UNMATCHED')
   if (quote.status !== 'ok') throw new ShipmentError('Không lấy được cước từ Goship, vui lòng thử lại.', 502, 'QUOTE_FAILED')
   // Đánh dấu phương án khách đã chọn lúc đặt hàng (cùng hãng và gói dịch vụ) để mặc định chọn lại đúng hãng đó.
-  const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
-  const options = quote.options.map((o) => ({ ...o, preferred: !!order.shippingCarrier && same(o.carrier, order.shippingCarrier) && same(o.service, order.shippingService) }))
+  const options = markPreferred(quote.options, order)
   const customerChoice = order.shippingCarrier ? { carrier: order.shippingCarrier, service: order.shippingService, fee: Number(order.shippingFee) } : null
   return { options, customerChoice, weightGrams: weightFor(order, settings), cod: codFor(order), subtotal: Number(order.subtotal) }
 }
@@ -183,6 +182,25 @@ export async function ratesForOrder(orderId, db = prisma, settingsIn, opts = {})
 export const cleanPhone = (v) => {
   const d = String(v ?? '').replace(/[^\d+]/g, '')
   return d.startsWith('+84') ? `0${d.slice(3)}` : d.startsWith('84') && d.length >= 11 ? `0${d.slice(2)}` : d.replace(/\D/g, '')
+}
+
+// Đánh dấu phương án khách đã chọn lúc đặt hàng để nhân viên được chọn sẵn đúng hãng. Ưu tiên khớp cả hãng lẫn gói dịch vụ; không còn gói đó thì lấy
+// phương án rẻ nhất CÙNG HÃNG (ưu tiên dòng của tài khoản Goship hơn dòng hợp đồng riêng), để "Chuẩn bị hàng" không rơi sang hãng khác.
+export function markPreferred(options, order) {
+  const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
+  const wanted = order.shippingCarrier
+  if (!wanted) return options.map((o) => ({ ...o, preferred: false }))
+  const exact = options.find((o) => same(o.carrier, wanted) && same(o.service, order.shippingService))
+  const sameCarrier = options.filter((o) => same(o.carrier, wanted)).sort((a, b) => Number(a.ownAccount) - Number(b.ownAccount) || a.fee - b.fee)
+  const chosen = exact || sameCarrier[0] || null
+  return options.map((o) => ({ ...o, preferred: o === chosen }))
+}
+
+// Hãng Goship thực tế gán cho vận đơn có khớp hãng của phương án đã chọn không (so theo mã hãng ổn định). Thiếu một trong hai mã thì không kết luận được -> false.
+export function carrierMismatch(option, created) {
+  const want = String(option?.carrierCode || '').trim().toLowerCase()
+  const got = String(created?.carrier_short_name || '').trim().toLowerCase()
+  return Boolean(want && got && want !== got)
 }
 
 // Mã do HÃNG vận chuyển cấp (khác mã của Goship dạng GS...). Goship có lúc trả chính mã của họ ở trường tracking_number khi hãng chưa cấp mã:
@@ -273,6 +291,9 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
 
     const gcode = str(created.id)
     let status = Number(created.shipment_status)
+    // Goship gán hãng khác với phương án đã chọn: vẫn lưu vận đơn (đã phát sinh thật bên Goship) nhưng ghi cảnh báo rõ để nhân viên kiểm tra / hủy.
+    const mismatch = carrierMismatch(option, created)
+    if (mismatch) console.error(`[goship] ${order.orderNumber}: chọn hãng ${option.carrierCode} nhưng Goship tạo bằng ${created.carrier_short_name}`)
     // Goship xử lý bất đồng bộ: vận đơn mới tạo có shipment_status 900 ("Đơn mới", chưa gửi sang hãng) và CHƯA có tracking_number, đó là bình thường,
     // mã hãng đến sau (webhook, hoặc bấm "Cập nhật từ Goship"). Chỉ coi là lỗi khi Goship không trả mã vận đơn hoặc trả kèm carrier_error có nội dung.
     const carrierErr = typeof created.carrier_error === 'string' ? created.carrier_error.trim() : created.carrier_error && Object.keys(created.carrier_error).length ? created.carrier_error : ''
@@ -313,6 +334,7 @@ export async function createShipmentForOrder({ orderId, rateId, actor = 'admin',
 
     const carrier = await ensureGoshipCarrier(db)
     const noteBits = [created.carrier ? `${created.carrier}${created.carrier_short_name ? ` (${created.carrier_short_name})` : ''}` : 'Goship', carrierCodeOf(created.tracking_number, gcode) ? `mã hãng: ${created.tracking_number}` : null].filter(Boolean)
+    if (mismatch) noteBits.push(`⚠ KHÁC hãng đã chọn (${option.carrier})`)
     const note = `Goship · ${noteBits.join(' · ')}`
     status = Number(created.shipment_status)
     const local = mapGoshipStatus(status).local || 'AWAITING_PICKUP'

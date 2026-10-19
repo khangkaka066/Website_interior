@@ -16,7 +16,7 @@ import { blastEmail, welcomeEmail } from '../src/lib/emailTemplates.js'
 import { refundInfoFields, cancelMyOrderSchema as cancelSchemaR } from '../src/schemas/orders.js'
 import { rowsOf } from '../src/lib/goship.js'
 import { applySurcharge } from '../src/lib/shippingRates.js'
-import { cleanPhone, carrierCodeOf } from '../src/lib/goshipShipments.js'
+import { cleanPhone, carrierCodeOf, markPreferred, carrierMismatch } from '../src/lib/goshipShipments.js'
 import { normalizeRow, judgeRow } from '../src/lib/shipmentReconcile.js'
 import { assertCanOpenClaim, ClaimError } from '../src/lib/shipmentClaims.js'
 import { approveReturnSchema, claimOpenSchema, claimResolveSchema } from '../src/schemas/admin.js'
@@ -1752,5 +1752,32 @@ describe('đền bù Goship và phân loại lỗi trả hàng', () => {
     assert.ok(!claimOpenSchema.safeParse({ amount: 1000 }).success)
     assert.ok(claimResolveSchema.safeParse({ status: 'COMPENSATED', amount: 200000 }).success)
     assert.ok(!claimResolveSchema.safeParse({ status: 'PENDING' }).success)
+  })
+})
+
+describe('chọn đúng hãng Best Express khi chuẩn bị hàng', () => {
+  const opts = [
+    { id: 'own', carrier: 'Best Express', carrierCode: 'best', service: 'Giao hàng tiết kiệm', ownAccount: true, fee: 15000 },
+    { id: 'goship', carrier: 'Best Express', carrierCode: 'best', service: 'Nhanh', ownAccount: false, fee: 18850 },
+    { id: 'spx', carrier: 'SPX Express', carrierCode: 'shopee', service: 'Tiêu chuẩn', ownAccount: false, fee: 12000 },
+  ]
+  const preferredId = (o) => o.find((x) => x.preferred)?.id
+  test('khớp đúng hãng và gói dịch vụ khách đã chọn', () => {
+    assert.equal(preferredId(markPreferred(opts, { shippingCarrier: 'Best Express', shippingService: 'Nhanh' })), 'goship')
+    assert.equal(preferredId(markPreferred(opts, { shippingCarrier: 'best express', shippingService: 'giao hàng tiết kiệm' })), 'own')
+  })
+  test('gói dịch vụ không còn: lấy cùng hãng, ưu tiên dòng của Goship hơn hợp đồng riêng, không sang hãng khác', () => {
+    assert.equal(preferredId(markPreferred(opts, { shippingCarrier: 'Best Express', shippingService: 'Hỏa tốc' })), 'goship')
+    assert.equal(preferredId(markPreferred([opts[0], opts[2]], { shippingCarrier: 'Best Express', shippingService: 'Nhanh' })), 'own')
+  })
+  test('hãng khách chọn không còn / đơn chưa có hãng: không chọn sẵn hãng nào', () => {
+    assert.equal(preferredId(markPreferred(opts, { shippingCarrier: 'Ninja Van', shippingService: 'x' })), undefined)
+    assert.equal(preferredId(markPreferred(opts, { shippingCarrier: null })), undefined)
+  })
+  test('phát hiện Goship tạo vận đơn bằng hãng khác với phương án đã chọn', () => {
+    assert.equal(carrierMismatch({ carrierCode: 'best' }, { carrier_short_name: 'best' }), false)
+    assert.equal(carrierMismatch({ carrierCode: 'best' }, { carrier_short_name: 'BEST' }), false)
+    assert.equal(carrierMismatch({ carrierCode: 'best' }, { carrier_short_name: 'ghnv3' }), true)
+    assert.equal(carrierMismatch({ carrierCode: 'best' }, {}), false) // thiếu mã thì không kết luận
   })
 })
