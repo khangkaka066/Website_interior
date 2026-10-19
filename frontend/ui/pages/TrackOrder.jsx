@@ -230,7 +230,7 @@ export default function TrackOrder() {
               <p className="track-address">
                 Giao tới: <strong>{order.recipientName}</strong>, {[order.addressLine, order.ward, order.district, order.province].filter(Boolean).join(', ')}
               </p>
-              {order.masked && <p className="track-intro">Tên và địa chỉ được ẩn bớt. Nhập cả mã đơn và số điện thoại đặt hàng để xem đầy đủ.</p>}
+              {order.masked && <p className="track-intro">Tên và địa chỉ được ẩn bớt. Nhập cả mã đơn và số điện thoại đặt hàng để xem đầy đủ. Muốn hủy đơn hoặc xác nhận đã nhận hàng, bạn cũng cần nhập thêm số điện thoại đặt hàng ở ô phía trên.</p>}
             </div>
           )}
         </div>
