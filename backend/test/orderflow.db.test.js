@@ -52,29 +52,38 @@ suite('vòng đời đơn hàng với database (rollback)', () => {
           assert.ok(after.activityLogs.some((l) => l.action === 'status_cancelled' && l.actor === 'customer'))
           await rejectsFlow(F.customerCancel(after, 'Lại hủy', tx), /không thể hủy/) // đã hủy rồi
 
-          // --- 2) Đã xác nhận: chỉ gửi yêu cầu, nhân viên duyệt / từ chối ---
-          o = await mk({ status: 'CONFIRMED' })
+          // --- 2) Chưa có vận đơn: hủy ngay kể cả khi đã xác nhận / đang xử lý ---
+          o = await mk({ status: 'PROCESSING' })
+          r = await F.customerCancel(await load(o.id), 'Đổi ý', tx)
+          assert.equal(r.result, 'cancelled')
+
+          // --- 3) Đã có vận đơn chờ lấy hàng: chỉ gửi yêu cầu, nhân viên duyệt / từ chối; hãng đã lấy hàng thì không hủy ---
+          const carrier = await tx.shippingCarrier.upsert({ where: { code: 'ZZOF' }, update: {}, create: { code: 'ZZOF', name: 'ZZ Test', enabled: true, apiStatus: 'connected', serviceTypes: [] } })
+          const ship = (orderId, status = 'AWAITING_PICKUP') => tx.shipment.create({ data: { trackingId: `ZZOF${Date.now()}${Math.random().toString(36).slice(2, 6)}`, orderId, carrierId: carrier.id, status, senderName: 's', recipientName: 'r', recipientPhone: '0900000092', addressLine: 'a', province: 'p', weightGrams: 500, shippingFee: 0 } })
+          o = await mk({ status: 'AWAITING_SHIPMENT' })
+          await ship(o.id)
           r = await F.customerCancel(await load(o.id), 'Đổi ý', tx)
           assert.equal(r.result, 'requested')
           after = await load(o.id)
-          assert.equal(after.status, 'CONFIRMED') // chưa hủy
+          assert.equal(after.status, 'AWAITING_SHIPMENT') // chưa hủy
           assert.ok(after.cancelRequestedAt)
           await rejectsFlow(F.customerCancel(after, 'Lần nữa', tx), /đã gửi yêu cầu hủy/)
           after = await F.rejectCancel(after, { note: 'Hàng đã đóng gói' }, tx)
           assert.equal(after.cancelRequestedAt, null)
           assert.equal(after.cancelRejectedNote, 'Hàng đã đóng gói')
-          assert.equal(after.status, 'CONFIRMED')
-          // gửi lại rồi đồng ý
-          await F.customerCancel(await load(o.id), 'Vẫn muốn hủy', tx)
-          after = await F.approveCancel(await load(o.id), { note: 'OK' }, tx)
-          assert.equal(after.status, 'CANCELLED')
-          assert.equal(after.cancelRequestedAt, null)
-
-          // --- 3) Đã có vận đơn thì không duyệt hủy; đang giao thì không hủy ---
-          const carrier = await tx.shippingCarrier.upsert({ where: { code: 'ZZOF' }, update: {}, create: { code: 'ZZOF', name: 'ZZ Test', enabled: true, apiStatus: 'connected', serviceTypes: [] } })
+          assert.equal(after.status, 'AWAITING_SHIPMENT')
+          // nhân viên duyệt: hủy luôn vận đơn bên hãng; hãng đã lấy hàng thì không duyệt được
           o = await mk({ status: 'AWAITING_SHIPMENT', cancelRequestedAt: new Date(), cancelRequestReason: 'x' })
-          await tx.shipment.create({ data: { trackingId: `ZZOF${Date.now()}`, orderId: o.id, carrierId: carrier.id, status: 'AWAITING_PICKUP', senderName: 's', recipientName: 'r', recipientPhone: '0900000092', addressLine: 'a', province: 'p', weightGrams: 500, shippingFee: 0 } })
-          await rejectsFlow(F.approveCancel(await load(o.id), {}, tx), /hủy vận đơn trước/)
+          const shA = await ship(o.id)
+          after = await F.approveCancel(await load(o.id), {}, tx)
+          assert.equal(after.status, 'CANCELLED')
+          assert.equal((await tx.shipment.findUnique({ where: { id: shA.id } })).status, 'NOT_CREATED')
+          o = await mk({ status: 'AWAITING_SHIPMENT', cancelRequestedAt: new Date(), cancelRequestReason: 'x' })
+          await ship(o.id, 'PICKED_UP')
+          await rejectsFlow(F.approveCancel(await load(o.id), {}, tx), /hãng lấy hàng/)
+          o = await mk({ status: 'AWAITING_SHIPMENT' })
+          await ship(o.id, 'PICKED_UP')
+          await rejectsFlow(F.customerCancel(await load(o.id), 'x', tx), /không thể hủy trực tuyến/)
           o = await mk({ status: 'SHIPPING' })
           await rejectsFlow(F.customerCancel(await load(o.id), 'x', tx), /đang được giao/)
 
@@ -152,11 +161,11 @@ suite('vòng đời đơn hàng với database (rollback)', () => {
           const staleShip = await mk({ ...ask(30), status: 'AWAITING_SHIPMENT' })
           const sh = await tx.shipment.create({ data: { trackingId: `ZZOF${Date.now()}c`, orderId: staleShip.id, carrierId: carrier.id, status: 'AWAITING_PICKUP', senderName: 's', recipientName: 'r', recipientPhone: '0900000092', addressLine: 'a', province: 'p', weightGrams: 500, shippingFee: 0 } })
           assert.equal(await F.autoApproveCancels(tx, new Date(), { rules: { ...rules, cancelAutoApproveHours: 0 }, where: only }), 0) // tắt
-          assert.equal(await F.autoApproveCancels(tx, new Date(), { rules, where: only }), 2)
+          assert.equal(await F.autoApproveCancels(tx, new Date(), { rules, where: only }), 1) // đơn đã có vận đơn không tự duyệt
           assert.equal(await st(stale), 'CANCELLED')
           assert.equal(await st(recent), 'CONFIRMED') // chưa đủ 24 giờ
-          assert.equal(await st(staleShip), 'CANCELLED')
-          assert.equal((await tx.shipment.findUnique({ where: { id: sh.id } })).status, 'NOT_CREATED') // vận đơn được hủy cùng
+          assert.equal(await st(staleShip), 'AWAITING_SHIPMENT') // có vận đơn: chờ nhân viên
+          assert.equal((await tx.shipment.findUnique({ where: { id: sh.id } })).status, 'AWAITING_PICKUP')
           const auto = (await load(stale.id)).activityLogs.find((l) => l.action === 'status_cancelled')
           assert.equal(auto.actor, 'system')
           assert.match(auto.note, /Tự động đồng ý/)

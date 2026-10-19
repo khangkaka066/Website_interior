@@ -100,7 +100,7 @@ const ORDER_RULES = [
   { key: 'handleHours', label: 'Hạn xử lý đơn liên tỉnh (giờ)', hint: 'Tính từ lúc khách đặt; trang Đơn hàng hiện đếm ngược và báo đơn quá hạn. Chỉ nhắc nhở, không tự hủy đơn. 0 = không đếm.' },
   { key: 'intracityHandleHours', label: 'Hạn xử lý đơn nội thành (giờ)', hint: 'Nội thành = nhận hàng cùng tỉnh/thành với kho gửi (Cài đặt, Vận chuyển). 0 = không đếm.' },
   { key: 'expressHandleHours', label: 'Hạn xử lý đơn hỏa tốc (giờ)', hint: 'Đơn khách chọn dịch vụ hỏa tốc. 0 = không đếm.' },
-  { key: 'cancelAutoApproveHours', label: 'Tự đồng ý yêu cầu hủy của khách sau (giờ)', hint: 'Khách xin hủy đơn đã xác nhận mà shop không phản hồi sau chừng này giờ thì hệ thống tự hủy đơn (và hủy vận đơn nếu có). 0 = chỉ nhân viên duyệt tay.' },
+  { key: 'cancelAutoApproveHours', label: 'Tự đồng ý yêu cầu hủy của khách sau (giờ)', hint: 'Khách xin hủy đơn đã xác nhận mà shop không phản hồi sau chừng này giờ thì hệ thống tự hủy đơn. Chỉ áp dụng cho đơn CHƯA có vận đơn; đơn đã có vận đơn luôn do nhân viên duyệt tay. 0 = chỉ nhân viên duyệt tay.' },
   { key: 'autoConfirmDelayMinutes', label: 'Tự xác nhận đơn hợp lệ sau (phút)', hint: 'Đơn đã thanh toán (và COD không quá mức bên dưới) có địa chỉ đủ tỉnh + quận/huyện sẽ tự được xác nhận sau chừng này phút (để khách còn kịp hủy). Cần bật ô "Tự xác nhận" bên dưới.' },
   { key: 'autoConfirmCodMax', label: 'Đơn COD tự xác nhận khi không quá (đồng)', hint: 'Đơn COD vượt mức này vẫn do nhân viên xác nhận. 0 = đơn COD luôn do nhân viên xác nhận (an toàn nhất vì COD dễ bị đặt khống).' },
   { key: 'pickupAlertHours', label: 'Cảnh báo hãng chưa lấy hàng sau (giờ)', hint: 'Tính từ lúc tạo vận đơn; đơn quá hạn hiện huy hiệu "Hãng chưa lấy hàng" và cảnh báo ở trang Vận chuyển. 0 = tắt.' },

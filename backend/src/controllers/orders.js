@@ -162,7 +162,7 @@ async function orderExtras(order) {
     code: displayCode(order),
     deliveryType: type,
     handleDueAt: handleDueAt(order, settings.orders, type),
-    cancelAutoApproveAt: order.cancelRequestedAt && hours ? new Date(new Date(order.cancelRequestedAt).getTime() + hours * 3600000) : null,
+    cancelAutoApproveAt: order.cancelRequestedAt && hours && !(order.shipment && order.shipment.status !== 'NOT_CREATED') ? new Date(new Date(order.cancelRequestedAt).getTime() + hours * 3600000) : null,
   }
 }
 
@@ -572,6 +572,12 @@ export const PUBLIC_ORDER_INCLUDE = {
   shipment: { include: { carrier: true, trackingEvents: { orderBy: { createdAt: 'asc' } } } },
 }
 
+const cancelAction = (order) => {
+  if (!['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status)) return null
+  if (!order.shipment || order.shipment.status === 'NOT_CREATED') return 'now'
+  return order.shipment.status === 'AWAITING_PICKUP' && !order.cancelRequestedAt ? 'request' : null
+}
+
 // Che tên người nhận: chỉ chữ cái đầu mỗi từ ("Nguyễn Văn A" -> "N*** V*** A***").
 const maskName = (name) => String(name || '').split(/\s+/).filter(Boolean).map((w) => `${w[0]}***`).join(' ')
 
@@ -581,9 +587,9 @@ export function publicOrderView(order, { masked = false, canReturn = false, deli
   const actions = masked
     ? {}
     : {
-        // Chưa có vận đơn: khách hủy ngay không cần shop xác nhận. Đã có vận đơn (hãng đã nhận đơn): không hủy được (cancelBlocked để giao diện báo lý do).
-        cancel: ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && !(order.shipment && order.shipment.status !== 'NOT_CREATED') ? 'now' : null,
-        cancelBlocked: ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && Boolean(order.shipment && order.shipment.status !== 'NOT_CREATED'),
+        // Chưa có vận đơn: khách hủy ngay. Có vận đơn còn chờ hãng lấy hàng: chỉ gửi yêu cầu, nhân viên duyệt. Hãng đã lấy hàng: không hủy được (cancelBlocked để giao diện báo lý do).
+        cancel: cancelAction(order),
+        cancelBlocked: cancelAction(order) === null && ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && Boolean(order.shipment && order.shipment.status !== 'NOT_CREATED') && !order.cancelRequestedAt,
         received: order.status === 'DELIVERED' && !order.receivedAt,
         return: canReturn,
         review: order.status === 'DELIVERED' && order.items.some((i) => i.productId && !i.review),
@@ -597,7 +603,7 @@ export function publicOrderView(order, { masked = false, canReturn = false, deli
       reason: order.cancelRequestReason,
       rejectedNote: order.cancelRejectedNote,
       // Quá giờ này mà shop chưa phản hồi thì yêu cầu hủy tự được đồng ý.
-      autoApproveAt: order.cancelRequestedAt && cancelAutoApproveHours ? new Date(new Date(order.cancelRequestedAt).getTime() + cancelAutoApproveHours * 3600000) : null,
+      autoApproveAt: order.cancelRequestedAt && cancelAutoApproveHours && !(order.shipment && order.shipment.status !== 'NOT_CREATED') ? new Date(new Date(order.cancelRequestedAt).getTime() + cancelAutoApproveHours * 3600000) : null,
     },
     returnRequest: order.returnRequest && { status: order.returnRequest.status, reason: order.returnRequest.reason, adminNote: order.returnRequest.adminNote, createdAt: order.returnRequest.createdAt },
     orderNumber: order.orderNumber,

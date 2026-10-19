@@ -96,7 +96,7 @@ export default function OrderActions({ order, owner, onChange }) {
         </p>
       )}
       {a.cancelBlocked && (
-        <p className="oa-note">Đơn đã được chuyển cho đơn vị vận chuyển nên không thể hủy trên website. Vui lòng liên hệ hotline của shop, hoặc từ chối nhận hàng khi nhân viên giao hàng liên hệ.</p>
+        <p className="oa-note">Đơn hàng đã được giao cho đơn vị vận chuyển, không thể hủy trực tuyến. Vui lòng liên hệ hotline của shop để được hỗ trợ, hoặc từ chối nhận hàng khi nhân viên giao hàng liên hệ.</p>
       )}
       {!order.cancelRequest?.pending && order.cancelRequest?.rejectedNote && <p className="oa-note">Shop chưa thể hủy đơn này: {order.cancelRequest.rejectedNote}</p>}
       {order.receivedAt && <p className="oa-note">Bạn đã xác nhận nhận hàng lúc {formatDateTime(order.receivedAt)}.</p>}
@@ -116,7 +116,7 @@ export default function OrderActions({ order, owner, onChange }) {
             <button type="button" className="btn btn-accent" onClick={() => open('review')}>Đánh giá sản phẩm</button>
           )}
           {a.cancel && (
-            <button type="button" className="btn btn-outline" onClick={() => open('cancel')}>Hủy đơn hàng</button>
+            <button type="button" className="btn btn-outline" onClick={() => open('cancel')}>{a.cancel === 'request' ? 'Gửi yêu cầu hủy' : 'Hủy đơn hàng'}</button>
           )}
           {a.return && <button type="button" className="btn btn-outline" onClick={() => open('return')}>Trả hàng / Hoàn tiền</button>}
         </div>
@@ -142,9 +142,9 @@ export default function OrderActions({ order, owner, onChange }) {
             else call('return', { reason: reasonText().slice(0, 300) })
           }}
         >
-          <h4>{panel === 'cancel' ? 'Hủy đơn hàng' : 'Yêu cầu trả hàng / hoàn tiền'}</h4>
+          <h4>{panel === 'cancel' ? (a.cancel === 'request' ? 'Gửi yêu cầu hủy đơn' : 'Hủy đơn hàng') : 'Yêu cầu trả hàng / hoàn tiền'}</h4>
           {panel === 'cancel' && (
-            <p className="oa-hint">Đơn sẽ được hủy ngay, không cần shop xác nhận. Nếu đã thanh toán, shop sẽ liên hệ hoàn tiền.</p>
+            <p className="oa-hint">{a.cancel === 'request' ? 'Đơn đã có mã vận đơn nên cần shop xác nhận: shop sẽ giữ lại gói hàng và hủy vận đơn trước khi đồng ý. Nếu đã thanh toán, shop sẽ liên hệ hoàn tiền.' : 'Đơn sẽ được hủy ngay, không cần shop xác nhận. Nếu đã thanh toán, shop sẽ liên hệ hoàn tiền.'}</p>
           )}
           <label>
             Lý do
@@ -180,7 +180,7 @@ export default function OrderActions({ order, owner, onChange }) {
           )}
           {error && <p className="oa-error">{error}</p>}
           <div className="oa-buttons">
-            <button type="submit" className="btn btn-accent" disabled={busy}>{busy ? 'Đang gửi…' : 'Gửi'}</button>
+            <button type="submit" className="btn btn-accent" disabled={busy}>{busy ? 'Đang gửi…' : panel === 'cancel' && a.cancel === 'request' ? 'Gửi yêu cầu' : 'Gửi'}</button>
             <button type="button" className="btn btn-outline" disabled={busy} onClick={() => setPanel(null)}>Đóng</button>
           </div>
         </form>

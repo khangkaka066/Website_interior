@@ -40,7 +40,7 @@ const inTx = (db, fn) => (db.$transaction ? db.$transaction(fn) : fn(db))
 const logActivity = (db, orderId, action, actor, note) =>
   db.activityLog.create({ data: { entityType: 'order', orderId, action, actor, note } })
 
-export const SHIPPED_NO_CANCEL = 'Đơn đã được chuyển cho đơn vị vận chuyển nên không thể hủy trên website. Vui lòng liên hệ hotline của shop, hoặc từ chối nhận hàng khi nhân viên giao hàng liên hệ.'
+export const SHIPPED_NO_CANCEL = 'Đơn hàng đã được giao cho đơn vị vận chuyển, không thể hủy trực tuyến. Vui lòng liên hệ hotline của shop để được hỗ trợ, hoặc từ chối nhận hàng khi nhân viên giao hàng liên hệ.'
 const hasActiveShipment = (order) => !!order.shipment && order.shipment.status !== 'NOT_CREATED'
 
 // Hạn nhân viên xử lý đơn (đếm ngược trong admin). null nếu đơn không còn việc hoặc quy tắc tắt.
@@ -113,12 +113,29 @@ export async function advanceToProcessing(order, actor = 'admin', db = prisma) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Khách hủy đơn: còn "Chờ xác nhận" thì hủy ngay; shop đã xác nhận nhưng chưa giao cho vận chuyển thì gửi yêu cầu để nhân viên duyệt.
+// Khách hủy đơn: chưa có vận đơn thì hủy ngay; đã có vận đơn nhưng hãng chưa lấy hàng thì gửi yêu cầu để nhân viên duyệt; hãng đã lấy hàng thì không hủy được.
 export async function customerCancel(order, reason, db = prisma, refund = null) {
   // Chưa giao cho hãng (chưa có vận đơn): khách hủy tùy ý, hủy ngay, không cần shop xác nhận. Đã có vận đơn (hãng đã nhận đơn): không hủy được trên website.
   if (['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status)) {
-    if (hasActiveShipment(order)) throw new FlowError(SHIPPED_NO_CANCEL, 409, 'SHIPMENT_CREATED')
     const paid = order.paymentStatus === 'PAID'
+    if (hasActiveShipment(order)) {
+      // Vận đơn đã được hãng lấy / đang đi: không hủy trên website. Còn chờ lấy hàng: chỉ gửi yêu cầu, nhân viên giữ gói hàng thật rồi mới duyệt (duyệt sẽ hủy vận đơn bên Goship).
+      if (order.shipment.status !== 'AWAITING_PICKUP') throw new FlowError(SHIPPED_NO_CANCEL, 409, 'SHIPMENT_CREATED')
+      if (order.cancelRequestedAt) throw new FlowError('Bạn đã gửi yêu cầu hủy đơn này, shop sẽ phản hồi sớm.', 409, 'CANCEL_ALREADY_REQUESTED')
+      if (paid && !refund) throw new FlowError('Đơn đã thanh toán: vui lòng nhập thông tin tài khoản ngân hàng để shop hoàn tiền cho bạn.', 400, 'REFUND_INFO_REQUIRED')
+      await db.order.update({
+        where: { id: order.id },
+        data: {
+          cancelRequestedAt: new Date(),
+          cancelRequestReason: reason,
+          cancelRejectedNote: null,
+          ...(paid ? { refundBankBin: refund.bankBin, refundBankName: refund.bankName, refundAccountNumber: refund.accountNumber, refundAccountName: refund.accountName } : {}),
+        },
+      })
+      await logActivity(db, order.id, 'cancel_requested', 'customer', `Khách yêu cầu hủy đơn (đã có vận đơn, chờ shop giữ hàng và duyệt): ${reason}`)
+      const updated = await db.order.findUniqueOrThrow({ where: { id: order.id }, include: ORDER_INCLUDE })
+      return { result: 'requested', order: updated }
+    }
     if (paid && !refund) throw new FlowError('Đơn đã thanh toán: vui lòng nhập thông tin tài khoản ngân hàng để shop hoàn tiền cho bạn.', 400, 'REFUND_INFO_REQUIRED')
     const updated = await applyTransition(order, { to: 'CANCELLED', note: `Khách hủy đơn: ${reason}`, actor: 'customer' }, db)
     if (paid) {
@@ -135,7 +152,8 @@ export async function customerCancel(order, reason, db = prisma, refund = null) 
 
 export async function approveCancel(order, { note, actor = 'admin' }, db = prisma) {
   if (!order.cancelRequestedAt) throw new FlowError('Đơn này không có yêu cầu hủy nào đang chờ.')
-  if (hasActiveShipment(order)) throw new FlowError('Đơn đã có vận đơn: hãy hủy vận đơn trước rồi mới duyệt yêu cầu hủy.', 409)
+  // Vận đơn còn chờ lấy hàng: applyTransition hủy luôn vận đơn bên Goship khi duyệt. Hãng đã lấy hàng thì không duyệt được.
+  if (hasActiveShipment(order) && order.shipment.status !== 'AWAITING_PICKUP') throw new FlowError('Vận đơn đã được hãng lấy hàng nên không hủy được. Hãy từ chối yêu cầu và hướng dẫn khách liên hệ hãng / từ chối nhận hàng.', 409)
   const reason = order.cancelRequestReason ? ` (lý do của khách: ${order.cancelRequestReason})` : ''
   return applyTransition(order, { to: 'CANCELLED', note: `${note || 'Đồng ý yêu cầu hủy của khách'}${reason}`, actor }, db)
 }
@@ -352,14 +370,14 @@ export async function autoApproveCancels(db = prisma, now = new Date(), opts = {
   if (!rules.cancelAutoApproveHours) return 0
   const cutoff = new Date(now.getTime() - rules.cancelAutoApproveHours * HOUR)
   const due = await db.order.findMany({
-    where: { cancelRequestedAt: { lt: cutoff }, status: { in: ['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'] }, ...(opts.where || {}) },
+    // Đơn đã có vận đơn KHÔNG tự duyệt: nhân viên phải giữ gói hàng thật rồi mới đồng ý, nếu không shipper vẫn có thể lấy đi.
+    where: { cancelRequestedAt: { lt: cutoff }, status: { in: ['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'] }, NOT: { shipment: { is: { status: { not: 'NOT_CREATED' } } } }, ...(opts.where || {}) },
     include: ORDER_INCLUDE,
     take: 50,
   })
   let n = 0
   for (const order of due) {
     try {
-      if (hasActiveShipment(order)) await cancelShipmentById(order.shipment.id, { actor: 'system', note: 'Tự động hủy vận đơn: khách yêu cầu hủy đơn' }, db)
       const fresh = await db.order.findUniqueOrThrow({ where: { id: order.id }, include: ORDER_INCLUDE })
       await approveCancel(fresh, { note: `Tự động đồng ý: shop chưa phản hồi sau ${rules.cancelAutoApproveHours} giờ`, actor: 'system' }, db)
       n++

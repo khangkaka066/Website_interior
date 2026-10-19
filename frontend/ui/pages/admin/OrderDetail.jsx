@@ -185,7 +185,7 @@ export default function OrderDetail() {
       {cancelAsk && (
         <div className="dash-card" style={{ marginBottom: '24px', borderLeft: '4px solid var(--dash-danger, #c0392b)' }}>
           <h3 className="form-card-title">Khách yêu cầu hủy đơn</h3>
-          <p style={{ fontSize: '13px', margin: '0 0 12px' }}>Lý do: <strong>{order.cancelRequestReason || '—'}</strong>. Không phản hồi thì hệ thống tự đồng ý lúc {order.cancelAutoApproveAt ? formatDateTime(order.cancelAutoApproveAt) : '(đã tắt)'}. Đồng ý thì đơn chuyển sang Đã hủy và tồn kho được trả lại{order.paymentStatus === 'PAID' ? ' (đơn đã thanh toán, bạn cần bấm Hoàn tiền sau đó)' : ''}.{order.shipment && order.shipment.status !== 'NOT_CREATED' ? ' Đơn đã có vận đơn: hãy hủy vận đơn trước.' : ''}</p>
+          <p style={{ fontSize: '13px', margin: '0 0 12px' }}>Lý do: <strong>{order.cancelRequestReason || '—'}</strong>. {order.shipment && order.shipment.status !== 'NOT_CREATED' ? 'Đơn đã có vận đơn nên không tự đồng ý, cần nhân viên duyệt.' : <>Không phản hồi thì hệ thống tự đồng ý lúc {order.cancelAutoApproveAt ? formatDateTime(order.cancelAutoApproveAt) : '(đã tắt)'}.</>} Đồng ý thì đơn chuyển sang Đã hủy và tồn kho được trả lại{order.paymentStatus === 'PAID' ? ' (đơn đã thanh toán, bạn cần bấm Hoàn tiền sau đó)' : ''}.{order.shipment && order.shipment.status !== 'NOT_CREATED' ? ' Đơn đã có vận đơn: hãy giữ lại gói hàng và gỡ nhãn trước, rồi bấm Đồng ý (hệ thống sẽ hủy vận đơn bên Goship).' : ''}</p>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="dash-btn" onClick={() => setModal('cancel-approve')}>Đồng ý hủy</button>
             <button className="dash-btn dash-btn-ghost" onClick={() => setModal('cancel-reject')}>Từ chối</button>

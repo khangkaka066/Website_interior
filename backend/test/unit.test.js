@@ -1238,13 +1238,19 @@ describe('vòng đời đơn kiểu Shopee', () => {
   })
 
   const base = { orderNumber: 'X', status: 'PENDING_CONFIRMATION', items: [{ id: 'i1', productId: 'p1', review: null }], statusEvents: [], recipientName: 'A B', cancelRequestedAt: null, receivedAt: null, returnRequest: null }
-  test('chưa có vận đơn: khách hủy ngay mọi lúc; đã có vận đơn: không hủy được; đang giao: không hủy', () => {
+  test('chưa có vận đơn: hủy ngay; có vận đơn chờ lấy: gửi yêu cầu; hãng đã lấy / đang giao: không hủy', () => {
     assert.equal(publicOrderView(base).actions.cancel, 'now')
     assert.equal(publicOrderView({ ...base, status: 'CONFIRMED' }).actions.cancel, 'now')
     assert.equal(publicOrderView({ ...base, status: 'PROCESSING', cancelRequestedAt: new Date() }).actions.cancel, 'now')
     const withShipment = { ...base, status: 'AWAITING_SHIPMENT', shipment: { status: 'AWAITING_PICKUP', trackingEvents: [] } }
-    assert.equal(publicOrderView(withShipment).actions.cancel, null)
-    assert.equal(publicOrderView(withShipment).actions.cancelBlocked, true)
+    assert.equal(publicOrderView(withShipment).actions.cancel, 'request')
+    assert.equal(publicOrderView(withShipment).actions.cancelBlocked, false)
+    // đã gửi yêu cầu rồi: không gửi lại, chờ shop phản hồi
+    const asked = publicOrderView({ ...withShipment, cancelRequestedAt: new Date() }).actions
+    assert.deepEqual([asked.cancel, asked.cancelBlocked], [null, false])
+    // hãng đã lấy hàng: chặn hẳn
+    const picked = publicOrderView({ ...withShipment, shipment: { status: 'PICKED_UP', trackingEvents: [] } }).actions
+    assert.deepEqual([picked.cancel, picked.cancelBlocked], [null, true])
     // vận đơn đã hủy bên Goship (NOT_CREATED) thì coi như chưa có vận đơn
     assert.equal(publicOrderView({ ...withShipment, shipment: { status: 'NOT_CREATED', trackingEvents: [] } }).actions.cancel, 'now')
     assert.equal(publicOrderView({ ...base, status: 'SHIPPING' }).actions.cancel, null)
