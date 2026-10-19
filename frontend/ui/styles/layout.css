@@ -2230,6 +2230,11 @@ a.product-card {
 .track-totals dt, .track-totals dd { margin: 0; }
 .track-total { font-weight: 700; font-size: 16px !important; border-top: 1px solid var(--surface-gray); margin-top: 6px; padding-top: 8px !important; }
 .track-address { margin-top: 18px; font-size: 14px; }
+.track-unlock { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border, #e5e7eb); }
+.track-unlock p { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
+.track-unlock-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.track-unlock-row input { flex: 1 1 200px; min-width: 0; padding: 9px 14px; border: 1px solid var(--border, #e5e7eb); border-radius: var(--radius-pill); font-size: 14px; background: var(--bg-white); }
+.track-unlock-row .btn { padding: 9px 18px; font-size: 14px; }
 @media (max-width: 640px) {
   .track-form { grid-template-columns: 1fr; }
   .track-items li { grid-template-columns: 40px 1fr; }

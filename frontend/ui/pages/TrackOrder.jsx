@@ -232,16 +232,18 @@ export default function TrackOrder() {
               </p>
               {order.masked && (
                 <form
-                  className="track-form"
+                  className="track-unlock"
                   onSubmit={(e) => {
                     e.preventDefault()
                     if (!phone.trim()) return setError('Vui lòng nhập số điện thoại đặt hàng.')
                     lookup({ orderNumber: order.orderNumber, phone: phone.trim() })
                   }}
                 >
-                  <p className="track-intro">Tên và địa chỉ được ẩn bớt. Nhập số điện thoại đặt hàng để xem đầy đủ và hủy đơn / xác nhận đã nhận hàng.</p>
+                  <p>Tên và địa chỉ được ẩn bớt. Nhập số điện thoại đặt hàng để xem đầy đủ và hủy đơn / xác nhận đã nhận hàng.</p>
+                  <div className="track-unlock-row">
                   <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Số điện thoại đặt hàng" inputMode="tel" maxLength={20} aria-label="Số điện thoại đặt hàng" />
-                  <button className="btn btn-accent" disabled={loading}>{loading ? 'Đang kiểm tra…' : 'Xác nhận và xem đầy đủ'}</button>
+                  <button className="btn btn-accent" disabled={loading}>{loading ? 'Đang kiểm tra…' : 'Xác nhận'}</button>
+                  </div>
                 </form>
               )}
             </div>
