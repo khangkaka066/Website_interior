@@ -5,6 +5,7 @@ import { shopInfo } from '../data/shop'
 import FilterBar from './FilterBar'
 import Words from './Words'
 import CountUp from './CountUp'
+import SunDust from './SunDust'
 
 // Hero căn giữa: dòng tin cậy (số liệu thật của shop), tiêu đề, hai nút, điểm đánh giá, rồi thanh lọc nhanh dẫn sang trang Sản phẩm.
 const rating = shopInfo.stats.find((s) => s.label === 'Đánh giá')
@@ -13,6 +14,7 @@ const years = shopInfo.stats.find((s) => s.label === 'Hoạt động')
 export default function Hero() {
   return (
     <section className="hero" id="home">
+      <SunDust />
       <div className="container hero-center">
         <span className="hero-trust">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

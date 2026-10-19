@@ -213,6 +213,26 @@
   }
 }
 
+/* ---------- Hạt bụi nắng (SunDust) ---------- */
+.sun-dust {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent); /* mép dưới mờ dần, không bị cắt thẳng */
+  /* vệt nắng mờ từ góc trên phải, tạo cảm giác ánh sáng ấm chiếu qua cửa sổ */
+  background:
+    radial-gradient(ellipse 70% 60% at 88% -8%, rgba(255, 214, 140, 0.32), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 8% 105%, rgba(246, 172, 72, 0.12), transparent 70%);
+}
+.sun-dust canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* ---------- Hero căn giữa ---------- */
 .hero {
   position: relative;
@@ -221,6 +241,8 @@
   overflow: visible;
 }
 .hero-center {
+  position: relative;
+  z-index: 1; /* nội dung nằm trên lớp hạt bụi nắng */
   display: flex;
   flex-direction: column;
   align-items: center;
