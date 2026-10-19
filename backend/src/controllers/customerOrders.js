@@ -5,7 +5,7 @@ import { PUBLIC_ORDER_INCLUDE, customerView, normPhone } from './orders.js'
 
 // Việc khách tự làm với đơn của mình: hủy / yêu cầu hủy, đã nhận hàng, trả hàng, đánh giá.
 // Hai cách chứng minh là chủ đơn: đã đăng nhập (đơn thuộc hồ sơ của mình) hoặc không đăng nhập thì cần đúng cả mã đơn lẫn số điện thoại
-// (giống trang Tra cứu). Sai một trong hai đều trả cùng một thông báo để không dò được mã đơn.
+// (giống trang Tra cứu). Đăng nhập nhưng đơn không thuộc hồ sơ của mình thì cũng đi đường số điện thoại. Sai một trong hai đều trả cùng một thông báo để không dò được mã đơn.
 const NOT_FOUND = { error: 'Không tìm thấy đơn hàng với thông tin này.' }
 
 async function resolveOrder(req) {
@@ -13,7 +13,8 @@ async function resolveOrder(req) {
   if (!code) return null
   const order = await findOrderByCode(code, { include: ORDER_INCLUDE })
   if (!order) return null
-  if (req.user) return req.user.customerId && order.customerId === req.user.customerId ? order : null
+  if (req.user?.customerId && order.customerId === req.user.customerId) return order
+  // Đang đăng nhập bằng tài khoản khác (hoặc đơn đặt khi chưa đăng nhập): vẫn xác thực được bằng số điện thoại như khách vãng lai.
   const phone = normPhone(req.body?.phone)
   if (phone.length < 8) return null
   return [order.recipientPhone, order.customer?.phone].some((p) => normPhone(p) === phone) ? order : null
