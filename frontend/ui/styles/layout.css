@@ -2277,6 +2277,7 @@ a.product-card {
 .mega-foot-label { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; color: var(--text-muted); }
 .mega-foot a { color: var(--text-dark); font-weight: 500; }
 .mega-foot a:hover { color: var(--accent); }
+.mega-menu-sheet { position: fixed; left: 12px; right: 12px; top: 0; bottom: auto; z-index: 200; max-height: calc(100dvh - 160px); overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--border-soft, #e5e7eb); border-radius: var(--radius-lg, 18px); }
 .mega-all { margin-left: auto; color: var(--accent) !important; font-weight: 700 !important; }
 @media (max-width: 1024px) {
   .mega-grid { grid-template-columns: repeat(2, 1fr); }
