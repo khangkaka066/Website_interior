@@ -10,7 +10,7 @@ import TransferQr from '../components/TransferQr'
 import { fillTransferNote } from '../utils/vietqr'
 import AddressFields from '../components/AddressFields'
 import DeliveryBadge from '../components/DeliveryBadge'
-import { useShippingQuote } from '../utils/useShippingQuote'
+import { useShippingQuote, defaultShippingOption } from '../utils/useShippingQuote'
 
 // Ô nhập có nhãn của form thanh toán (đặt ngoài component để không bị dựng lại mỗi lần gõ).
 function CheckoutField({ label, children }) {
@@ -116,7 +116,7 @@ export default function Checkout() {
   const { fee, freeShippingOver } = (options || FALLBACK_OPTIONS).shipping
   const fixedFee = freeShippingOver > 0 && totalPrice >= freeShippingOver ? 0 : fee
   const quote = useShippingQuote({ items, paymentMethod: form.paymentMethod, province: form.province, district: form.district, ward: form.ward })
-  const picked = quote.status === 'ok' ? quote.options.find((o) => o.id === rateId) || quote.options[0] : null // chưa chọn thì lấy lựa chọn rẻ nhất
+  const picked = quote.status === 'ok' ? quote.options.find((o) => o.id === rateId) || defaultShippingOption(quote.options) : null // chưa chọn thì mặc định Best Inc, không có thì lấy lựa chọn rẻ nhất
   const shippingFee = picked ? picked.fee : fixedFee
   const couponDiscount = coupon ? Math.min(coupon.discount, totalPrice) : 0
   const total = totalPrice - couponDiscount + shippingFee
