@@ -227,6 +227,12 @@
     radial-gradient(ellipse 70% 60% at 88% -8%, rgba(255, 214, 140, 0.32), transparent 70%),
     radial-gradient(ellipse 45% 40% at 8% 105%, rgba(246, 172, 72, 0.12), transparent 70%);
 }
+/* Máy tính: header là viên thuốc nổi trên nền trong suốt nên lớp hạt bụi nắng kéo lên phủ cả vùng nền quanh viên thuốc (header nằm trên lớp này nhờ z-index cao hơn). */
+@media (min-width: 1100px) {
+  .sun-dust {
+    top: -110px;
+  }
+}
 .sun-dust canvas {
   display: block;
   width: 100%;
