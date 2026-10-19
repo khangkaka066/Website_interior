@@ -230,7 +230,20 @@ export default function TrackOrder() {
               <p className="track-address">
                 Giao tới: <strong>{order.recipientName}</strong>, {[order.addressLine, order.ward, order.district, order.province].filter(Boolean).join(', ')}
               </p>
-              {order.masked && <p className="track-intro">Tên và địa chỉ được ẩn bớt. Nhập cả mã đơn và số điện thoại đặt hàng để xem đầy đủ. Muốn hủy đơn hoặc xác nhận đã nhận hàng, bạn cũng cần nhập thêm số điện thoại đặt hàng ở ô phía trên.</p>}
+              {order.masked && (
+                <form
+                  className="track-form"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    if (!phone.trim()) return setError('Vui lòng nhập số điện thoại đặt hàng.')
+                    lookup({ orderNumber: order.orderNumber, phone: phone.trim() })
+                  }}
+                >
+                  <p className="track-intro">Tên và địa chỉ được ẩn bớt. Nhập số điện thoại đặt hàng để xem đầy đủ và hủy đơn / xác nhận đã nhận hàng.</p>
+                  <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Số điện thoại đặt hàng" inputMode="tel" maxLength={20} aria-label="Số điện thoại đặt hàng" />
+                  <button className="btn btn-accent" disabled={loading}>{loading ? 'Đang kiểm tra…' : 'Xác nhận và xem đầy đủ'}</button>
+                </form>
+              )}
             </div>
           )}
         </div>
