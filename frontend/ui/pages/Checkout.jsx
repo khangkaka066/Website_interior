@@ -9,7 +9,6 @@ import { pixelTrack } from '../pixels'
 import TransferQr from '../components/TransferQr'
 import { fillTransferNote } from '../utils/vietqr'
 import AddressFields from '../components/AddressFields'
-import DeliveryBadge from '../components/DeliveryBadge'
 import { useShippingQuote, defaultShippingOption } from '../utils/useShippingQuote'
 
 // Ô nhập có nhãn của form thanh toán (đặt ngoài component để không bị dựng lại mỗi lần gõ).
@@ -57,7 +56,6 @@ export default function Checkout() {
   const [coupon, setCoupon] = useState(null) // { code, description, discount } sau khi áp mã thành công
   const [couponError, setCouponError] = useState('')
   const [couponBusy, setCouponBusy] = useState(false)
-  const [rateId, setRateId] = useState(null) // lựa chọn vận chuyển khách đã chọn (khi có báo giá Goship)
 
   useEffect(() => {
     api
@@ -116,7 +114,7 @@ export default function Checkout() {
   const { fee, freeShippingOver } = (options || FALLBACK_OPTIONS).shipping
   const fixedFee = freeShippingOver > 0 && totalPrice >= freeShippingOver ? 0 : fee
   const quote = useShippingQuote({ items, paymentMethod: form.paymentMethod, province: form.province, district: form.district, ward: form.ward })
-  const picked = quote.status === 'ok' ? quote.options.find((o) => o.id === rateId) || defaultShippingOption(quote.options) : null // chưa chọn thì mặc định Best Inc, không có thì lấy lựa chọn rẻ nhất
+  const picked = quote.status === 'ok' ? defaultShippingOption(quote.options) : null // khách không chọn hãng: luôn dùng Best Inc, hãng này không báo giá cho địa chỉ thì lấy lựa chọn rẻ nhất
   const shippingFee = picked ? picked.fee : fixedFee
   const couponDiscount = coupon ? Math.min(coupon.discount, totalPrice) : 0
   const total = totalPrice - couponDiscount + shippingFee
@@ -215,30 +213,6 @@ export default function Checkout() {
                 </div>
                 <AddressFields value={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} Field={CheckoutField} />
               </div>
-
-              {(quote.status === 'loading' || quote.status === 'ok') && (
-                <>
-                  <h3 className="checkout-section-title" style={{ marginTop: '24px' }}>Đơn vị vận chuyển</h3>
-                  {quote.status === 'loading' ? (
-                    <p className="checkout-ship-note">Đang tính cước vận chuyển…</p>
-                  ) : (
-                    <div className="checkout-payment-options">
-                      {quote.options.map((o) => (
-                        <label key={o.id} className={`checkout-payment-option checkout-ship-option ${picked?.id === o.id ? 'active' : ''}`}>
-                          <input type="radio" name="shipping" checked={picked?.id === o.id} onChange={() => setRateId(o.id)} />
-                          <span className="checkout-ship-name">
-                            {o.carrier}
-                            {o.service ? ` – ${o.service}` : ''}
-                            {o.express && <DeliveryBadge type="EXPRESS" />}
-                            {o.expected && <small>{o.expected}</small>}
-                          </span>
-                          <strong>{o.fee === 0 ? 'Miễn phí' : formatPrice(o.fee)}</strong>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
 
               <h3 className="checkout-section-title" style={{ marginTop: '24px' }}>Phương thức thanh toán</h3>
               <div className="checkout-payment-options">
