@@ -13,13 +13,14 @@ describe('hãng vận chuyển mặc định', () => {
     expect(defaultShippingOption([opt('a', 'GHTK', 20000), opt('c', 'Viettel Post', 30000)]).id).toBe('a')
     expect(defaultShippingOption([])).toBeNull()
   })
-  it('theo mã hãng "best", ưu tiên dòng Goship hơn dòng hợp đồng riêng dù dòng riêng rẻ hơn', () => {
+  it('theo mã hãng "best", ưu tiên dòng tài khoản riêng hơn dòng Goship dù dòng riêng đắt hơn', () => {
     const options = [
-      { id: 'own', carrier: 'Best Express', carrierCode: 'best', service: 'Giao hàng tiết kiệm', ownAccount: true, fee: 15000 },
+      { id: 'own', carrier: 'Best Express', carrierCode: 'best', service: 'Giao hàng tiết kiệm', ownAccount: true, fee: 21000 },
       { id: 'goship', carrier: 'Best Express', carrierCode: 'best', service: 'Nhanh', ownAccount: false, fee: 18850 },
       { id: 'spx', carrier: 'SPX Express', carrierCode: 'shopee', fee: 12000 },
     ]
-    expect(defaultShippingOption(options).id).toBe('goship')
+    expect(defaultShippingOption(options).id).toBe('own')
+    expect(defaultShippingOption(options.slice(1)).id).toBe('goship') // không có dòng riêng thì dùng dòng Goship
   })
   it('có mã hãng thì không đoán theo tên (hãng khác mã nhưng tên chứa "Best" bị bỏ qua)', () => {
     expect(defaultShippingOption([{ id: 'a', carrier: 'Best Way', carrierCode: 'bestway', fee: 1 }, { id: 'b', carrier: 'GHTK', carrierCode: 'ghtk', fee: 2 }]).id).toBe('a') // không có best -> rẻ nhất

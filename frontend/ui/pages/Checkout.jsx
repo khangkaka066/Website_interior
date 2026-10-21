@@ -114,7 +114,7 @@ export default function Checkout() {
   const { fee, freeShippingOver } = (options || FALLBACK_OPTIONS).shipping
   const fixedFee = freeShippingOver > 0 && totalPrice >= freeShippingOver ? 0 : fee
   const quote = useShippingQuote({ items, paymentMethod: form.paymentMethod, province: form.province, district: form.district, ward: form.ward })
-  const picked = quote.status === 'ok' ? defaultShippingOption(quote.options) : null // khách không chọn hãng: luôn dùng Best Inc, hãng này không báo giá cho địa chỉ thì lấy lựa chọn rẻ nhất
+  const picked = quote.status === 'ok' ? defaultShippingOption(quote.options) : null // khách không chọn hãng: luôn dùng Best Inc (tài khoản riêng của shop nếu có), hãng này không báo giá cho địa chỉ thì lấy lựa chọn rẻ nhất
   const shippingFee = picked ? picked.fee : fixedFee
   const couponDiscount = coupon ? Math.min(coupon.discount, totalPrice) : 0
   const total = totalPrice - couponDiscount + shippingFee

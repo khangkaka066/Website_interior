@@ -186,13 +186,13 @@ export const cleanPhone = (v) => {
 }
 
 // Đánh dấu phương án khách đã chọn lúc đặt hàng để nhân viên được chọn sẵn đúng hãng. Ưu tiên khớp cả hãng lẫn gói dịch vụ; không còn gói đó thì lấy
-// phương án rẻ nhất CÙNG HÃNG (ưu tiên dòng của tài khoản Goship hơn dòng hợp đồng riêng), để "Chuẩn bị hàng" không rơi sang hãng khác.
+// phương án rẻ nhất CÙNG HÃNG (ưu tiên dòng tài khoản riêng của shop hơn dòng của tài khoản Goship), để "Chuẩn bị hàng" không rơi sang hãng khác.
 export function markPreferred(options, order) {
   const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
   const wanted = order.shippingCarrier
   if (!wanted) return options.map((o) => ({ ...o, preferred: false }))
   const exact = options.find((o) => same(o.carrier, wanted) && same(o.service, order.shippingService))
-  const sameCarrier = options.filter((o) => same(o.carrier, wanted)).sort((a, b) => Number(a.ownAccount) - Number(b.ownAccount) || a.fee - b.fee)
+  const sameCarrier = options.filter((o) => same(o.carrier, wanted)).sort((a, b) => Number(!!b.ownAccount) - Number(!!a.ownAccount) || a.fee - b.fee)
   const chosen = exact || sameCarrier[0] || null
   return options.map((o) => ({ ...o, preferred: o === chosen }))
 }

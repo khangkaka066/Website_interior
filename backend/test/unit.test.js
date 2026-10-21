@@ -1769,9 +1769,9 @@ describe('chọn đúng hãng Best Express khi chuẩn bị hàng', () => {
     assert.equal(preferredId(markPreferred(opts, { shippingCarrier: 'Best Express', shippingService: 'Nhanh' })), 'goship')
     assert.equal(preferredId(markPreferred(opts, { shippingCarrier: 'best express', shippingService: 'giao hàng tiết kiệm' })), 'own')
   })
-  test('gói dịch vụ không còn: lấy cùng hãng, ưu tiên dòng của Goship hơn hợp đồng riêng, không sang hãng khác', () => {
-    assert.equal(preferredId(markPreferred(opts, { shippingCarrier: 'Best Express', shippingService: 'Hỏa tốc' })), 'goship')
-    assert.equal(preferredId(markPreferred([opts[0], opts[2]], { shippingCarrier: 'Best Express', shippingService: 'Nhanh' })), 'own')
+  test('gói dịch vụ không còn: lấy cùng hãng, ưu tiên dòng tài khoản riêng hơn dòng của Goship, không sang hãng khác', () => {
+    assert.equal(preferredId(markPreferred(opts, { shippingCarrier: 'Best Express', shippingService: 'Hỏa tốc' })), 'own')
+    assert.equal(preferredId(markPreferred([opts[1], opts[2]], { shippingCarrier: 'Best Express', shippingService: 'Hỏa tốc' })), 'goship')
   })
   test('hãng khách chọn không còn / đơn chưa có hãng: không chọn sẵn hãng nào', () => {
     assert.equal(preferredId(markPreferred(opts, { shippingCarrier: 'Ninja Van', shippingService: 'x' })), undefined)
