@@ -22,8 +22,8 @@ export default function AddressFields({ value, onChange, Field, inputClassName }
     return (
       <>
         <Field label="Tỉnh/Thành phố *">{text('province', 'address-level1')}</Field>
-        <Field label="Quận/Huyện">{text('district', 'address-level2')}</Field>
-        <Field label="Phường/Xã">{text('ward', 'address-level3')}</Field>
+        <Field label="Quận/Huyện *">{text('district', 'address-level2')}</Field>
+        <Field label="Phường/Xã *">{text('ward', 'address-level3')}</Field>
       </>
     )
   }
@@ -40,7 +40,7 @@ export default function AddressFields({ value, onChange, Field, inputClassName }
           onSelect={(c) => (city?.id === c.id ? onChange({ province: c.name }) : onChange({ province: c.name, district: '', ward: '' }))}
         />
       </Field>
-      <Field label="Quận/Huyện">
+      <Field label="Quận/Huyện *">
         {districts.status === 'error' || (districts.status === 'ready' && districts.items.length === 0) ? (
           text('district', 'address-level2')
         ) : (
@@ -55,7 +55,7 @@ export default function AddressFields({ value, onChange, Field, inputClassName }
           />
         )}
       </Field>
-      <Field label="Phường/Xã">
+      <Field label="Phường/Xã *">
         {wards.status === 'error' || (wards.status === 'ready' && wards.items.length === 0) ? (
           text('ward', 'address-level3')
         ) : (

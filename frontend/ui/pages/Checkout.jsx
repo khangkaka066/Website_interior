@@ -126,8 +126,17 @@ export default function Checkout() {
   const selectedMethod = methods.find((m) => m.id === form.paymentMethod)
 
   async function handleSubmit() {
-    if (!form.name || !form.phone || !form.addressLine || !form.province) {
-      setError('Vui lòng điền đầy đủ thông tin bắt buộc (*).')
+    const required = [
+      ['name', 'họ tên'],
+      ['phone', 'số điện thoại'],
+      ['addressLine', 'địa chỉ'],
+      ['province', 'tỉnh/thành phố'],
+      ['district', 'quận/huyện'],
+      ['ward', 'phường/xã'],
+    ]
+    const missing = required.filter(([key]) => !form[key].trim()).map(([, label]) => label)
+    if (missing.length > 0) {
+      setError(`Vui lòng điền đầy đủ thông tin bắt buộc (*): ${missing.join(', ')}.`)
       return
     }
     setSubmitting(true)
