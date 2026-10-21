@@ -1,5 +1,6 @@
 import { prisma } from './prisma.js'
 import { toPlain } from '../utils/serialize.js'
+import { INACTIVE_SHIPMENT } from '../constants/workflow.js'
 
 // Đền bù từ Goship khi hàng mất / hỏng. Vòng đời: (chưa có) -> REQUESTED -> COMPENSATED | REJECTED. Gửi lại được sau khi bị từ chối.
 // COMPENSATED là khoản "Thu nhập khác" trong tổng hợp kế toán (lib/shipmentReconcile.js).
@@ -15,7 +16,7 @@ const vnd = (n) => `${Number(n).toLocaleString('vi-VN')}đ`
 
 // Thuần: vận đơn chỉ đòi đền bù được khi đã bàn giao cho hãng (không phải bản nháp / đã hủy), và chưa có yêu cầu đang chờ hay đã được đền bù.
 export function assertCanOpenClaim(shipment) {
-  if (shipment.status === 'NOT_CREATED') throw new ClaimError('Vận đơn chưa bàn giao cho hãng hoặc đã hủy nên không đòi đền bù được.')
+  if (INACTIVE_SHIPMENT.includes(shipment.status)) throw new ClaimError('Vận đơn chưa bàn giao cho hãng hoặc đã hủy nên không đòi đền bù được.')
   if (shipment.claimStatus === 'REQUESTED') throw new ClaimError('Vận đơn này đã có yêu cầu đền bù đang chờ Goship trả lời.', 409)
   if (shipment.claimStatus === 'COMPENSATED') throw new ClaimError('Vận đơn này đã được Goship đền bù rồi.', 409)
 }

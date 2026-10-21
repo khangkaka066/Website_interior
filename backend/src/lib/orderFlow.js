@@ -1,6 +1,6 @@
 import { prisma } from './prisma.js'
 import { releaseCoupon } from './coupons.js'
-import { canTransitionOrder } from '../constants/workflow.js'
+import { canTransitionOrder, INACTIVE_SHIPMENT } from '../constants/workflow.js'
 import { releaseStock, loadProducts } from './productStore.js'
 import { getSettings, COD_METHOD_ID } from './settingsStore.js'
 import { sendMail } from './mailer.js'
@@ -41,7 +41,7 @@ const logActivity = (db, orderId, action, actor, note) =>
   db.activityLog.create({ data: { entityType: 'order', orderId, action, actor, note } })
 
 export const SHIPPED_NO_CANCEL = 'Đơn hàng đã được giao cho đơn vị vận chuyển, không thể hủy trực tuyến. Vui lòng liên hệ hotline của shop để được hỗ trợ, hoặc từ chối nhận hàng khi nhân viên giao hàng liên hệ.'
-const hasActiveShipment = (order) => !!order.shipment && order.shipment.status !== 'NOT_CREATED'
+const hasActiveShipment = (order) => !!order.shipment && !INACTIVE_SHIPMENT.includes(order.shipment.status)
 
 // Hạn nhân viên xử lý đơn (đếm ngược trong admin). null nếu đơn không còn việc hoặc quy tắc tắt.
 // Hạn tính theo loại đơn: hỏa tốc và nội thành gấp hơn liên tỉnh. type bỏ trống thì lấy loại đã lưu trên đơn, chưa có thì coi là liên tỉnh.
@@ -318,7 +318,7 @@ export async function autoCancelUnpaid(db = prisma, now = new Date(), opts = {})
       paymentStatus: { in: ['AWAITING_PAYMENT', 'FAILED'] },
       status: { in: ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING'] },
       createdAt: { lt: cutoff },
-      OR: [{ shipment: null }, { shipment: { status: 'NOT_CREATED' } }],
+      OR: [{ shipment: null }, { shipment: { status: { in: INACTIVE_SHIPMENT } } }],
       ...(opts.where || {}),
     },
     take: 50,
@@ -374,7 +374,7 @@ export async function autoApproveCancels(db = prisma, now = new Date(), opts = {
   const cutoff = new Date(now.getTime() - rules.cancelAutoApproveHours * HOUR)
   const due = await db.order.findMany({
     // Đơn đã có vận đơn KHÔNG tự duyệt: nhân viên phải giữ gói hàng thật rồi mới đồng ý, nếu không shipper vẫn có thể lấy đi.
-    where: { cancelRequestedAt: { lt: cutoff }, status: { in: ['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'] }, NOT: { shipment: { is: { status: { not: 'NOT_CREATED' } } } }, ...(opts.where || {}) },
+    where: { cancelRequestedAt: { lt: cutoff }, status: { in: ['CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'] }, NOT: { shipment: { is: { status: { notIn: INACTIVE_SHIPMENT } } } }, ...(opts.where || {}) },
     include: ORDER_INCLUDE,
     take: 50,
   })

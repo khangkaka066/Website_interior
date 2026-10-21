@@ -77,7 +77,7 @@ suite('vòng đời đơn hàng với database (rollback)', () => {
           const shA = await ship(o.id)
           after = await F.approveCancel(await load(o.id), {}, tx)
           assert.equal(after.status, 'CANCELLED')
-          assert.equal((await tx.shipment.findUnique({ where: { id: shA.id } })).status, 'NOT_CREATED')
+          assert.equal((await tx.shipment.findUnique({ where: { id: shA.id } })).status, 'CANCELLED')
           o = await mk({ status: 'AWAITING_SHIPMENT', cancelRequestedAt: new Date(), cancelRequestReason: 'x' })
           await ship(o.id, 'PICKED_UP')
           await rejectsFlow(F.approveCancel(await load(o.id), {}, tx), /hãng lấy hàng/)

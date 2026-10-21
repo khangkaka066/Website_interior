@@ -1,6 +1,7 @@
 import { prisma } from './prisma.js'
 import { normCode } from './orderCode.js'
 import { toPlain } from '../utils/serialize.js'
+import { INACTIVE_SHIPMENT } from '../constants/workflow.js'
 
 // Đối soát vận chuyển với Goship: nhân viên nạp file đối soát (xuất từ cổng Goship) dưới dạng các dòng { code, cod, fee, extraFee }.
 // Mỗi dòng được đối chiếu với vận đơn của mình: khớp (đúng tiền COD, đúng cước, không truy thu) thì vận đơn đánh dấu "Đã đối soát";
@@ -93,9 +94,9 @@ export async function reconcileRows(rawRows, { actor = 'admin' } = {}, db = pris
 
 // Sổ tổng hợp dòng tiền vận chuyển cho kế toán (không phụ thuộc kỳ): cước tạm tính vs thực tế, COD chờ đối soát, chi phí hoàn hàng.
 export async function accountingSummary(db = prisma) {
-  const live = { status: { notIn: ['NOT_CREATED'] } }
+  const live = { status: { notIn: INACTIVE_SHIPMENT } }
   const [estimate, actual, codWaiting, codReconciled, returned, unreconciled, mismatched, compensated, claimsPending] = await Promise.all([
-    db.shipment.aggregate({ where: { ...live, reconciledAt: null, status: { notIn: ['NOT_CREATED', 'RETURNED'] } }, _sum: { shippingFee: true } }),
+    db.shipment.aggregate({ where: { ...live, reconciledAt: null, status: { notIn: [...INACTIVE_SHIPMENT, 'RETURNED'] } }, _sum: { shippingFee: true } }),
     db.shipment.aggregate({ where: { actualFee: { not: null } }, _sum: { actualFee: true, extraFee: true } }),
     db.shipment.aggregate({ where: { status: 'DELIVERED', reconciledAt: null, codAmount: { gt: 0 } }, _sum: { codAmount: true }, _count: { _all: true } }),
     db.shipment.aggregate({ where: { reconciledAt: { not: null }, codCollected: { gt: 0 } }, _sum: { codCollected: true } }),

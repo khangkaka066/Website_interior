@@ -324,6 +324,7 @@ enum ShippingStatus {
   FAILED // Giao thất bại
   RETURNING // Đang hoàn
   RETURNED // Đã hoàn
+  CANCELLED // Đã hủy vận đơn (có thể tạo lại vận đơn mới)
 }
 
 model ShippingCarrier {

@@ -116,7 +116,7 @@ suite('Goship hỏa tốc: báo cước, tạo, webhook, hủy (rollback)', () =
 
           // 6) hủy đơn hỏa tốc: gọi đúng API hỏa tốc (DELETE /ondemand-shipments)
           const cancelled = await S.cancelShipmentById(s3.id, { actor: 'test', note: 'khách đổi ý' }, tx)
-          assert.equal(cancelled.status, 'NOT_CREATED')
+          assert.equal(cancelled.status, 'CANCELLED')
           assert.ok(sent.some(([m, p]) => m === 'DELETE' && p === `/ondemand-shipments/${s3.trackingId}`))
           assert.ok(!sent.some(([m, p]) => m === 'DELETE' && p === `/shipments/${s3.trackingId}`), 'không được gọi API vận đơn thường')
 

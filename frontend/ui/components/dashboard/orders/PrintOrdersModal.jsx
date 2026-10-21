@@ -11,6 +11,7 @@ import { DELIVERY_LABEL } from '../../DeliveryBadge'
 import { PICKUP_LABEL } from './PickupMethod'
 import { paymentMethodLabel } from '../../../constants/paymentMethod'
 import '../../../styles/print.css'
+import { INACTIVE_SHIPMENT } from '../../../constants/shippingStatus'
 
 const MAX_ORDERS = 50
 
@@ -45,14 +46,14 @@ function Qr({ value }) {
 }
 
 // Mã vận đơn là mã DO HÃNG VẬN CHUYỂN cấp (có sau khi tạo vận đơn). Chưa có thì tem chỉ có mã đơn của shop, hãng không quét được.
-const hasCarrierCode = (o) => Boolean(o.shipment && o.shipment.status !== 'NOT_CREATED' && o.shipment.carrierCode)
+const hasCarrierCode = (o) => Boolean(o.shipment && !INACTIVE_SHIPMENT.includes(o.shipment.status) && o.shipment.carrierCode)
 
 const MAX_LABEL_ITEMS = 8
 const vnd = (n) => `${Math.round(Number(n) || 0).toLocaleString('vi-VN')} VND`
 
 // Tem giao hàng khổ A6 (dán lên kiện hàng): mã vạch vận đơn, nơi gửi/nhận, mã phân loại, nội dung hàng, tiền thu hộ, chữ ký.
 function LabelSheet({ order, shop, skipped, onToggle }) {
-  const ship = order.shipment && order.shipment.status !== 'NOT_CREATED' ? order.shipment : null
+  const ship = order.shipment && !INACTIVE_SHIPMENT.includes(order.shipment.status) ? order.shipment : null
   const addr = [order.addressLine, order.ward, order.district, order.province].filter(Boolean).join(', ')
   const carrierCode = hasCarrierCode(order) ? ship.carrierCode : null
   const code = carrierCode || order.orderNumber // chưa có mã hãng thì mã vạch chỉ là mã đơn của shop (dùng nội bộ)
@@ -197,7 +198,7 @@ function PickingList({ orders, shop, skipped, onToggle }) {
 // Phiếu A4 cho khách/kho: chỉ có thông tin giao hàng và thanh toán, không có ghi chú nội bộ hay nhật ký hoạt động.
 function Sheet({ order, shop, skipped, onToggle }) {
   const addr = [order.addressLine, order.ward, order.district, order.province].filter(Boolean).join(', ')
-  const ship = order.shipment && order.shipment.status !== 'NOT_CREATED' ? order.shipment : null
+  const ship = order.shipment && !INACTIVE_SHIPMENT.includes(order.shipment.status) ? order.shipment : null
   const isCod = order.paymentMethod === 'COD'
   const paid = order.paymentStatus === 'PAID'
   const collect = isCod && !paid ? Math.round(Number(order.total)) : 0
@@ -354,7 +355,7 @@ export default function PrintOrdersModal({ ids, onClose }) {
   const toggle = (id) => setSkipped((s) => flip(s, id)) // dùng cho phiếu nhặt hàng gộp (không cần mã vận đơn)
   const missing = orders ? orders.filter(noCode) : []
   // Hỏi lại Goship mã vận đơn của hãng cho các đơn đã có vận đơn Goship nhưng chưa có mã, rồi tải lại phiếu.
-  const syncable = missing.filter((o) => o.shipment?.id && o.shipment.status !== 'NOT_CREATED')
+  const syncable = missing.filter((o) => o.shipment?.id && !INACTIVE_SHIPMENT.includes(o.shipment.status))
   async function refreshCodes() {
     setSyncing(true)
     setSyncMsg('')

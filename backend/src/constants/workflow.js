@@ -14,8 +14,12 @@ export const ORDER_TRANSITIONS = {
   RETURNED: [],
 }
 
+// Vận đơn không còn hiệu lực: chưa tạo, hoặc đã hủy (đơn có thể tạo lại vận đơn mới).
+export const INACTIVE_SHIPMENT = ['NOT_CREATED', 'CANCELLED']
+
 export const SHIPPING_TRANSITIONS = {
   NOT_CREATED: ['AWAITING_PICKUP'],
+  CANCELLED: [],
   AWAITING_PICKUP: ['PICKED_UP', 'FAILED'],
   PICKED_UP: ['IN_TRANSIT', 'FAILED'],
   IN_TRANSIT: ['OUT_FOR_DELIVERY', 'FAILED'],

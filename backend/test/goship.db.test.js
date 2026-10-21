@@ -115,7 +115,7 @@ suite('Goship: vận đơn và webhook với database (rollback)', () => {
           await tx.shipment.update({ where: { id: ship.id }, data: { status: 'AWAITING_PICKUP' } })
           await tx.order.update({ where: { id: order.id }, data: { status: 'AWAITING_SHIPMENT' } })
           r = await wh({ status: '914', status_text: 'Đơn hủy' })
-          assert.equal((await fresh()).status, 'NOT_CREATED')
+          assert.equal((await fresh()).status, 'CANCELLED')
           remote = { id: 'GSTEST002', status_code: 901, status_text: 'Chờ lấy hàng' }
           const again = await S.createShipmentForOrder({ orderId: order.id, rateId: 'RATE-OK', settings }, tx)
           assert.equal(again.id, ship.id) // cùng bản ghi (mỗi đơn một vận đơn)

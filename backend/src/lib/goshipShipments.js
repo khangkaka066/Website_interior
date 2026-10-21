@@ -6,7 +6,7 @@ import { quoteShipping, resolveAddressIds } from './shippingRates.js'
 import { createGoshipShipment, cancelGoshipShipment, searchGoshipShipment, goshipConfigured, GoshipError, requestOndemandRates, createOndemandShipment, cancelOndemandShipment, getOndemandShipment } from './goship.js'
 import { geocodeAddress } from './geocode.js'
 import { toExpressOption, buildOndemandRatesBody, buildOndemandShipmentBody, mapOndemandStatus, fromApiOndemand } from './ondemand.js'
-import { SHIPPING_TO_ORDER_STATUS } from '../constants/workflow.js'
+import { SHIPPING_TO_ORDER_STATUS, INACTIVE_SHIPMENT } from '../constants/workflow.js'
 
 // Tạo / hủy vận đơn THẬT qua Goship và đồng bộ trạng thái từ webhook. Mọi hàm đọc/ghi database nhận `db` (mặc định prisma)
 // để kiểm thử được bên trong một transaction rồi rollback.
@@ -33,6 +33,7 @@ const LABEL = {
   FAILED: 'Giao thất bại',
   RETURNING: 'Đang hoàn',
   RETURNED: 'Đã hoàn',
+  CANCELLED: 'Đã hủy vận đơn',
 }
 
 // Mã trạng thái Goship (https://doc.goship.io/api/shipment/shipment-status-code) -> trạng thái vận đơn của mình.
@@ -69,7 +70,7 @@ const RANK = { AWAITING_PICKUP: 1, PICKED_UP: 2, IN_TRANSIT: 3, OUT_FOR_DELIVERY
 // (ví dụ bỏ qua "đang trung chuyển"), nên chỉ cho đi tới, không cho lùi, và vận đơn đã kết thúc hoặc đã hủy thì bỏ qua.
 export function nextShippingStatus(current, target) {
   if (!target || target === current) return null
-  if (['DELIVERED', 'RETURNED', 'NOT_CREATED'].includes(current)) return null
+  if (['DELIVERED', 'RETURNED', ...INACTIVE_SHIPMENT].includes(current)) return null
   if (target === 'FAILED') return current === 'RETURNING' ? null : 'FAILED'
   if (target === 'RETURNING') return 'RETURNING'
   if (target === 'RETURNED') return 'RETURNED'
@@ -106,7 +107,7 @@ function assertCreatable(order, settings) {
   if (!['PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status)) {
     throw new ShipmentError(`Đơn hàng đang ở trạng thái "${order.status}", cần xử lý xong trước khi tạo vận đơn.`, 400, 'ORDER_STATE')
   }
-  if (order.shipment && order.shipment.status !== 'NOT_CREATED') throw new ShipmentError('Đơn hàng này đã có vận đơn.', 400, 'HAS_SHIPMENT')
+  if (order.shipment && !INACTIVE_SHIPMENT.includes(order.shipment.status)) throw new ShipmentError('Đơn hàng này đã có vận đơn.', 400, 'HAS_SHIPMENT')
 }
 
 // Số tiền thu hộ: đơn COD thu đúng tổng khách phải trả (tiền hàng + phí vận chuyển khách đã trả cho shop), còn lại 0.
@@ -443,7 +444,7 @@ export async function cancelOnGoship(shipment) {
   }
 }
 
-// Hủy một vận đơn (cả bên Goship nếu là vận đơn Goship) và đánh dấu "chưa tạo vận đơn". Dùng chung cho nút của nhân viên và tác vụ tự hủy.
+// Hủy một vận đơn (cả bên Goship nếu là vận đơn Goship) và đánh dấu "đã hủy vận đơn". Dùng chung cho nút của nhân viên và tác vụ tự hủy.
 export async function cancelShipmentById(shipmentId, { actor = 'admin', note } = {}, db = prisma) {
   const shipment = await db.shipment.findUnique({ where: { id: shipmentId }, include: { carrier: true } })
   if (!shipment) throw new ShipmentError('Không tìm thấy vận đơn.', 404, 'NOT_FOUND')
@@ -455,7 +456,7 @@ export async function cancelShipmentById(shipmentId, { actor = 'admin', note } =
     const s = await tx.shipment.update({
       where: { id: shipment.id },
       data: {
-        status: 'NOT_CREATED',
+        status: 'CANCELLED',
         trackingEvents: { create: { status: 'Đã hủy vận đơn', note: remote.cancelledRemote ? [note, 'Đã hủy bên Goship'].filter(Boolean).join(' · ') : note } },
       },
       include: { carrier: true, order: { include: { customer: true } }, trackingEvents: { orderBy: { createdAt: 'asc' } } },
@@ -535,7 +536,7 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
     let order = null
 
     if (info.cancel) {
-      if (!['DELIVERED', 'RETURNED', 'NOT_CREATED'].includes(shipment.status)) changes.status = 'NOT_CREATED' // đã hủy bên Goship: đưa về như hủy vận đơn
+      if (!['DELIVERED', 'RETURNED', ...INACTIVE_SHIPMENT].includes(shipment.status)) changes.status = 'CANCELLED' // đã hủy bên Goship: đưa về như hủy vận đơn
       // Đơn đang "Chờ giao hàng" mà vận đơn đã bị hủy: đưa đơn về "Đang xử lý" để nhân viên tạo lại vận đơn (nếu không đơn kẹt ở Chờ giao hàng mà không có vận đơn).
       if (shipment.order.status === 'AWAITING_SHIPMENT') order = 'PROCESSING'
     } else {
@@ -567,7 +568,7 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
     if (changes.status || order || !duplicate) {
       await tx.activityLog.create({ data: { entityType: 'shipment', shipmentId: shipment.id, orderId: shipment.orderId, action: `goship_${p.status || 'event'}`, actor: 'goship', note: `${trusted ? 'webhook' : 'đối chiếu API'}: ${label}` } })
     }
-    return { handled: true, status: changes.status || shipment.status, orderStatus: order, duplicate: Boolean(duplicate), verified: trusted, cancelledRemote: Boolean(info.cancel && changes.status === 'NOT_CREATED') }
+    return { handled: true, status: changes.status || shipment.status, orderStatus: order, duplicate: Boolean(duplicate), verified: trusted, cancelledRemote: Boolean(info.cancel && INACTIVE_SHIPMENT.includes(changes.status)) }
   })
 
   // Hủy vận đơn ngay trên cổng Goship (không phải bấm hủy ở website): hủy luôn đơn hàng nếu bật trong Cài đặt, để hai bên không lệch nhau.

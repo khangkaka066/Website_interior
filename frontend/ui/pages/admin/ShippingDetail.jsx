@@ -6,7 +6,7 @@ import AdminLayout from '../../components/dashboard/AdminLayout'
 import StatusTimeline from '../../components/dashboard/StatusTimeline'
 import ConfirmModal from '../../components/dashboard/ConfirmModal'
 import { api } from '../../api'
-import { SHIPPING_STATUS, SHIPPING_TIMELINE_STEPS, SHIPPING_TRANSITIONS, shippingStatusLabel } from '../../constants/shippingStatus'
+import { SHIPPING_STATUS, SHIPPING_TIMELINE_STEPS, SHIPPING_TRANSITIONS, shippingStatusLabel, INACTIVE_SHIPMENT } from '../../constants/shippingStatus'
 import { formatCurrency, formatDateTime } from '../../utils/format'
 import ClaimCard from '../../components/dashboard/ClaimCard'
 import { PICKUP_LABEL } from '../../components/dashboard/orders/PickupMethod'
@@ -140,7 +140,7 @@ export default function ShippingDetail() {
               Cập nhật trạng thái
             </button>
           )}
-          {shipment.carrier?.code === 'GOSHIP' && shipment.status !== 'NOT_CREATED' && (
+          {shipment.carrier?.code === 'GOSHIP' && !INACTIVE_SHIPMENT.includes(shipment.status) && (
             <button className="dash-btn dash-btn-ghost" onClick={syncFromGoship} disabled={syncing}>{syncing ? 'Đang hỏi Goship…' : 'Cập nhật từ Goship'}</button>
           )}
           <button className="dash-btn dash-btn-ghost" onClick={() => window.print()}>In shipping label</button>

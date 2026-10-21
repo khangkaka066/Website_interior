@@ -16,6 +16,7 @@ const SHIPMENT_INCLUDE = {
 
 const STATUS_LABEL = {
   NOT_CREATED: 'Đã tạo vận đơn',
+  CANCELLED: 'Đã hủy vận đơn',
   AWAITING_PICKUP: 'Chờ lấy hàng',
   PICKED_UP: 'Đã lấy hàng',
   IN_TRANSIT: 'Đang trung chuyển',

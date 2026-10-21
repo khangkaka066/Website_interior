@@ -20,7 +20,7 @@ import {
   orderStatusLabel,
   paymentStatusLabel,
 } from '../../constants/orderStatus'
-import { shippingStatusLabel, SHIPPING_STATUS } from '../../constants/shippingStatus'
+import { shippingStatusLabel, SHIPPING_STATUS, INACTIVE_SHIPMENT } from '../../constants/shippingStatus'
 import { formatCurrency, formatDateTime, dueIn } from '../../utils/format'
 
 const TIMELINE_LABELS = {
@@ -137,7 +137,7 @@ export default function OrderDetail() {
 
   const canCancel = !['CANCELLED', 'DELIVERED', 'COMPLETED', 'RETURNED'].includes(order.status)
   const canRefund = order.paymentStatus === 'PAID'
-  const hasActiveShipment = !!order.shipment && order.shipment.status !== 'NOT_CREATED'
+  const hasActiveShipment = !!order.shipment && !INACTIVE_SHIPMENT.includes(order.shipment.status)
   const canPrepare = !hasActiveShipment && ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'AWAITING_SHIPMENT'].includes(order.status) && !order.cancelRequestedAt
   const isCancelledOrReturned = ['CANCELLED', 'RETURNED'].includes(order.status)
 
@@ -187,7 +187,7 @@ export default function OrderDetail() {
       {cancelAsk && (
         <div className="dash-card" style={{ marginBottom: '24px', borderLeft: '4px solid var(--dash-danger, #c0392b)' }}>
           <h3 className="form-card-title">Khách yêu cầu hủy đơn</h3>
-          <p style={{ fontSize: '13px', margin: '0 0 12px' }}>Lý do: <strong>{order.cancelRequestReason || '—'}</strong>. {order.shipment && order.shipment.status !== 'NOT_CREATED' ? 'Đơn đã có vận đơn nên không tự đồng ý, cần nhân viên duyệt.' : <>Không phản hồi thì hệ thống tự đồng ý lúc {order.cancelAutoApproveAt ? formatDateTime(order.cancelAutoApproveAt) : '(đã tắt)'}.</>} Đồng ý thì đơn chuyển sang Đã hủy và tồn kho được trả lại{order.paymentStatus === 'PAID' ? ' (đơn đã thanh toán, bạn cần bấm Hoàn tiền sau đó)' : ''}.{order.shipment && order.shipment.status !== 'NOT_CREATED' ? ' Đơn đã có vận đơn: hãy giữ lại gói hàng và gỡ nhãn trước, rồi bấm Đồng ý (hệ thống sẽ hủy vận đơn bên Goship).' : ''}</p>
+          <p style={{ fontSize: '13px', margin: '0 0 12px' }}>Lý do: <strong>{order.cancelRequestReason || '—'}</strong>. {order.shipment && !INACTIVE_SHIPMENT.includes(order.shipment.status) ? 'Đơn đã có vận đơn nên không tự đồng ý, cần nhân viên duyệt.' : <>Không phản hồi thì hệ thống tự đồng ý lúc {order.cancelAutoApproveAt ? formatDateTime(order.cancelAutoApproveAt) : '(đã tắt)'}.</>} Đồng ý thì đơn chuyển sang Đã hủy và tồn kho được trả lại{order.paymentStatus === 'PAID' ? ' (đơn đã thanh toán, bạn cần bấm Hoàn tiền sau đó)' : ''}.{order.shipment && !INACTIVE_SHIPMENT.includes(order.shipment.status) ? ' Đơn đã có vận đơn: hãy giữ lại gói hàng và gỡ nhãn trước, rồi bấm Đồng ý (hệ thống sẽ hủy vận đơn bên Goship).' : ''}</p>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="dash-btn" onClick={() => setModal('cancel-approve')}>Đồng ý hủy</button>
             <button className="dash-btn dash-btn-ghost" onClick={() => setModal('cancel-reject')}>Từ chối</button>
@@ -351,7 +351,7 @@ export default function OrderDetail() {
               <div>
                 <strong>Trạng thái:</strong>{' '}
                 <span className={`order-status-badge ${SHIPPING_STATUS[order.shipment.status]?.cls || ''}`}>
-                  {order.shipment.status === 'NOT_CREATED' && order.status === 'CANCELLED' ? 'Vận đơn đã hủy' : shippingStatusLabel(order.shipment.status)}
+                  {shippingStatusLabel(order.shipment.status)}
                 </span>
               </div>
               <button className="dash-btn dash-btn-ghost" style={{ marginTop: '10px' }} onClick={() => navigate(`/dashboard/shipping/${order.shipment.id}`)}>

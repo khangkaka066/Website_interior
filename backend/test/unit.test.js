@@ -1078,6 +1078,7 @@ describe('Goship: trạng thái vận đơn', () => {
     assert.equal(nextShippingStatus('DELIVERED', 'FAILED'), null)
     assert.equal(nextShippingStatus('RETURNED', 'DELIVERED'), null)
     assert.equal(nextShippingStatus('NOT_CREATED', 'PICKED_UP'), null) // vận đơn đã hủy không "sống lại"
+    assert.equal(nextShippingStatus('CANCELLED', 'PICKED_UP'), null)
   })
 
   test('giao thất bại, hoàn hàng và giao lại', () => {
@@ -1223,6 +1224,7 @@ describe('mã đơn hiển thị: mã vận đơn của hãng thay ORD-xxxxx khi
   })
   test('vận đơn đã hủy (NOT_CREATED) -> quay lại mã đơn', () => {
     assert.equal(displayCode(order({ status: 'NOT_CREATED', carrierCode: 'GHN123' })), 'ORD-12345')
+    assert.equal(displayCode(order({ status: 'CANCELLED', carrierCode: 'GHN123' })), 'ORD-12345')
   })
   test('chuẩn hóa mã: bỏ khoảng trắng, viết hoa', () => {
     assert.equal(normCode('  ghn123 '), 'GHN123')
@@ -1740,6 +1742,7 @@ describe('đền bù Goship và phân loại lỗi trả hàng', () => {
     assert.doesNotThrow(() => assertCanOpenClaim({ status: 'FAILED', claimStatus: null }))
     assert.doesNotThrow(() => assertCanOpenClaim({ status: 'RETURNED', claimStatus: 'REJECTED' })) // bị từ chối thì gửi lại được
     assert.throws(() => assertCanOpenClaim({ status: 'NOT_CREATED' }), ClaimError)
+    assert.throws(() => assertCanOpenClaim({ status: 'CANCELLED' }), ClaimError)
     assert.throws(() => assertCanOpenClaim({ status: 'FAILED', claimStatus: 'REQUESTED' }), /đang chờ/)
     assert.throws(() => assertCanOpenClaim({ status: 'DELIVERED', claimStatus: 'COMPENSATED' }), /đã được Goship đền bù/)
   })

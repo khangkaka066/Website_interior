@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { api } from '../../api'
 import { formatCurrency, formatDateTime } from '../../utils/format'
+import { INACTIVE_SHIPMENT } from '../../constants/shippingStatus'
 
 const STATUS = { REQUESTED: 'Đã gửi, chờ Goship trả lời', COMPENSATED: 'Goship đã đền bù', REJECTED: 'Goship từ chối' }
 
@@ -11,7 +12,7 @@ export default function ClaimCard({ shipment, onChanged }) {
   const [form, setForm] = useState({ amount: '', note: '' })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  if (shipment.status === 'NOT_CREATED') return null
+  if (INACTIVE_SHIPMENT.includes(shipment.status)) return null
 
   async function send(path, body) {
     setBusy(true)

@@ -8,7 +8,11 @@ export const SHIPPING_STATUS = {
   FAILED: { label: 'Giao thất bại', cls: 'status-cancelled' },
   RETURNING: { label: 'Đang hoàn', cls: 'status-returned' },
   RETURNED: { label: 'Đã hoàn', cls: 'status-returned' },
+  CANCELLED: { label: 'Đã hủy vận đơn', cls: 'status-cancelled' },
 }
+
+// Vận đơn không còn hiệu lực: chưa tạo, hoặc đã hủy (đơn có thể tạo lại vận đơn mới). Khớp INACTIVE_SHIPMENT ở backend.
+export const INACTIVE_SHIPMENT = ['NOT_CREATED', 'CANCELLED']
 
 // Timeline hiển thị trên Shipping Detail.
 export const SHIPPING_TIMELINE_STEPS = [
@@ -27,6 +31,7 @@ export function shippingStatusLabel(status) {
 // dùng để chỉ hiển thị action admin được phép bấm.
 export const SHIPPING_TRANSITIONS = {
   NOT_CREATED: ['AWAITING_PICKUP'],
+  CANCELLED: [],
   AWAITING_PICKUP: ['PICKED_UP', 'FAILED'],
   PICKED_UP: ['IN_TRANSIT', 'FAILED'],
   IN_TRANSIT: ['OUT_FOR_DELIVERY', 'FAILED'],

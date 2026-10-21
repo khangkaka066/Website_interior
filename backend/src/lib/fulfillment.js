@@ -6,11 +6,12 @@ import { deliveryTypeOf } from './deliveryType.js'
 import { getSettings, COD_METHOD_ID } from './settingsStore.js'
 import { sendMail } from './mailer.js'
 import { orderHandoverEmail } from './emailTemplates.js'
+import { INACTIVE_SHIPMENT } from '../constants/workflow.js'
 
 // Từ lúc nhân viên bấm "Chuẩn bị hàng" tới khi bàn giao cho hãng: quét mã vạch xác nhận đã đóng gói, rồi lập biên bản bàn giao theo hãng.
 const HOUR = 3600 * 1000
 const VN_OFFSET = 7 * HOUR
-const hasActiveShipment = (o) => !!o.shipment && o.shipment.status !== 'NOT_CREATED'
+const hasActiveShipment = (o) => !!o.shipment && !INACTIVE_SHIPMENT.includes(o.shipment.status)
 const qtyOf = (items) => items.reduce((n, i) => n + (Number(i.quantity) || 0), 0)
 
 const summary = (o) => ({
@@ -41,7 +42,7 @@ export async function scanPack(rawCode, actor = 'admin', db = prisma) {
 
 // Hàng đợi đóng gói: đơn đã có vận đơn mà chưa đóng gói, và đơn đã đóng gói nhưng chưa bàn giao.
 export async function packQueue(db = prisma) {
-  const base = { status: { in: ['PROCESSING', 'AWAITING_SHIPMENT'] }, shipment: { is: { status: { not: 'NOT_CREATED' }, handoverId: null } } }
+  const base = { status: { in: ['PROCESSING', 'AWAITING_SHIPMENT'] }, shipment: { is: { status: { notIn: INACTIVE_SHIPMENT }, handoverId: null } } }
   const include = { items: true, shipment: { include: { carrier: true } } }
   const [waiting, packed] = await Promise.all([
     db.order.findMany({ where: { ...base, packedAt: null }, include, orderBy: { createdAt: 'asc' }, take: 300 }),
@@ -173,7 +174,7 @@ export async function workload(db = prisma, now = new Date()) {
   }
   const [toPrepare, toPack, toHandover] = await Promise.all([
     db.order.count({ where: { status: { in: ['PENDING_CONFIRMATION', 'CONFIRMED', 'PROCESSING'] }, OR: [{ paymentMethod: COD_METHOD_ID }, { paymentStatus: 'PAID' }], shipment: null } }),
-    db.order.count({ where: { status: { in: ['PROCESSING', 'AWAITING_SHIPMENT'] }, packedAt: null, shipment: { is: { status: { not: 'NOT_CREATED' } } } } }),
+    db.order.count({ where: { status: { in: ['PROCESSING', 'AWAITING_SHIPMENT'] }, packedAt: null, shipment: { is: { status: { notIn: INACTIVE_SHIPMENT } } } } }),
     db.shipment.count({ where: packedAndWaiting() }),
   ])
   const cutoff = cutoffToday(rules.pickupCutoff, now)

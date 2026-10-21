@@ -9,6 +9,7 @@ import { ORDER_STATUS, PAYMENT_STATUS, orderStatusLabel, paymentStatusLabel } fr
 import { formatCurrency, formatDate, dueIn } from '../../utils/format'
 import PickupMethod, { usePickupMethod, PICKUP_LABEL } from '../../components/dashboard/orders/PickupMethod'
 import DeliveryBadge, { DELIVERY_LABEL } from '../../components/DeliveryBadge'
+import { INACTIVE_SHIPMENT } from '../../constants/shippingStatus'
 
 const PAGE_SIZE = 10
 
@@ -105,7 +106,7 @@ export default function OrderList() {
     const rows = data.items.map((o) => ({
       'Mã đơn': o.orderNumber,
       'Loại giao hàng': DELIVERY_LABEL[o.deliveryType] || '',
-      'Mã vận đơn': o.shipment?.status !== 'NOT_CREATED' ? o.shipment?.carrierCode || '' : '',
+      'Mã vận đơn': !INACTIVE_SHIPMENT.includes(o.shipment?.status) ? o.shipment?.carrierCode || '' : '',
       'Khách hàng': o.customer?.name,
       'Tổng tiền': o.total,
       'Thanh toán': paymentStatusLabel(o.paymentStatus),

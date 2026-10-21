@@ -186,7 +186,7 @@ export default function TrackOrder() {
                   <h3>
                     Vận chuyển · {order.shipment.carrier} · Mã vận đơn {order.shipment.trackingId}
                   </h3>
-                  <p>Trạng thái: {order.shipment.status === 'NOT_CREATED' && order.shipment.events.length > 0 ? 'Vận đơn đã hủy' : SHIPPING_STATUS[order.shipment.status]?.label || order.shipment.status}</p>
+                  <p>Trạng thái: {SHIPPING_STATUS[order.shipment.status]?.label || order.shipment.status}</p>
                   <ol className="track-timeline">
                     {dedupeEvents(order.shipment.events).map((e, i) => (
                       <li key={i}>
