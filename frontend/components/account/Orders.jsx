@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { api } from '@/ui/api'
 import { ORDER_STATUS, PAYMENT_STATUS } from '@/ui/constants/orderStatus'
-import { SHIPPING_STATUS } from '@/ui/constants/shippingStatus'
+import { SHIPPING_STATUS, dedupeEvents } from '@/ui/constants/shippingStatus'
 import { Notice, Field, input, btnPrimary, btnGhost, money, when, fullAddress } from './ui'
 import { sized, IMG } from '@/ui/utils/image'
 import OrderActions, { StaticStars } from '@/ui/components/OrderActions'
@@ -213,7 +213,7 @@ export function OrderDetail({ orderNumber, onBack }) {
                 {' · '}{SHIPPING_STATUS[order.shipment.status]?.label || order.shipment.status}
               </p>
               <ol className="mt-3 space-y-2 border-l-2 border-line pl-4">
-                {[...order.shipment.events].reverse().map((e, i) => (
+                {[...dedupeEvents(order.shipment.events)].reverse().map((e, i) => (
                   <li key={i}>
                     <p className="font-medium">{SHIPPING_STATUS[e.status]?.label || e.status}</p>
                     <p className="text-xs text-muted">{when(e.createdAt)}{e.location ? ` · ${e.location}` : ''}{e.note ? ` · ${e.note}` : ''}</p>

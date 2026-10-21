@@ -36,3 +36,8 @@ export const SHIPPING_TRANSITIONS = {
   DELIVERED: [],
   RETURNED: [],
 }
+
+// Bỏ các dòng lặp liên tiếp (cùng trạng thái, cùng ghi chú): Goship hay báo lại một trạng thái nhiều lần.
+export function dedupeEvents(events) {
+  return events.filter((e, i) => i === 0 || e.status !== events[i - 1].status || (e.note || '') !== (events[i - 1].note || ''))
+}

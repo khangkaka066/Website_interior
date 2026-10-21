@@ -52,7 +52,7 @@ const GOSHIP_STATUS = {
   911: { text: 'Goship đã trả COD' },
   912: { text: 'Chờ thanh toán COD' },
   913: { local: 'DELIVERED' },
-  914: { cancel: true },
+  914: { cancel: true, text: 'Đã hủy vận đơn' },
   915: { text: 'Chậm lấy/giao hàng' },
   916: { text: 'Giao hàng một phần' },
   917: { local: 'FAILED', text: 'Thất lạc hàng' },

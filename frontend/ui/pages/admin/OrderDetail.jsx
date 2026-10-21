@@ -351,7 +351,7 @@ export default function OrderDetail() {
               <div>
                 <strong>Trạng thái:</strong>{' '}
                 <span className={`order-status-badge ${SHIPPING_STATUS[order.shipment.status]?.cls || ''}`}>
-                  {shippingStatusLabel(order.shipment.status)}
+                  {order.shipment.status === 'NOT_CREATED' && order.status === 'CANCELLED' ? 'Vận đơn đã hủy' : shippingStatusLabel(order.shipment.status)}
                 </span>
               </div>
               <button className="dash-btn dash-btn-ghost" style={{ marginTop: '10px' }} onClick={() => navigate(`/dashboard/shipping/${order.shipment.id}`)}>

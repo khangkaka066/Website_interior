@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from '@/lib/router'
 import { api } from '../api'
 import { ORDER_STATUS, PAYMENT_STATUS } from '../constants/orderStatus'
-import { SHIPPING_STATUS } from '../constants/shippingStatus'
+import { SHIPPING_STATUS, dedupeEvents } from '../constants/shippingStatus'
 import { sized, IMG } from '../utils/image'
 import OrderActions, { StaticStars } from '../components/OrderActions'
 import DeliveryBadge from '../components/DeliveryBadge'
@@ -186,11 +186,11 @@ export default function TrackOrder() {
                   <h3>
                     Vận chuyển · {order.shipment.carrier} · Mã vận đơn {order.shipment.trackingId}
                   </h3>
-                  <p>Trạng thái: {SHIPPING_STATUS[order.shipment.status]?.label || order.shipment.status}</p>
+                  <p>Trạng thái: {order.shipment.status === 'NOT_CREATED' && order.shipment.events.length > 0 ? 'Vận đơn đã hủy' : SHIPPING_STATUS[order.shipment.status]?.label || order.shipment.status}</p>
                   <ol className="track-timeline">
-                    {order.shipment.events.map((e, i) => (
+                    {dedupeEvents(order.shipment.events).map((e, i) => (
                       <li key={i}>
-                        <strong>{e.status}</strong>
+                        <strong>{SHIPPING_STATUS[e.status]?.label || e.status}</strong>
                         {e.note && <em>{e.note}</em>}
                         <span>
                           {when(e.createdAt)}
