@@ -2797,24 +2797,37 @@ label {
 .catalog-viewer { position: fixed; inset: 0; z-index: 400; background: rgba(15, 15, 20, 0.92); display: flex; flex-direction: column; }
 .catalog-viewer-bar { flex: none; display: flex; align-items: center; gap: 12px; padding: 14px 18px; color: #fff; }
 .catalog-viewer-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.catalog-viewer-count { margin-left: auto; font-size: 13px; color: rgba(255, 255, 255, 0.72); }
-.catalog-viewer-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
+.catalog-viewer-count { font-size: 13px; color: rgba(255, 255, 255, 0.72); white-space: nowrap; }
+.catalog-viewer-close { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
 .catalog-viewer-close:hover { background: rgba(255, 255, 255, 0.18); }
+/* Nhóm nút zoom (−, %, +) trên thanh trên: đẩy sát bên phải, trước nút đóng. */
+.catalog-viewer-zoom { margin-left: auto; display: flex; align-items: center; gap: 2px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 999px; padding: 3px; flex: none; }
+.catalog-viewer-zoom button { flex: none; border: none; background: transparent; color: #fff; cursor: pointer; border-radius: 999px; line-height: 1; }
+.catalog-viewer-zoom button:disabled { opacity: 0.35; cursor: default; }
+.catalog-viewer-zoom button:not(:disabled):hover { background: rgba(255, 255, 255, 0.16); }
+.catalog-viewer-zoom button:first-child,
+.catalog-viewer-zoom button:last-child { width: 30px; height: 30px; font-size: 17px; }
+.catalog-viewer-zoom-pct { min-width: 46px; padding: 0 6px; font-size: 12px; font-variant-numeric: tabular-nums; }
 .catalog-viewer-stage { position: relative; flex: 1 1 auto; display: flex; align-items: center; justify-content: center; padding: 0 56px 20px; overflow: hidden; }
+.catalog-viewer-stage.is-zoomed { overflow: auto; cursor: grab; }
+.catalog-viewer-stage.is-zoomed.is-panning { cursor: grabbing; }
 .catalog-viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.92); color: var(--text-dark); font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); z-index: 1; }
 .catalog-viewer-nav:hover { background: #fff; }
 .catalog-viewer-prev { left: 8px; }
 .catalog-viewer-next { right: 8px; }
+.catalog-zoom-wrap { display: inline-flex; transform-origin: center center; transition: transform 0.15s ease; }
 .catalog-flipbook { box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); }
 .catalog-page { background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .catalog-page img { width: 100%; height: 100%; object-fit: contain; user-select: none; }
 /* Điện thoại: thanh trên gọn lại (tên catalog dễ bị dài), nút lùi/tới chuyển xuống 2 góc dưới (ngón tay cầm máy bấm tới,
    tránh đè lên vùng góc trang mà StPageFlip dùng để nhận vuốt/kéo lật), tăng vùng bấm theo khuyến nghị cỡ chạm tối thiểu ~44px. */
 @media (max-width: 640px) {
-  .catalog-viewer-bar { padding: 10px 12px; gap: 8px; }
+  .catalog-viewer-bar { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
   .catalog-viewer-title { font-size: 14px; max-width: 46%; }
   .catalog-viewer-count { font-size: 12px; }
-  .catalog-viewer-close { width: 40px; height: 40px; flex: none; }
+  .catalog-viewer-close { width: 40px; height: 40px; }
+  .catalog-viewer-zoom button:first-child,
+  .catalog-viewer-zoom button:last-child { width: 34px; height: 34px; font-size: 18px; }
   .catalog-viewer-stage { padding: 0 6px 76px; }
   .catalog-viewer-nav { top: auto; bottom: 14px; transform: none; width: 46px; height: 46px; font-size: 20px; }
   .catalog-viewer-prev { left: 14px; }
