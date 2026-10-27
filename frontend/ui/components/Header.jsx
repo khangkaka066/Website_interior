@@ -157,6 +157,7 @@ export default function Header() {
           <nav className="main-nav">
             <Link to="/">Trang chủ</Link>
             <ProductsMenu />
+            <Link to="/dat-rieng">Đặt riêng</Link>
             <Link to="/news">Tin tức</Link>
             <Link to="/about">Giới thiệu</Link>
             <Link to="/faq">Hỏi đáp</Link>

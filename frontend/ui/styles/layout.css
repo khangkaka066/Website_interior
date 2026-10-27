@@ -2792,3 +2792,23 @@ label {
 .coupon-discount {
   color: var(--green-badge);
 }
+
+/* Xem catalog (PDF đặt riêng) kiểu lật sách, toàn màn hình (xem CatalogFlipBook.jsx). */
+.catalog-viewer { position: fixed; inset: 0; z-index: 400; background: rgba(15, 15, 20, 0.92); display: flex; flex-direction: column; }
+.catalog-viewer-bar { flex: none; display: flex; align-items: center; gap: 12px; padding: 14px 18px; color: #fff; }
+.catalog-viewer-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catalog-viewer-count { margin-left: auto; font-size: 13px; color: rgba(255, 255, 255, 0.72); }
+.catalog-viewer-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
+.catalog-viewer-close:hover { background: rgba(255, 255, 255, 0.18); }
+.catalog-viewer-stage { position: relative; flex: 1 1 auto; display: flex; align-items: center; justify-content: center; padding: 0 56px 20px; overflow: hidden; }
+.catalog-viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.92); color: var(--text-dark); font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); z-index: 1; }
+.catalog-viewer-nav:hover { background: #fff; }
+.catalog-viewer-prev { left: 8px; }
+.catalog-viewer-next { right: 8px; }
+.catalog-flipbook { box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); }
+.catalog-page { background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.catalog-page img { width: 100%; height: 100%; object-fit: contain; user-select: none; }
+@media (max-width: 640px) {
+  .catalog-viewer-stage { padding: 0 8px 12px; }
+  .catalog-viewer-nav { width: 34px; height: 34px; font-size: 18px; }
+}

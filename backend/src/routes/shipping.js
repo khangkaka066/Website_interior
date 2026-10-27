@@ -18,6 +18,7 @@ import { checkGoship } from '../lib/goship.js'
 import { reconcileUpload, accountingOverview, claimOpen, claimResolve } from '../controllers/goshipShipping.js'
 import { goshipConfig, goshipRates, goshipCreate, goshipBulkCreate, goshipWebhook,
   goshipSync, geocodeLookup } from '../controllers/goshipShipping.js'
+import { bestWebhook } from '../lib/bestWebhook.js'
 import { webhookLimiter } from '../middleware/security.js'
 import { validate } from '../middleware/validate.js'
 import { requirePermission } from '../middleware/auth.js'
@@ -45,6 +46,8 @@ router.post('/goship/shipments/:id/sync', guard, asyncHandler(goshipSync))
 router.post('/reconcile', guard, validate(reconcileSchema), asyncHandler(reconcileUpload)) // trước '/:id'
 router.get('/accounting', guard, asyncHandler(accountingOverview))
 router.post('/goship/webhook', webhookLimiter, asyncHandler(goshipWebhook))
+// Webhook công khai từ Best Express: xác thực bằng Bearer token (BEST_WEBHOOK_TOKEN).
+router.post('/best/webhook', webhookLimiter, asyncHandler(bestWebhook))
 router.get('/carriers', guard, asyncHandler(listCarriers))
 router.post('/carriers', guard, validate(createCarrierSchema), asyncHandler(createCarrier))
 router.patch('/carriers/:id', guard, validate(updateCarrierSchema), asyncHandler(updateCarrier))

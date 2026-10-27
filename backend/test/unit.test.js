@@ -1,3 +1,4 @@
+import { mapBestStatus, verifyBestBearer } from '../src/lib/bestWebhook.js'
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 import crypto, { createHmac } from 'node:crypto'
@@ -1782,5 +1783,24 @@ describe('chọn đúng hãng Best Express khi chuẩn bị hàng', () => {
     assert.equal(carrierMismatch({ carrierCode: 'best' }, { carrier_short_name: 'BEST' }), false)
     assert.equal(carrierMismatch({ carrierCode: 'best' }, { carrier_short_name: 'ghnv3' }), true)
     assert.equal(carrierMismatch({ carrierCode: 'best' }, {}), false) // thiếu mã thì không kết luận
+  })
+})
+
+describe('webhook Best Express', () => {
+  test('mã trạng thái Best -> trạng thái vận đơn', () => {
+    assert.equal(mapBestStatus('202').local, 'PICKED_UP')
+    assert.equal(mapBestStatus(601).local, 'OUT_FOR_DELIVERY')
+    assert.equal(mapBestStatus('666').local, 'DELIVERED')
+    assert.equal(mapBestStatus(708).local, 'RETURNED')
+    assert.equal(mapBestStatus(2).cancel, true)
+    assert.deepEqual(mapBestStatus(99999), {})
+  })
+  test('Bearer token: đúng thì nhận, sai / thiếu / chưa đặt token thì từ chối', () => {
+    assert.equal(verifyBestBearer('Bearer abc123', 'abc123'), true)
+    assert.equal(verifyBestBearer('bearer abc123', 'abc123'), true)
+    assert.equal(verifyBestBearer('Bearer abc124', 'abc123'), false)
+    assert.equal(verifyBestBearer('abc123', 'abc123'), false)
+    assert.equal(verifyBestBearer(undefined, 'abc123'), false)
+    assert.equal(verifyBestBearer('Bearer abc123', ''), false)
   })
 })

@@ -12,3 +12,7 @@ backend/skills-lock.json
 # Tệp khóa tạm của LibreOffice / Office (xuất hiện khi đang mở file Excel)
 .~*
 ~$*
+
+# Tài liệu/file nguồn tải về để tại gốc repo, không đưa vào git (PDF catalog đã chuyển thành ảnh ở frontend/public/catalogs)
+/*.pdf
+/*.docx

@@ -19,6 +19,7 @@
     "react": "19.2.8",
     "react-apexcharts": "^2.1.1",
     "react-dom": "19.2.8",
+    "react-pageflip": "^2.0.3",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

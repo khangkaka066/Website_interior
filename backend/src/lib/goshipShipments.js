@@ -577,7 +577,7 @@ export async function processGoshipWebhook({ payload, verified }, db = prisma) {
   return outcome
 }
 
-async function cancelOrderAfterRemoteCancel(orderId, db) {
+export async function cancelOrderAfterRemoteCancel(orderId, db) {
   try {
     const { orders } = await getSettings()
     if (orders.cancelOrderOnShipmentCancel === false) return
