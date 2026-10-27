@@ -56,12 +56,12 @@ export default function CatalogFlipBook({ catalog, onClose }) {
         </button>
         <HTMLFlipBook
           ref={flipRef}
-          width={480}
-          height={680}
+          width={catalog.width || 480}
+          height={catalog.height || 680}
           size="stretch"
           minWidth={240}
-          minHeight={320}
-          maxWidth={760}
+          minHeight={200}
+          maxWidth={900}
           maxHeight={1040}
           showCover={false}
           mobileScrollSupport

@@ -9,12 +9,16 @@ export const CATALOGS = [
     slug: 'cau-vong-blinds',
     title: 'Màn Sáo Lá Dọc – Cầu Vồng Blinds',
     description: 'Catalog mẫu màn sáo lá dọc (vertical blinds) Cầu Vồng: 51 trang mẫu vải, màu và cách phối.',
+    width: 620, // trang ảnh ngang (1240x878) -> khung sách cũng để ngang, tránh viền trắng thừa khi lật
+    height: 439,
     pages: pages('cau-vong-blinds', 51),
   },
   {
     slug: 'vh-blinds-rem-cuon',
     title: 'Rèm Cuốn VH Blinds',
     description: 'Catalog mẫu rèm cuốn VH Blinds: 12 trang mẫu vải và màu sắc.',
+    width: 480, // trang ảnh dọc (874x1241)
+    height: 682,
     pages: pages('vh-blinds-rem-cuon', 12),
   },
 ]

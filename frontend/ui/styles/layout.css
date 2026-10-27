@@ -2808,7 +2808,15 @@ label {
 .catalog-flipbook { box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); }
 .catalog-page { background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .catalog-page img { width: 100%; height: 100%; object-fit: contain; user-select: none; }
+/* Điện thoại: thanh trên gọn lại (tên catalog dễ bị dài), nút lùi/tới chuyển xuống 2 góc dưới (ngón tay cầm máy bấm tới,
+   tránh đè lên vùng góc trang mà StPageFlip dùng để nhận vuốt/kéo lật), tăng vùng bấm theo khuyến nghị cỡ chạm tối thiểu ~44px. */
 @media (max-width: 640px) {
-  .catalog-viewer-stage { padding: 0 8px 12px; }
-  .catalog-viewer-nav { width: 34px; height: 34px; font-size: 18px; }
+  .catalog-viewer-bar { padding: 10px 12px; gap: 8px; }
+  .catalog-viewer-title { font-size: 14px; max-width: 46%; }
+  .catalog-viewer-count { font-size: 12px; }
+  .catalog-viewer-close { width: 40px; height: 40px; flex: none; }
+  .catalog-viewer-stage { padding: 0 6px 76px; }
+  .catalog-viewer-nav { top: auto; bottom: 14px; transform: none; width: 46px; height: 46px; font-size: 20px; }
+  .catalog-viewer-prev { left: 14px; }
+  .catalog-viewer-next { right: 14px; }
 }
