@@ -15,7 +15,7 @@ export const COD_METHOD_ID = 'COD'
 
 export const DEFAULTS = {
   store: {
-    name: 'CLEVINUM',
+    name: 'CLEVINIUM',
     tagline: 'Rèm Việt Giá Sỉ',
     hotline: '0356 789 749',
     email: 'clevi.interior@gmail.com',
@@ -91,10 +91,10 @@ export const DEFAULTS = {
   // Nội dung các trang Về chúng tôi / Liên hệ / FAQ (sửa ở Cài đặt > Nội dung trang).
   content: {
     about: {
-      heading: 'Về CLEVINUM',
+      heading: 'Về CLEVINIUM',
       intro: 'Rèm cửa chất lượng cao, giá xưởng, giao hàng toàn quốc.',
       story:
-        'CLEVINUM bắt đầu từ một xưởng may rèm nhỏ với mong muốn mang đến cho mỗi gia đình những tấm rèm đẹp, bền và giá hợp lý.\n\nChúng tôi tự chọn vải, tự may và kiểm tra từng tấm trước khi giao, nên giá luôn sát giá xưởng.',
+        'CLEVINIUM bắt đầu từ một xưởng may rèm nhỏ với mong muốn mang đến cho mỗi gia đình những tấm rèm đẹp, bền và giá hợp lý.\n\nChúng tôi tự chọn vải, tự may và kiểm tra từng tấm trước khi giao, nên giá luôn sát giá xưởng.',
       highlights: [
         { title: 'Giá xưởng', text: 'Làm trực tiếp tại xưởng, không qua trung gian.' },
         { title: 'May theo kích thước', text: 'Rèm may đo theo đúng cửa sổ, cửa chính nhà bạn.' },
@@ -102,7 +102,7 @@ export const DEFAULTS = {
       ],
     },
     contact: {
-      intro: 'Cần tư vấn chọn rèm hay đo kích thước? Liên hệ CLEVINUM, chúng tôi phản hồi trong giờ làm việc.',
+      intro: 'Cần tư vấn chọn rèm hay đo kích thước? Liên hệ CLEVINIUM, chúng tôi phản hồi trong giờ làm việc.',
       hours: '8:00 – 21:00 hằng ngày',
       shopeeUrl: 'https://shopee.vn/clevi.interior',
       zaloUrl: '',
@@ -124,7 +124,8 @@ function merge(saved) {
     return { ...def, ...got, id: def.id, ...(def.bank ? { bank: { ...def.bank, ...(got.bank || {}) } } : {}) }
   })
   return {
-    store: { ...DEFAULTS.store, ...(s.store || {}) },
+    // Cài đặt đã lưu từ khi tên mặc định còn là "CLEVINUM" thì tự đổi sang tên mới (tên khác do admin tự đặt vẫn giữ nguyên).
+    store: { ...DEFAULTS.store, ...(s.store || {}), ...(s.store?.name === 'CLEVINUM' && { name: DEFAULTS.store.name }) },
     payment: { methods },
     shipping: {
       ...DEFAULTS.shipping,
