@@ -41,12 +41,15 @@ export default function RevenueChart({ range = '7d', dates }) {
     legend: { show: false, labels: { colors: '#64748b' }, markers: { radius: 4 } },
     xaxis: {
       categories: trend.map((t) => t.label),
-      labels: { style: { colors: '#94a3b8' } },
+      // Trục chỉ hiện vài mốc; ngày cụ thể xem ở tooltip khi rê chuột.
+      tickAmount: Math.min(Math.max(trend.length - 1, 1), 6),
+      labels: { style: { colors: '#94a3b8' }, rotate: 0, hideOverlappingLabels: true },
+      tooltip: { enabled: false },
       axisBorder: { show: false },
       axisTicks: { show: false },
     },
     yaxis: { labels: { style: { colors: '#94a3b8' } } },
-    tooltip: { theme: 'light' },
+    tooltip: { theme: 'light', x: { show: true } },
   }
 
   const series = [{ name: metric === 'revenue' ? 'Doanh thu (triệu đ)' : 'Số đơn', data: trend.map((t) => (metric === 'revenue' ? +(t.revenue / 1e6).toFixed(2) : t.orders)) }]
