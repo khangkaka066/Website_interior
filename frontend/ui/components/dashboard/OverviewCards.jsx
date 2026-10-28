@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Link } from '@/lib/router'
 import { api } from '../../api'
+import { rangeQuery } from '../../utils/rangeQuery'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { ORDER_STATUS } from '../../constants/orderStatus'
 
@@ -106,15 +107,15 @@ export function SuccessGauge({ overview }) {
 }
 
 // Phễu chuyển đổi: các bậc cột giảm dần từ lượt xem đến mua hàng.
-export function FunnelCard({ range }) {
+export function FunnelCard({ range, dates }) {
   const [stages, setStages] = useState(null)
   useEffect(() => {
     let off = false
-    api.get(`/analytics/funnel?range=${range === 'custom' ? '30d' : range}`).then((r) => !off && setStages(r.stages)).catch(() => !off && setStages([]))
+    api.get(`/analytics/funnel?${rangeQuery(range, dates)}`).then((r) => !off && setStages(r.stages)).catch(() => !off && setStages([]))
     return () => {
       off = true
     }
-  }, [range])
+  }, [range, dates])
   const max = Math.max(1, ...(stages || []).map((s) => s.count))
   return (
     <div className="dash-card">

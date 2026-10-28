@@ -3,31 +3,30 @@
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { api } from '../../api'
+import { rangeQuery } from '../../utils/rangeQuery'
 
 // Thư viện biểu đồ khá nặng: tải sau khi trang đã hiện để số liệu và menu hiện ra trước.
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
-
-const RANGE_API = { today: 'today', '7d': '7d', '30d': '30d', month: 'month', custom: '30d' }
 
 const METRICS = [
   { id: 'revenue', label: 'Doanh thu', unit: 'tr đ' },
   { id: 'orders', label: 'Số đơn hàng', unit: 'đơn' },
 ]
 
-export default function RevenueChart({ range = '7d' }) {
+export default function RevenueChart({ range = '7d', dates }) {
   const [metric, setMetric] = useState('revenue')
   const [trend, setTrend] = useState([])
 
   useEffect(() => {
     let cancelled = false
     api
-      .get(`/analytics/overview?range=${RANGE_API[range] || '30d'}`)
+      .get(`/analytics/overview?${rangeQuery(range, dates)}`)
       .then((r) => !cancelled && setTrend(r.trend || []))
       .catch(() => !cancelled && setTrend([]))
     return () => {
       cancelled = true
     }
-  }, [range])
+  }, [range, dates])
 
   const options = {
     chart: { type: 'area', toolbar: { show: false } },

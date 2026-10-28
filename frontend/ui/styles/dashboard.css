@@ -294,6 +294,8 @@
 
 .range-filter {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   background: #f3f4f6;
   border-radius: var(--dash-radius);
   padding: 4px;
@@ -315,6 +317,26 @@
   background: #ffffff;
   color: var(--dash-primary);
   box-shadow: 0 2px 6px rgba(30, 41, 59, 0.08);
+}
+
+.range-custom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 0 8px;
+  font-size: 12px;
+  color: var(--dash-text);
+}
+
+.range-custom input {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dash-text);
+  background: #fff;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  padding: 4px 6px;
 }
 
 .icon-bell {

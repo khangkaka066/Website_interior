@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api'
 import { formatCurrency } from '../../utils/format'
+import { rangeQuery } from '../../utils/rangeQuery'
 import {
   RevenueIcon,
   OrdersIcon,
@@ -13,18 +14,16 @@ import {
   TrendDownIcon,
 } from './DashIcons'
 
-const RANGE_API = { today: 'today', '7d': '7d', '30d': '30d', month: 'month', custom: '30d' }
-
 // Số liệu thật từ đơn hàng / khách hàng / sự kiện truy cập; chưa có dữ liệu thì hiện 0.
-export default function KpiCards({ range = '7d' }) {
+export default function KpiCards({ range = '7d', dates }) {
   const [data, setData] = useState(null)
 
   useEffect(() => {
     let cancelled = false
-    const r = RANGE_API[range] || '30d'
+    const r = rangeQuery(range, dates)
     Promise.all([
-      api.get(`/analytics/overview?range=${r}`),
-      api.get(`/analytics/funnel?range=${r}`),
+      api.get(`/analytics/overview?${r}`),
+      api.get(`/analytics/funnel?${r}`),
       api.get('/customers?pageSize=1'),
     ])
       .then(([overview, funnel, customers]) => {
@@ -36,7 +35,7 @@ export default function KpiCards({ range = '7d' }) {
     return () => {
       cancelled = true
     }
-  }, [range])
+  }, [range, dates])
 
   const o = data?.overview
   const kpis = [
