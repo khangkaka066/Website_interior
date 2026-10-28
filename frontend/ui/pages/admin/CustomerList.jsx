@@ -8,6 +8,8 @@ import CustomerFormModal from '../../components/dashboard/customers/CustomerForm
 import { api } from '../../api'
 import { CUSTOMER_STATUS, CUSTOMER_SEGMENT, customerStatusLabel, customerSegmentLabel } from '../../constants/customer'
 import { formatCurrency, formatDate } from '../../utils/format'
+import CustomRangeInputs, { useCustomDates } from '../../components/dashboard/CustomRangeInputs'
+import { rangeQuery } from '../../utils/rangeQuery'
 
 // Thư viện biểu đồ khá nặng: tải sau khi trang đã hiện để số liệu và menu hiện ra trước.
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
@@ -18,11 +20,13 @@ const RANGES = [
   { id: '7d', label: '7 ngày' },
   { id: '30d', label: '30 ngày' },
   { id: 'month', label: 'Tháng này' },
+  { id: 'custom', label: 'Tùy chỉnh' },
 ]
 
 export default function CustomerList() {
   const navigate = useNavigate()
   const [range, setRange] = useState('30d')
+  const [dates, setDate, today] = useCustomDates()
   const [overview, setOverview] = useState(null)
 
   const [search, setSearch] = useState('')
@@ -36,8 +40,8 @@ export default function CustomerList() {
   const [showAddModal, setShowAddModal] = useState(false)
 
   useEffect(() => {
-    api.get(`/customers/overview?range=${range}`).then(setOverview).catch(() => {})
-  }, [range])
+    api.get(`/customers/overview?${rangeQuery(range, dates)}`).then(setOverview).catch(() => {})
+  }, [range, dates])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -112,6 +116,7 @@ export default function CustomerList() {
             {r.label}
           </button>
         ))}
+        {range === 'custom' && <CustomRangeInputs dates={dates} setDate={setDate} max={today} />}
       </div>
 
       {overview && (

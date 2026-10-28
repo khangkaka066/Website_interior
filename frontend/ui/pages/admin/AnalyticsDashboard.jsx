@@ -7,6 +7,8 @@ import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
 import { AD_PLATFORM, platformLabel } from '../../constants/campaign'
 import { formatCurrency } from '../../utils/format'
+import CustomRangeInputs, { useCustomDates } from '../../components/dashboard/CustomRangeInputs'
+import { rangeQuery } from '../../utils/rangeQuery'
 
 // Thư viện biểu đồ khá nặng: tải sau khi trang đã hiện để số liệu và menu hiện ra trước.
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
@@ -16,6 +18,7 @@ const RANGES = [
   { id: '7d', label: '7 ngày' },
   { id: '30d', label: '30 ngày' },
   { id: 'month', label: 'Tháng này' },
+  { id: 'custom', label: 'Tùy chỉnh' },
 ]
 
 const INSIGHT_ICON = { positive: '📈', negative: '📉', warning: '⚠️', neutral: 'ℹ️' }
@@ -23,6 +26,7 @@ const INSIGHT_ICON = { positive: '📈', negative: '📉', warning: '⚠️', ne
 export default function AnalyticsDashboard() {
   const navigate = useNavigate()
   const [range, setRange] = useState('30d')
+  const [dates, setDate, today] = useCustomDates()
   const [overview, setOverview] = useState(null)
   const [funnel, setFunnel] = useState(null)
   const [ads, setAds] = useState(null)
@@ -32,11 +36,12 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     setLoading(true)
+    const q = rangeQuery(range, dates)
     Promise.all([
-      api.get(`/analytics/overview?range=${range}`),
-      api.get(`/analytics/funnel?range=${range}`),
-      api.get(`/analytics/ads-performance?range=${range}`),
-      api.get(`/analytics/insights?range=${range}`),
+      api.get(`/analytics/overview?${q}`),
+      api.get(`/analytics/funnel?${q}`),
+      api.get(`/analytics/ads-performance?${q}`),
+      api.get(`/analytics/insights?${q}`),
     ])
       .then(([o, f, a, i]) => {
         setOverview(o)
@@ -45,7 +50,7 @@ export default function AnalyticsDashboard() {
         setInsights(i.insights)
       })
       .finally(() => setLoading(false))
-  }, [range])
+  }, [range, dates])
 
   const chartOptions = {
     chart: { type: 'area', toolbar: { show: false } },
@@ -76,6 +81,7 @@ export default function AnalyticsDashboard() {
             {r.label}
           </button>
         ))}
+        {range === 'custom' && <CustomRangeInputs dates={dates} setDate={setDate} max={today} />}
       </div>
 
       {loading || !overview ? (
