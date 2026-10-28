@@ -30,7 +30,7 @@ export default function ProductColumns() {
                 <span className="product-row-name">{p.name}</span>
                 <span className="product-row-price">
                   {p.priceMax ? 'Từ ' : ''}
-                  {formatPrice(p.price)}
+                  {p.contactOnly ? 'Liên hệ' : formatPrice(p.price)}
                   <PriceOld product={p} />
                 </span>
               </div>

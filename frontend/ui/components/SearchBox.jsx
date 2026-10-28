@@ -147,7 +147,7 @@ export default function SearchBox() {
                     <span className="ss-name">{p.name}</span>
                     <span className="ss-price">
                       {p.priceMax ? 'Từ ' : ''}
-                      {formatPrice(p.price)}
+                      {p.contactOnly ? 'Liên hệ' : formatPrice(p.price)}
                       <PriceOld product={p} />
                     </span>
                   </button>

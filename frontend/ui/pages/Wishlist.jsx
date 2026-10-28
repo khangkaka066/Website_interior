@@ -40,7 +40,7 @@ export default function Wishlist() {
                   <div className="product-meta">
                     <span className="price">
                       {p.priceMax ? 'Từ ' : ''}
-                      {formatPrice(p.price)}
+                      {p.contactOnly ? 'Liên hệ' : formatPrice(p.price)}
                       <PriceOld product={p} />
                     </span>
                   </div>

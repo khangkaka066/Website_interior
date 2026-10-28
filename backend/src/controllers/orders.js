@@ -23,6 +23,7 @@ const MAX_LINE_QTY = 999
 function priceLine(it) {
   const product = getStorefrontProduct(it?.productId)
   if (!product) return { error: 'Có sản phẩm không tồn tại trong cửa hàng.' }
+  if (product.contactOnly) return { error: `"${product.name}" chưa có giá niêm yết, vui lòng liên hệ để được báo giá.` }
 
   const quantity = Number(it.quantity)
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_LINE_QTY) {

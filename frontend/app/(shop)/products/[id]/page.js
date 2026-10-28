@@ -30,7 +30,9 @@ const vnd = (n) => `${Number(n).toLocaleString('vi-VN')}đ`
 // Mô tả hiển thị trên kết quả tìm kiếm: ưu tiên mô tả thật; thiếu thì ghép từ tên + giá + cam kết để không bỏ trống.
 function describe(product) {
   const base = clean(product.description, 400)
-  const price = product.originalPrice
+  const price = product.contactOnly
+    ? 'Giá liên hệ để được báo giá.'
+    : product.originalPrice
     ? `Giá ${vnd(product.price)} (giảm ${product.discountPercent}%).`
     : `Giá ${product.priceMax ? 'từ ' : ''}${vnd(product.price)}.`
   const lead = `${cut(product.name, 90)} — ${price}`
@@ -50,7 +52,7 @@ export async function generateMetadata({ params }) {
     alternates: { canonical: `/products/${product.id}` },
     openGraph: { type: 'website', title, description, url: `/products/${product.id}`, images: images.map((url) => ({ url, alt: product.name })) },
     twitter: { card: 'summary_large_image', title, description, images: images.slice(0, 1) },
-    other: { 'product:price:amount': String(product.price), 'product:price:currency': 'VND' },
+    ...(!product.contactOnly && { other: { 'product:price:amount': String(product.price), 'product:price:currency': 'VND' } }),
   }
 }
 
@@ -79,7 +81,7 @@ export default async function ProductPage({ params }) {
       brand: { '@type': 'Brand', name: 'CLEVINUM' },
       // Chỉ khai báo khi có đánh giá thật của khách đã nhận hàng.
       ...(reviews?.count > 0 && { aggregateRating: { '@type': 'AggregateRating', ratingValue: reviews.average, reviewCount: reviews.count, bestRating: 5, worstRating: 1 } }),
-      offers: {
+      ...(!product.contactOnly && { offers: {
         '@type': product.priceMax ? 'AggregateOffer' : 'Offer',
         priceCurrency: 'VND',
         ...(product.priceMax ? { lowPrice: product.price, highPrice: product.priceMax, offerCount: product.variants?.length || 1 } : { price: product.price }),
@@ -88,7 +90,7 @@ export default async function ProductPage({ params }) {
         availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
         url,
         seller: { '@type': 'Organization', name: 'CLEVINUM' },
-      },
+      } }),
     },
     {
       '@context': 'https://schema.org',

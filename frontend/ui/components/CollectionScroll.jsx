@@ -77,7 +77,7 @@ export default function CollectionScroll() {
               <h3>{p.name}</h3>
               <span className="collection-price">
                 {p.priceMax ? 'Từ ' : ''}
-                {formatPrice(p.price)}
+                {p.contactOnly ? 'Liên hệ' : formatPrice(p.price)}
                 <PriceOld product={p} />
               </span>
             </div>

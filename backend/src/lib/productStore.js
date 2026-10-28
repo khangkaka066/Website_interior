@@ -1,4 +1,5 @@
 import { products as staticProducts } from '../data/shop.js'
+import { contactProducts } from '../data/contactProducts.js'
 import { Prisma } from '../generated/prisma/client.js'
 import { prisma } from './prisma.js'
 import { getSettings } from './settingsStore.js'
@@ -90,7 +91,7 @@ export function toStorefront(p, rules = new Map()) {
   return out
 }
 
-let storefront = staticProducts
+let storefront = [...staticProducts, ...contactProducts]
 let codeIndex = new Map() // mã (viết thường: SKU, Mã Shopee, mã phân loại...) -> { kind: 'product' | 'variant', target, name, price, ... }; dùng để kiểm tra mã khi nhập giảm giá
 let storefrontById = new Map(storefront.map((p) => [p.id, p]))
 
@@ -115,9 +116,10 @@ function rebuild(list, discountRules = []) {
       for (const c of variantCodes(v)) if (!codeIndex.has(c)) codeIndex.set(c, info)
     }
   }
-  storefront = list.length
+  const priced = list.length
     ? list.filter((p) => p.status === 'active').map((p) => toStorefront(p, rules)).filter((p) => Number.isFinite(p.price) && p.price > 0)
     : staticProducts
+  storefront = [...priced, ...contactProducts]
   storefrontById = new Map(storefront.map((p) => [p.id, p]))
 }
 

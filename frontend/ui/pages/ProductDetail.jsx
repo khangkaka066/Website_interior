@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from '@/lib/router'
-import { categories } from '../data/shop'
+import { categories, shopInfo } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
 import { useCart } from '../context/CartContext'
 import { trackEvent } from '../analytics'
@@ -151,8 +151,8 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
               {category && <span className="pdp-category">{category.name}</span>}
               <h1 className="pdp-name">{product.name}</h1>
               <div className="pdp-price-row">
-                <span className="pdp-price">{formatPrice(price)}</span>
-                {salePrice && <span className="pdp-price-old">{formatPrice(salePrice)}</span>}
+                <span className="pdp-price">{product.contactOnly ? 'Liên hệ' : formatPrice(price)}</span>
+                {!product.contactOnly && salePrice && <span className="pdp-price-old">{formatPrice(salePrice)}</span>}
                 {salePercent ? <span className="badge badge-discount">-{salePercent}%</span> : null}
               </div>
               {reviewSummary?.count > 0 ? (
@@ -201,6 +201,16 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
                 </p>
               )}
 
+              {product.contactOnly ? (
+                <div className="pdp-purchase-row">
+                  <a className="btn btn-accent" href={`tel:${shopInfo.hotline.replace(/\s/g, '')}`}>
+                    Gọi {shopInfo.hotline} để báo giá
+                  </a>
+                  <Link className="btn" to="/contact">
+                    Gửi yêu cầu tư vấn
+                  </Link>
+                </div>
+              ) : (
               <div className="pdp-purchase-row">
                 <div className="pdp-qty">
                   <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="Giảm số lượng">
@@ -234,6 +244,7 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
                   Mua ngay
                 </button>
               </div>
+              )}
               {added && <p className="pdp-added-note">Đã thêm vào giỏ hàng — <Link to="/cart">xem giỏ hàng →</Link></p>}
 
               <a href="#shipping-info" className="pdp-shipping-link">

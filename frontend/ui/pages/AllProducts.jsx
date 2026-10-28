@@ -16,7 +16,7 @@ function formatPrice(n) {
 }
 
 const PRICE_RANGES = [
-  { id: 'under100', label: 'Dưới 100.000đ', test: (p) => p.price < 100000 },
+  { id: 'under100', label: 'Dưới 100.000đ', test: (p) => !p.contactOnly && p.price < 100000 },
   { id: '100-250', label: '100.000đ – 250.000đ', test: (p) => p.price >= 100000 && p.price <= 250000 },
   { id: 'over250', label: 'Trên 250.000đ', test: (p) => p.price > 250000 },
 ]
@@ -339,7 +339,7 @@ export default function AllProducts() {
                         <div className="product-meta">
                           <span className="price">
                             {p.priceMax ? 'Từ ' : ''}
-                            {formatPrice(p.price)}
+                            {p.contactOnly ? 'Liên hệ' : formatPrice(p.price)}
                             <PriceOld product={p} />
                           </span>
                         </div>
@@ -366,7 +366,7 @@ export default function AllProducts() {
                       <div className="product-meta">
                         <span className="price">
                           {p.priceMax ? 'Từ ' : ''}
-                          {formatPrice(p.price)}
+                          {p.contactOnly ? 'Liên hệ' : formatPrice(p.price)}
                           <PriceOld product={p} />
                         </span>
                       </div>
