@@ -8,6 +8,7 @@ import { useCart } from '../context/CartContext'
 import { trackEvent } from '../analytics'
 import { pixelTrack } from '../pixels'
 import { sized, IMG } from '../utils/image'
+import ZoomableImage from '../components/ZoomableImage'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -143,7 +144,7 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
                 ))}
               </div>
               <div className="pdp-main-image">
-                <img src={sized(mainImage, IMG.large)} alt={product.name} decoding="async" />
+                <ZoomableImage src={sized(mainImage, IMG.large)} alt={product.name} decoding="async" />
               </div>
             </div>
 
