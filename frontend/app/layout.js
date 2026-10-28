@@ -15,15 +15,15 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'CLEVINUM — Rèm Việt Giá Sỉ', template: '%s | CLEVINUM' },
-  description: 'CLEVINUM — rèm cửa chất lượng cao, giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo và phụ kiện. Giao hàng toàn quốc.',
+  title: { default: 'CLEVINIUM — Rèm Việt Giá Sỉ', template: '%s | CLEVINIUM' },
+  description: 'CLEVINIUM — rèm cửa chất lượng cao, giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo và phụ kiện. Giao hàng toàn quốc.',
   applicationName: 'CLEVINUM',
   openGraph: {
     type: 'website',
     siteName: 'CLEVINUM',
     locale: 'vi_VN',
     // Ảnh mặc định khi chia sẻ link (Facebook, Zalo...) của trang không có ảnh riêng.
-    images: [{ url: '/images/curtains/room-blue.webp', alt: 'CLEVINUM — rèm cửa giá xưởng' }],
+    images: [{ url: '/images/curtains/room-blue.webp', alt: 'CLEVINIUM — rèm cửa giá xưởng' }],
   },
   twitter: { card: 'summary_large_image' },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },

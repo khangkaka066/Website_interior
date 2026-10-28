@@ -1,5 +1,5 @@
 export const shopInfo = {
-  name: 'CLEVINUM',
+  name: 'CLEVINIUM',
   tagline: 'Rèm Việt Giá Sỉ',
   subBrand: 'CURTAIN · PREMIUM QUALITY',
   hotline: '0356 789 749',

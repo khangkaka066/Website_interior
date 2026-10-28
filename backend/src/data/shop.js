@@ -2,7 +2,7 @@
 // data (from https://shopee.vn/clevi.interior) the storefront was built
 // from. Keep both in sync until the frontend is switched to fetch from here.
 export const shopInfo = {
-  name: 'CLEVINUM',
+  name: 'CLEVINIUM',
   tagline: 'Rèm Việt Giá Sỉ',
   subBrand: 'CURTAIN · PREMIUM QUALITY',
   hotline: '0356 789 749',
