@@ -5,10 +5,12 @@ import { useEffect, useRef, useState } from 'react'
 const MIN = 1
 const MAX = 4
 const STEP = 0.5
+const HOLD_ZOOM = 2.5 // mức phóng khi giữ chuột trái
 const clamp = (z) => Math.min(MAX, Math.max(MIN, Math.round(z * 100) / 100))
 
-// Ảnh sản phẩm có zoom: nút +/− (mọi thiết bị), Ctrl/Cmd + cuộn chuột và bấm đúp (laptop/PC),
-// chụm 2 ngón (điện thoại/tablet); đã zoom thì kéo (chuột hoặc 1 ngón) để xem các góc.
+// Ảnh sản phẩm có zoom: nút +/− (mọi thiết bị), Ctrl/Cmd + cuộn chuột (laptop/PC),
+// giữ chuột trái để phóng tại chỗ và rê chuột tới đâu zoom tới đó (thả chuột thì về cỡ gốc),
+// chụm 2 ngón (điện thoại/tablet); đã zoom bằng nút/Ctrl+cuộn thì kéo (chuột hoặc 1 ngón) để xem các góc.
 export default function ZoomableImage({ src, alt, ...imgProps }) {
   const stageRef = useRef(null)
   const [view, setView] = useState({ s: 1, x: 0, y: 0 })
@@ -69,7 +71,14 @@ export default function ZoomableImage({ src, alt, ...imgProps }) {
 
   function onPointerDown(e) {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    if (pointers.current.size === 2) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    if (e.pointerType === 'mouse' && viewRef.current.s === 1) {
+      // giữ chuột trái: phóng tại điểm giữ, điểm dưới con trỏ giữ nguyên vị trí khi rê
+      const [cx, cy] = fromCenter(e.clientX, e.clientY)
+      gesture.current = { type: 'hold' }
+      setView(limit(HOLD_ZOOM, -cx * (HOLD_ZOOM - 1), -cy * (HOLD_ZOOM - 1)))
+      setDragging(true)
+    } else if (pointers.current.size === 2) {
       const [mx, my] = mid()
       gesture.current = { type: 'pinch', d: dist(), s: viewRef.current.s, mx, my }
     } else if (pointers.current.size === 1 && viewRef.current.s > 1) {
@@ -84,7 +93,10 @@ export default function ZoomableImage({ src, alt, ...imgProps }) {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     const g = gesture.current
     if (!g) return
-    if (g.type === 'pinch' && pointers.current.size === 2) {
+    if (g.type === 'hold') {
+      const [cx, cy] = fromCenter(e.clientX, e.clientY)
+      setView(limit(HOLD_ZOOM, -cx * (HOLD_ZOOM - 1), -cy * (HOLD_ZOOM - 1)))
+    } else if (g.type === 'pinch' && pointers.current.size === 2) {
       const [mx, my] = mid()
       const s = clamp(g.s * (dist() / g.d))
       const [cx, cy] = fromCenter(mx, my)
@@ -101,6 +113,7 @@ export default function ZoomableImage({ src, alt, ...imgProps }) {
 
   function onPointerUp(e) {
     pointers.current.delete(e.pointerId)
+    if (gesture.current?.type === 'hold') setView({ s: 1, x: 0, y: 0 })
     gesture.current = null
     setDragging(false)
     // còn 1 ngón sau khi chụm: tiếp tục kéo nếu đang zoom
@@ -108,12 +121,6 @@ export default function ZoomableImage({ src, alt, ...imgProps }) {
       const [p] = [...pointers.current.values()]
       gesture.current = { type: 'pan', x: p.x, y: p.y, vx: viewRef.current.x, vy: viewRef.current.y }
     }
-  }
-
-  function onDoubleClick(e) {
-    if (viewRef.current.s > 1) return setView({ s: 1, x: 0, y: 0 })
-    const [cx, cy] = fromCenter(e.clientX, e.clientY)
-    zoomTo(2.5, cx, cy)
   }
 
   const zoomed = view.s > 1
@@ -126,7 +133,6 @@ export default function ZoomableImage({ src, alt, ...imgProps }) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        onDoubleClick={onDoubleClick}
       >
         <img
           src={src}
