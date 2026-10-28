@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Link, useNavigate } from '@/lib/router'
 import SearchBox from './SearchBox'
 import ProductsMenu from './ProductsMenu'
@@ -16,6 +17,13 @@ function formatPrice(n) {
 export default function Header() {
   // Phiên đăng nhập nằm trong trình duyệt: nạp sau khi mở trang để HTML từ server và lần vẽ đầu của trình duyệt giống nhau.
   const [session, setSession] = useState(null)
+  const pathname = usePathname()
+  // Đang ở trang chủ mà bấm logo / "Trang chủ" thì tải lại trang (Next chỉ chuyển trong cùng trang nên mặc định không có gì xảy ra).
+  const reloadIfHome = (e) => {
+    if (pathname !== '/' || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    e.preventDefault()
+    window.location.reload()
+  }
   useEffect(() => setSession(getSession()), [])
   // Khi trình duyệt rảnh, tải sẵn các trang giỏ hàng / thanh toán / yêu thích / tra cứu đơn để chuyển sang là nhanh.
   useEffect(() => {
@@ -42,7 +50,7 @@ export default function Header() {
     <header className="header">
       <div className="header-pill">
       <div className="container header-top">
-        <Link to="/" className="logo" aria-label={`${shopInfo.name} - về trang chủ`}>
+        <Link to="/" onClick={reloadIfHome} className="logo" aria-label={`${shopInfo.name} - về trang chủ`}>
           <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
             <path
               d="M4 3 C4 10 9 12 9 16 C9 20 5 21 5 23"
@@ -155,7 +163,7 @@ export default function Header() {
         <div className="container header-bottom-inner">
           {/* Thứ tự: trang chủ -> xem sản phẩm -> cảm hứng/mẹo chọn -> độ tin cậy -> hỗ trợ tự phục vụ (hỏi đáp, tra cứu đơn) -> liên hệ trực tiếp */}
           <nav className="main-nav">
-            <Link to="/">Trang chủ</Link>
+            <Link to="/" onClick={reloadIfHome}>Trang chủ</Link>
             <ProductsMenu />
             <Link to="/dat-rieng">Đặt riêng</Link>
             <Link to="/news">Tin tức</Link>
