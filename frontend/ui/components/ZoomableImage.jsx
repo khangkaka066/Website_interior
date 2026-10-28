@@ -8,9 +8,9 @@ const STEP = 0.5
 const HOLD_ZOOM = 2.5 // mức phóng khi giữ chuột trái
 const clamp = (z) => Math.min(MAX, Math.max(MIN, Math.round(z * 100) / 100))
 
-// Ảnh sản phẩm có zoom: Ctrl/Cmd + cuộn chuột (laptop/PC),
+// Ảnh sản phẩm có zoom: nút +/− (mọi thiết bị), Ctrl/Cmd + cuộn chuột (laptop/PC),
 // giữ chuột trái để phóng tại chỗ và rê chuột tới đâu zoom tới đó (thả chuột thì về cỡ gốc),
-// chụm 2 ngón (điện thoại/tablet); đã zoom bằng Ctrl+cuộn/chụm thì kéo (chuột hoặc 1 ngón) để xem các góc.
+// chụm 2 ngón (điện thoại/tablet); đã zoom bằng nút/Ctrl+cuộn thì kéo (chuột hoặc 1 ngón) để xem các góc.
 export default function ZoomableImage({ src, alt, ...imgProps }) {
   const stageRef = useRef(null)
   const [view, setView] = useState({ s: 1, x: 0, y: 0 })
@@ -141,6 +141,17 @@ export default function ZoomableImage({ src, alt, ...imgProps }) {
           style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.s})` }}
           {...imgProps}
         />
+      </div>
+      <div className="zoom-controls">
+        <button type="button" onClick={() => zoomTo(view.s - STEP)} disabled={view.s <= MIN} aria-label="Thu nhỏ">
+          −
+        </button>
+        <button type="button" onClick={() => setView({ s: 1, x: 0, y: 0 })} aria-label="Về cỡ gốc" className="zoom-pct">
+          {Math.round(view.s * 100)}%
+        </button>
+        <button type="button" onClick={() => zoomTo(view.s + STEP)} disabled={view.s >= MAX} aria-label="Phóng to">
+          +
+        </button>
       </div>
     </>
   )
