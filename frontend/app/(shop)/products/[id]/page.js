@@ -29,6 +29,7 @@ const vnd = (n) => `${Number(n).toLocaleString('vi-VN')}đ`
 
 // Mô tả hiển thị trên kết quả tìm kiếm: ưu tiên mô tả thật; thiếu thì ghép từ tên + giá + cam kết để không bỏ trống.
 function describe(product) {
+  if (product.seo?.metaDescription) return product.seo.metaDescription
   const base = clean(product.description, 400)
   const price = product.contactOnly
     ? 'Giá liên hệ để được báo giá.'
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }) {
   const { id } = await params
   const product = await load(id)
   if (!product) return { title: 'Không tìm thấy sản phẩm', robots: { index: false } }
-  const title = cut(product.name, 62)
+  const title = product.seo?.metaTitle || cut(product.name, 62)
   const description = describe(product)
   const images = (product.images?.length ? product.images : [product.image]).filter(Boolean).slice(0, 4)
   return {

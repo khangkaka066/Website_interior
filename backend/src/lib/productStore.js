@@ -1,5 +1,6 @@
 import { products as staticProducts } from '../data/shop.js'
 import { contactProducts } from '../data/contactProducts.js'
+import { seoOverrides } from '../data/seoOverrides.js'
 import { Prisma } from '../generated/prisma/client.js'
 import { prisma } from './prisma.js'
 import { getSettings } from './settingsStore.js'
@@ -69,6 +70,9 @@ export function toStorefront(p, rules = new Map()) {
     createdAt: p.createdAt || '',
     ...(p.updatedAt && { updatedAt: p.updatedAt }), // ngày cập nhật cho sitemap
   }
+  // Meta title/description do admin nhập (ưu tiên) hoặc đặt sẵn trong data/seoOverrides.js.
+  const seo = { ...seoOverrides[out.id], ...Object.fromEntries(Object.entries(p.seo || {}).filter(([k, v]) => ['metaTitle', 'metaDescription'].includes(k) && v)) }
+  if (seo.metaTitle || seo.metaDescription) out.seo = seo
   if (variants.length) {
     const cheapest = variants.reduce((a, b) => (b.price < a.price ? b : a))
     if (cheapest.percent) Object.assign(out, { originalPrice: cheapest.listPrice, discountPercent: cheapest.percent })
