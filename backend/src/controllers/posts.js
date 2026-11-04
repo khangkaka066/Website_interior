@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js'
+import { Prisma } from '../generated/prisma/client.js'
 import { toPlain } from '../utils/serialize.js'
 import { slugify } from '../schemas/admin.js'
 
@@ -28,7 +29,7 @@ export async function getPublicPost(req, res) {
 export async function listPosts(req, res) {
   const posts = await prisma.post.findMany({
     orderBy: [{ createdAt: 'desc' }],
-    select: { ...PUBLIC_LIST, status: true, createdAt: true, updatedAt: true },
+    select: { ...PUBLIC_LIST, status: true, rejectReason: true, createdAt: true, updatedAt: true },
   })
   res.json(toPlain(posts))
 }
@@ -51,7 +52,7 @@ async function uniqueSlug(base, ignoreId) {
 }
 
 export async function createPost(req, res) {
-  const { title, slug, excerpt, content, coverUrl, status } = req.body
+  const { title, slug, excerpt, content, coverUrl, status, seoReport, rejectReason } = req.body
   const post = await prisma.post.create({
     data: {
       title,
@@ -60,6 +61,8 @@ export async function createPost(req, res) {
       content,
       coverUrl: coverUrl || null,
       status,
+      seoReport: seoReport ?? undefined,
+      rejectReason: status === 'rejected' ? rejectReason || null : null,
       publishedAt: status === 'published' ? new Date() : null,
     },
   })
@@ -69,15 +72,18 @@ export async function createPost(req, res) {
 export async function updatePost(req, res) {
   const post = await prisma.post.findUnique({ where: { id: req.params.id } })
   if (!post) return res.status(404).json({ error: 'Không tìm thấy bài viết.' })
-  const { title, slug, excerpt, content, coverUrl, status } = req.body
+  const { title, slug, excerpt, content, coverUrl, status, seoReport, rejectReason } = req.body
   const data = {}
   if (title !== undefined) data.title = title
   if (slug !== undefined && slug !== post.slug) data.slug = await uniqueSlug(slug, post.id)
   if (excerpt !== undefined) data.excerpt = excerpt
   if (content !== undefined) data.content = content
   if (coverUrl !== undefined) data.coverUrl = coverUrl || null
+  if (seoReport !== undefined) data.seoReport = seoReport === null ? Prisma.DbNull : seoReport
   if (status !== undefined) {
     data.status = status
+    // Lý do từ chối chỉ giữ khi bài đang ở trạng thái bị từ chối.
+    data.rejectReason = status === 'rejected' ? rejectReason || null : null
     // Ngày đăng đặt lần đầu khi xuất bản và giữ nguyên khi sửa/xuất bản lại; chuyển về nháp thì ẩn khỏi website.
     if (status === 'published' && !post.publishedAt) data.publishedAt = new Date()
   }

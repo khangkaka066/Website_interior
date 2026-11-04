@@ -218,6 +218,20 @@ export const slugify = (text) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 80)
 
+// Báo cáo chấm bài do công cụ ghi lại (chỉ để hiển thị khi duyệt): giới hạn kích thước để không lưu rác.
+const seoReport = () =>
+  z
+    .object({
+      total: z.number().min(0).max(100),
+      rating: z.string().max(40).optional(),
+      categories: z.record(z.string().max(60), z.number()).optional(),
+      issues: z.array(z.object({ severity: z.string().max(20), issue: z.string().max(300) })).max(40).optional(),
+      tool: z.string().max(120).optional(),
+      measuredAt: z.string().max(40).optional(),
+    })
+    .nullable()
+    .optional()
+
 const postFields = {
   title: text('tiêu đề', 200),
   slug: z
@@ -230,7 +244,9 @@ const postFields = {
   excerpt: z.string().trim().max(400, 'Mô tả ngắn quá dài (tối đa 400 ký tự).').optional().default(''),
   content: z.string().max(60000, 'Nội dung quá dài.').optional().default(''),
   coverUrl: url('ảnh bìa'),
-  status: z.enum(['draft', 'published'], 'Trạng thái không hợp lệ.').optional().default('draft'),
+  status: z.enum(['draft', 'published', 'rejected'], 'Trạng thái không hợp lệ.').optional().default('draft'),
+  seoReport: seoReport(),
+  rejectReason: z.string().trim().max(500, 'Lý do quá dài (tối đa 500 ký tự).').optional(),
 }
 export const createPostSchema = z.object(postFields)
 export const updatePostSchema = z.object({
@@ -240,7 +256,9 @@ export const updatePostSchema = z.object({
   content: z.string().max(60000, 'Nội dung quá dài.').optional(),
   // Chuỗi rỗng/null = xóa ảnh bìa (phải xét trước `url()` vì url() biến chuỗi rỗng thành undefined, tức là "không đổi").
   coverUrl: z.union([z.literal('').transform(() => null), z.null(), url('ảnh bìa')]).optional(),
-  status: z.enum(['draft', 'published'], 'Trạng thái không hợp lệ.').optional(),
+  status: z.enum(['draft', 'published', 'rejected'], 'Trạng thái không hợp lệ.').optional(),
+  seoReport: seoReport(),
+  rejectReason: z.string().trim().max(500, 'Lý do quá dài (tối đa 500 ký tự).').optional(),
 })
 
 // Tạo vận đơn THẬT qua Goship: bắt buộc chọn một lựa chọn cước và xác nhận tường minh.

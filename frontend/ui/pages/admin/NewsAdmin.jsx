@@ -4,6 +4,16 @@ import { useCallback, useEffect, useState } from 'react'
 import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
 import { formatDate } from '../../utils/format'
+import PostReview from './PostReview'
+
+const STATUS_LABEL = { published: 'Đã đăng', draft: 'Chờ duyệt', rejected: 'Đã từ chối' }
+const STATUS_CLASS = { published: 'status-delivered', draft: 'status-pending', rejected: 'status-cancelled' }
+const TABS = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'draft', label: 'Chờ duyệt' },
+  { id: 'published', label: 'Đã đăng' },
+  { id: 'rejected', label: 'Đã từ chối' },
+]
 
 const EMPTY = { title: '', slug: '', excerpt: '', coverUrl: '', content: '', status: 'draft' }
 
@@ -16,6 +26,10 @@ export default function NewsAdmin() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [tab, setTab] = useState('all')
+  const [reviewing, setReviewing] = useState(null) // bài đang duyệt (đủ nội dung)
+  const [reviewBusy, setReviewBusy] = useState(false)
+  const [reviewError, setReviewError] = useState('')
 
   const load = useCallback(async () => {
     try {
@@ -62,6 +76,29 @@ export default function NewsAdmin() {
     }
   }
 
+  async function openReview(id) {
+    setReviewError('')
+    try {
+      setReviewing(await api.get(`/posts/${id}`))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function decide(body) {
+    setReviewBusy(true)
+    setReviewError('')
+    try {
+      await api.patch(`/posts/${reviewing.id}`, body)
+      setReviewing(null)
+      await load()
+    } catch (err) {
+      setReviewError(err.message)
+    } finally {
+      setReviewBusy(false)
+    }
+  }
+
   async function toggle(p) {
     try {
       await api.patch(`/posts/${p.id}`, { status: p.status === 'published' ? 'draft' : 'published' })
@@ -81,6 +118,7 @@ export default function NewsAdmin() {
     }
   }
 
+  const shown = tab === 'all' ? posts : posts.filter((p) => p.status === tab)
   const set = (k) => (e) => setEditing((f) => ({ ...f, [k]: e.target.value }))
 
   return (
@@ -95,11 +133,19 @@ export default function NewsAdmin() {
     >
       {error && <div className="dash-card" style={{ padding: '16px', color: 'var(--dash-danger)', marginBottom: '16px' }}>{error}</div>}
 
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+        {TABS.map((t) => (
+          <button key={t.id} className={tab === t.id ? 'dash-btn' : 'dash-btn-outline'} onClick={() => setTab(t.id)}>
+            {t.label} ({t.id === 'all' ? posts.length : posts.filter((p) => p.status === t.id).length})
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="dash-card" style={{ textAlign: 'center', padding: '40px' }}>Đang tải...</div>
-      ) : posts.length === 0 ? (
+      ) : shown.length === 0 ? (
         <div className="dash-card" style={{ textAlign: 'center', padding: '40px' }}>
-          <p className="dash-empty-state">Chưa có bài viết nào. Bấm “+ Viết bài” để đăng bài đầu tiên.</p>
+          <p className="dash-empty-state">{posts.length === 0 ? 'Chưa có bài viết nào. Bấm “+ Viết bài” để đăng bài đầu tiên.' : 'Không có bài nào ở mục này.'}</p>
         </div>
       ) : (
         <div className="dash-card dash-card-wide">
@@ -114,25 +160,33 @@ export default function NewsAdmin() {
               </tr>
             </thead>
             <tbody>
-              {posts.map((p) => (
+              {shown.map((p) => (
                 <tr key={p.id}>
                   <td>
                     <strong>{p.title}</strong>
                     <div style={{ fontSize: '12px', color: 'var(--dash-text-muted, #888)' }}>/news/{p.slug}</div>
                   </td>
                   <td>
-                    <span className={`order-status-badge ${p.status === 'published' ? 'status-delivered' : 'status-pending'}`}>
-                      {p.status === 'published' ? 'Đã đăng' : 'Bản nháp'}
+                    <span className={`order-status-badge ${STATUS_CLASS[p.status] || 'status-pending'}`}>
+                      {STATUS_LABEL[p.status] || p.status}
                     </span>
+                    {p.status === 'rejected' && p.rejectReason && (
+                      <div style={{ fontSize: '12px', color: 'var(--dash-text-muted, #888)' }}>{p.rejectReason}</div>
+                    )}
                   </td>
                   <td>{formatDate(p.publishedAt)}</td>
                   <td>{formatDate(p.updatedAt)}</td>
                   <td>
+                    {p.status !== 'published' && (
+                      <button className="dash-btn" onClick={() => openReview(p.id)}>Duyệt</button>
+                    )}{' '}
                     <button className="dash-btn-outline" onClick={() => startEdit(p.id)}>Sửa</button>{' '}
                     {p.status === 'published' && (
                       <a className="dash-btn-outline" href={`/news/${p.slug}`} target="_blank" rel="noreferrer">Xem</a>
                     )}{' '}
-                    <button className="dash-btn-outline" onClick={() => toggle(p)}>{p.status === 'published' ? 'Gỡ xuống' : 'Đăng'}</button>{' '}
+                    {p.status === 'published' && (
+                      <button className="dash-btn-outline" onClick={() => toggle(p)}>Gỡ xuống</button>
+                    )}{' '}
                     {confirmDelete === p.id ? (
                       <>
                         <button className="dash-btn" onClick={() => remove(p.id)}>Xác nhận xóa</button>{' '}
@@ -147,6 +201,17 @@ export default function NewsAdmin() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {reviewing && (
+        <PostReview
+          post={reviewing}
+          busy={reviewBusy}
+          error={reviewError}
+          onAccept={() => decide({ status: 'published' })}
+          onReject={(reason) => decide({ status: 'rejected', rejectReason: reason })}
+          onClose={() => setReviewing(null)}
+        />
       )}
 
       {editing && (

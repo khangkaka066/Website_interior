@@ -656,8 +656,10 @@ model Post {
   excerpt     String    @default("")
   content     String    @default("")
   coverUrl    String?
-  status      String    @default("draft") // draft | published
+  status      String    @default("draft") // draft | published | rejected
   publishedAt DateTime?
+  seoReport    Json?     // điểm và lỗi do công cụ chấm bài (claude-blog) ghi lại lúc tạo bài; chỉ để xem khi duyệt
+  rejectReason String?   // lý do khi bấm Từ chối
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
