@@ -1,6 +1,6 @@
 ---
 title: "Hướng dẫn giặt gối tựa sofa vải gấm đúng cách"
-description: "Cách giặt gối tựa sofa vải gấm: đọc nhãn, tháo vỏ nếu được, giặt chế độ nhẹ, vắt và phơi. Tham khảo This Old House và lưu ý khi chưa có hướng dẫn của shop."
+description: "Cách giặt gối tựa sofa vải gấm: đọc nhãn, tháo vỏ nếu được, giặt chế độ nhẹ, vắt và phơi. Theo hướng dẫn của This Old House."
 slug: huong-dan-giat-goi-vai-gam
 date: 2026-11-04
 author: CLEVINIUM
@@ -11,7 +11,7 @@ status: draft
 
 **Trước khi giặt gối, hãy đọc nhãn, tháo vỏ nếu được, rồi giặt chế độ nhẹ với nước lạnh hoặc ấm.**
 
-CLEVINIUM chưa công bố hướng dẫn giặt riêng cho gối tựa sofa vải gấm, nên bài này tổng hợp lời khuyên chung và lưu ý bạn kiểm tra thêm với shop.
+Gối tựa sofa vải gấm của CLEVINIUM gồm vải gấm và ruột bông. Các bước dưới đây dựa trên hướng dẫn giặt gối của This Old House.
 
 ## Trước khi giặt: đọc nhãn
 
@@ -19,7 +19,7 @@ CLEVINIUM chưa công bố hướng dẫn giặt riêng cho gối tựa sofa v�
 
 ![Gối tựa vải gấm màu xám có vân chìm đặt trên ghế sofa màu kem](https://cf.shopee.vn/file/vn-11134207-7ras8-mdsud6vqebphfb)
 
-Nếu gối của bạn chưa có nhãn hoặc nhãn không rõ, hãy hỏi shop trước khi giặt. Gối tựa sofa vải gấm của CLEVINIUM gồm vải gấm và ruột bông theo mô tả của shop.
+Gối tựa sofa vải gấm của CLEVINIUM gồm vải gấm và ruột bông.
 
 ## Các bước giặt gối
 
