@@ -29,6 +29,7 @@ Mức độ: **A** = sai sự thật hoặc rủi ro pháp lý/uy tín, phải x
 | B4 | Đơn vị độ dày trong catalog rèm cầu vồng lẫn cm và mm | Xem `zebra-vh-blinds.md` |
 | B5 | Trang `/dat-rieng` (catalog rèm cầu vồng, rèm cuốn) **không có trong sitemap** (kiểm tra 2026-11-04: sitemap có 81 URL, không có `/dat-rieng`) | Thêm vào sitemap để Google biết trang này, nhất là sau khi sửa A1 |
 | B6 | **Đổi slug bài viết không tạo chuyển hướng 301**: `updatePost` cho đổi `slug` và không lưu slug cũ, nên link cũ sẽ 404 | `backend/src/controllers/posts.js` | Quy tắc: không đổi slug sau khi đăng (`blog-playbook.md` mục 6). Nếu cần đổi thường xuyên, thêm bảng chuyển hướng |
+| B7 | **Mô tả rèm RIDO không nhất quán**: `sp5248262061` ghi khoen RIDO dạng móc, kéo thẳng không cần nhún nhiều; `sp28882500901` và `sp28482500494` ghi "đã gắn khoen đục lỗ" (giống rèm ORE). Mô tả rèm dán tường cũng không thống nhất về thanh treo | Mô tả sản phẩm qua API | Bài `rem-rido-la-gi` và `rem-dan-tuong-la-gi` chỉ nêu theo `sp5248262061` và nói rõ "theo mô tả của shop". Chủ shop cần xác nhận khoen RIDO là gì, rèm dán có cần thanh treo không, và giới hạn tường/tải của miếng dán |
 
 ## C. Thiếu dữ liệu
 
