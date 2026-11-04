@@ -15,6 +15,20 @@ const CATEGORY = {
 }
 const SEVERITY = { high: 'Cao', medium: 'Vừa', low: 'Thấp', critical: 'Nghiêm trọng' }
 
+// Danh sách các mục checklist: ✔ đạt, ! gợi ý (không chặn đăng), ✕ chưa đạt.
+export function ChecklistList({ items }) {
+  return (
+    <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '6px', fontSize: '13px' }}>
+      {items.map((i) => (
+        <li key={i.id} style={{ display: 'flex', gap: '8px' }}>
+          <span aria-label={i.status} style={{ color: COLOR[i.status], fontWeight: 700, width: '14px' }}>{ICON[i.status]}</span>
+          <span>{i.label}{i.detail && <span style={{ color: '#888' }}> — {i.detail}</span>}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 // Cửa sổ duyệt bài: đọc bài như trên website, xem điểm do công cụ chấm (nếu có), checklist SEO, rồi Chấp nhận (đăng) hoặc Từ chối.
 export default function PostReview({ post, busy, error, onAccept, onReject, onClose }) {
   const [reason, setReason] = useState('')
@@ -80,14 +94,7 @@ export default function PostReview({ post, busy, error, onAccept, onReject, onCl
 
             <section className="dash-card" style={{ padding: '16px' }}>
               <h4 style={{ marginBottom: '8px' }}>Checklist SEO ({check.passed}/{check.total} đạt)</h4>
-              <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '6px', fontSize: '13px' }}>
-                {check.items.map((i) => (
-                  <li key={i.id} style={{ display: 'flex', gap: '8px' }}>
-                    <span aria-label={i.status} style={{ color: COLOR[i.status], fontWeight: 700, width: '14px' }}>{ICON[i.status]}</span>
-                    <span>{i.label}{i.detail && <span style={{ color: '#888' }}> — {i.detail}</span>}</span>
-                  </li>
-                ))}
-              </ul>
+              <ChecklistList items={check.items} />
               <p style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}>Ngưỡng là quy ước biên tập của shop, mục “!” chỉ là gợi ý.</p>
             </section>
           </aside>

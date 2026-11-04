@@ -9,13 +9,13 @@ status: draft
 
 # Cách đo và tính vải rèm ORE cho cửa sổ và cửa chính
 
-**Rèm ORE nên có tổng chiều ngang khoảng 1,5 đến 2,5 lần chiều rộng cửa, và cao hơn cửa khoảng 30 cm với cửa sổ, 10 đến 15 cm với cửa chính.** Rèm cần dư vải để nhún thành nếp khi treo.
+**Rèm ORE nên có tổng chiều ngang khoảng 1,5 đến 2,5 lần chiều rộng cửa, và cao hơn cửa khoảng 30 cm với cửa sổ, 10 đến 15 cm với cửa chính.**
 
-Bài này hướng dẫn từng bước đo và tính, theo cách CLEVINIUM đang tư vấn khi bạn chọn [rèm ORE chống nắng](/products?category=chong-nang).
+Rèm cần dư vải để nhún thành nếp khi treo. Bài này hướng dẫn từng bước đo và tính, theo cách CLEVINIUM đang tư vấn khi bạn chọn [rèm ORE chống nắng](/products?category=chong-nang).
 
 ## Rèm ORE là gì?
 
-Rèm ORE (còn gọi là rèm khoen, rèm đục lỗ) là loại rèm vải gấm may sẵn, gắn hàng khoen đục lỗ để xỏ thẳng vào thanh treo. Rèm ORE tại CLEVINIUM được may hoàn thiện theo kích thước rộng x cao đã chọn, gắn sẵn khoen và tặng kèm dây vén màn. **Giá không bao gồm thanh treo**, nên bạn cần chọn thêm [thanh treo rèm](/products?category=thanh-treo).
+**Rèm ORE** là loại rèm vải gấm may sẵn (còn gọi là rèm khoen, rèm đục lỗ), gắn hàng khoen đục lỗ để xỏ thẳng vào thanh treo. Rèm ORE tại CLEVINIUM được may hoàn thiện theo kích thước rộng x cao đã chọn, gắn sẵn khoen và tặng kèm dây vén màn. **Giá không bao gồm thanh treo**, nên bạn cần chọn thêm [thanh treo rèm](/products?category=thanh-treo).
 
 ## Kích thước trên shop là kích thước của 1 tấm rèm
 
@@ -29,7 +29,7 @@ Dùng thước dây đo **rộng cửa** và **cao cửa** (khung màu cam trong
 
 ## Bước 2: Chọn độ nhún và số tấm
 
-Nhân chiều rộng cửa với hệ số nhún bạn muốn để ra **tổng chiều ngang rèm**, rồi chọn số tấm sao cho phù hợp:
+**Độ nhún** là tỷ lệ giữa tổng chiều ngang vải rèm và chiều rộng cửa: độ nhún 2 nghĩa là vải rèm rộng gấp 2 lần cửa. Nhân chiều rộng cửa với hệ số nhún bạn muốn để ra **tổng chiều ngang rèm**, rồi chọn số tấm sao cho phù hợp:
 
 | Kiểu nhún | Tổng chiều ngang rèm | Ví dụ của shop |
 |---|---|---|
@@ -52,6 +52,16 @@ Hãy chọn cỡ gần nhất trong danh sách của từng sản phẩm; nếu 
 
 Các con số trên là khoảng gợi ý của shop: tùy kiểu treo và vị trí lắp thanh, bạn có thể cần điều chỉnh. Nếu phân vân, hãy gọi hotline để được tư vấn theo đúng căn nhà của bạn.
 
+## Ví dụ tính nhanh
+
+Cửa sổ rộng 1 m, cao 1,2 m, chọn độ nhún vừa phải (khoảng 2 lần):
+
+1. Tổng chiều ngang rèm: 1 m x 2 = khoảng 2 m, tương ứng 1 tấm rộng khoảng 2 m (như ví dụ cửa 1 m ở bảng trên).
+2. Chiều cao rèm: 1,2 m + khoảng 30 cm = khoảng 1,5 m.
+3. Kích thước cần chọn: 1 tấm rộng khoảng 2 m x cao khoảng 1,5 m.
+
+Đây là ví dụ minh họa theo quy tắc ở trên, số đo thực tế còn tùy cỡ có sẵn của từng sản phẩm.
+
 ## Chọn thanh treo cho rèm
 
 Thanh treo nên chọn sau khi đã biết chiều rộng rèm. Tại CLEVINIUM, thanh treo rèm bằng hợp kim nhôm sơn tĩnh điện, đi kèm đầu chụp, pát đỡ, cút cột và ốc vít, có các cỡ từ 1 m đến 3,4 m:
@@ -72,6 +82,10 @@ CLEVINIUM có nhiều mẫu rèm ORE vải gấm với nhiều màu và kích th
 - [Rèm cửa chính cao từ 2,7 m đến 3,1 m](/products/sp28930288769) cho cửa lớn
 
 Ở trang sản phẩm có phần chọn kích thước, bạn cũng có thể bấm "Hướng dẫn chọn kích thước" để xem lại hai hình minh họa ở trên.
+
+## Tham khảo thêm
+
+Các hướng dẫn nước ngoài cũng đưa ra khoảng độ nhún tương tự. The Shade Store gợi ý chiều rộng rèm bằng [1,5 đến 2 lần chiều rộng cửa](https://theshadestore.com/blog/how-to-measure-for-curtains/) và cho biết vải mỏng như voan có thể cần 2,5 đến 3 lần. Linen Chest mô tả [độ nhún 1,5x cho dáng gọn, 2x cho nếp mềm phổ biến, 2,5x cho nếp sâu sang trọng](https://www.linenchest.com/en_ca/blog/post/understanding-curtain-fullness). Các số này là hướng dẫn của hai nhà bán hàng nước ngoài, tham khảo thêm bên cạnh khuyến nghị riêng của CLEVINIUM.
 
 ## Giao hàng và đổi trả
 

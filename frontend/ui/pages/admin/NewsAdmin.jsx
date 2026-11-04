@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
 import { formatDate } from '../../utils/format'
-import PostReview from './PostReview'
+import PostReview, { ChecklistList } from './PostReview'
 import { buildChecklist } from './postChecklist'
 
 const STATUS_LABEL = { published: 'Đã đăng', draft: 'Chờ duyệt', rejected: 'Đã từ chối' }
@@ -15,6 +15,8 @@ const TABS = [
   { id: 'published', label: 'Đã đăng' },
   { id: 'rejected', label: 'Đã từ chối' },
 ]
+
+const ORDER = { fail: 0, warn: 1, pass: 2 } // mục chưa đạt lên đầu
 
 const EMPTY = { title: '', slug: '', excerpt: '', coverUrl: '', content: '', status: 'draft' }
 
@@ -194,6 +196,12 @@ export default function NewsAdmin() {
                             <div style={{ color: 'var(--dash-text-muted, #888)' }}>
                               Checklist {c.passed}/{c.total}{p.seoReport ? ` · Điểm ${p.seoReport.total}/100` : ''}
                             </div>
+                            <details style={{ marginTop: '6px' }}>
+                              <summary style={{ cursor: 'pointer' }}>Xem từng mục</summary>
+                              <div style={{ marginTop: '6px', minWidth: '320px' }}>
+                                <ChecklistList items={[...c.items].sort((x, y) => ORDER[x.status] - ORDER[y.status])} />
+                              </div>
+                            </details>
                           </div>
                         )
                       })()
