@@ -1,9 +1,9 @@
 import Storefront from '@/ui/pages/Storefront'
 import { loadSite } from '@/components/site/loadSite'
+import { SITE_URL } from '@/lib/site'
 
 export const metadata = { alternates: { canonical: '/' } }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 // Địa chỉ, điện thoại, email lấy từ Dashboard > Cài đặt (admin sửa thì Google thấy theo, cập nhật trong vòng 1 phút).
 export default async function HomePage() {
