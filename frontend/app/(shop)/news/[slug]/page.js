@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import PostBody from '@/components/site/PostBody'
+import SaleProductsPanel from '@/components/site/SaleProductsPanel'
 import { fetchPost } from '@/lib/server'
 import { SITE_URL } from '@/lib/site'
 
@@ -35,21 +36,28 @@ export default async function PostPage({ params }) {
     publisher: { '@type': 'Organization', name: 'CLEVINUM' },
   }
   return (
-    <main className="tw-reset mx-auto w-full max-w-3xl px-4 py-10">
+    <main className="tw-reset mx-auto w-full max-w-6xl px-4 py-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <Link href="/news" className="text-sm font-semibold text-accent hover:underline">← Tất cả tin tức</Link>
-      <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl">{post.title}</h1>
-      <time className="mt-3 block text-sm text-muted" dateTime={post.publishedAt}>{fmt(post.publishedAt)}</time>
-      {post.coverUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.coverUrl} alt="" className="mt-6 w-full rounded-xl object-cover" />
-      )}
-      <div className="mt-8">
-        <PostBody content={post.content} />
-      </div>
-      <div className="mt-12 rounded-xl border border-line bg-white p-6 text-center">
-        <p className="font-semibold">Cần tư vấn chọn rèm?</p>
-        <Link href="/contact" className="btn btn-accent mt-4 inline-flex">Liên hệ CLEVINUM</Link>
+      <div className="mt-4 grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <article className="min-w-0 max-w-3xl">
+          <h1 className="text-3xl font-bold leading-tight sm:text-4xl">{post.title}</h1>
+          <time className="mt-3 block text-sm text-muted" dateTime={post.publishedAt}>{fmt(post.publishedAt)}</time>
+          {post.coverUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={post.coverUrl} alt="" className="mt-6 w-full rounded-xl object-cover" />
+          )}
+          <div className="mt-8">
+            <PostBody content={post.content} />
+          </div>
+          <div className="mt-12 rounded-xl border border-line bg-white p-6 text-center">
+            <p className="font-semibold">Cần tư vấn chọn rèm?</p>
+            <Link href="/contact" className="btn btn-accent mt-4 inline-flex">Liên hệ CLEVINUM</Link>
+          </div>
+        </article>
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <SaleProductsPanel />
+        </div>
       </div>
     </main>
   )
