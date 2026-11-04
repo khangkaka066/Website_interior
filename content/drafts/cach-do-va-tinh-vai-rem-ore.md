@@ -1,5 +1,5 @@
 ---
-title: "Cách đo và tính vải rèm ORE: chọn kích thước cho cửa sổ và cửa chính"
+title: "Cách đo và tính vải rèm ORE cho cửa sổ và cửa chính"
 description: "Hướng dẫn đo cửa, tính độ nhún, chọn số tấm và chiều cao rèm ORE (rèm khoen đục lỗ) để chọn đúng kích thước ngay từ lần đặt đầu tiên."
 slug: cach-do-va-tinh-vai-rem-ore
 date: 2026-11-04
@@ -7,9 +7,11 @@ author: CLEVINIUM
 status: draft
 ---
 
-# Cách đo và tính vải rèm ORE: chọn kích thước cho cửa sổ và cửa chính
+# Cách đo và tính vải rèm ORE cho cửa sổ và cửa chính
 
-**Rèm ORE nên có tổng chiều ngang khoảng 1,5 đến 2,5 lần chiều rộng cửa, và cao hơn cửa khoảng 30 cm với cửa sổ, 10 đến 15 cm với cửa chính.** Lý do là rèm cần dư vải để nhún thành nếp khi treo. Bài này hướng dẫn từng bước đo và tính, theo cách CLEVINIUM đang tư vấn khi bạn chọn [rèm ORE chống nắng](/products?category=chong-nang).
+**Rèm ORE nên có tổng chiều ngang khoảng 1,5 đến 2,5 lần chiều rộng cửa, và cao hơn cửa khoảng 30 cm với cửa sổ, 10 đến 15 cm với cửa chính.** Rèm cần dư vải để nhún thành nếp khi treo.
+
+Bài này hướng dẫn từng bước đo và tính, theo cách CLEVINIUM đang tư vấn khi bạn chọn [rèm ORE chống nắng](/products?category=chong-nang).
 
 ## Rèm ORE là gì?
 
