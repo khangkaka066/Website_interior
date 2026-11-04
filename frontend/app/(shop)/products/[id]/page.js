@@ -2,10 +2,10 @@ import { notFound } from 'next/navigation'
 import ProductDetail from '@/ui/pages/ProductDetail'
 import { products as bundled } from '@/ui/data/shop'
 import { fetchProduct, fetchReviews } from '@/lib/server'
+import { SITE_URL } from '@/lib/site'
 import ProductReviews from '@/ui/components/ProductReviews'
 import { categories } from '@/ui/data/shop'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 // Backend tắt thì thử bản đóng gói sẵn; không có ở cả hai nơi mới là 404 thật.
 async function load(id) {

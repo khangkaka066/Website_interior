@@ -1,5 +1,6 @@
 import { Be_Vietnam_Pro } from 'next/font/google'
 import Providers from './providers'
+import { SITE_URL } from '@/lib/site'
 import './globals.css'
 
 const beVietnam = Be_Vietnam_Pro({
@@ -11,7 +12,6 @@ const beVietnam = Be_Vietnam_Pro({
   preload: false,
 })
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
