@@ -49,3 +49,32 @@ Mọi thông tin khác (kiến thức chung về rèm, ánh sáng, chất liệu
 4. Chạy `/blog analyze` và `/seo page <url>` sau khi đăng; xem `risks-and-open-questions.md` trước khi duyệt.
 5. Cập nhật `verified` ngày trong các file knowledge bạn đã dùng nếu thay đổi nội dung.
 6. Bài đăng qua trang quản trị (API `/api/shop/posts`, đường dẫn `/news/<slug>`); thêm URL vào sitemap nếu hệ thống chưa tự thêm.
+
+## 6. Quy tắc URL bài viết (tiếng Việt)
+
+Chốt 2026-11-04. Áp dụng cho mọi bài trong `/news`. Bản tiếng Anh (`/en/news/...`) **chưa làm**, chỉ làm khi có nhu cầu thật (xem cuối mục).
+
+**Dạng URL:** `https://clevinium.com/news/<slug>`. Không thêm tiền tố `/vi`, không ngày tháng, không danh mục, không mã số trong đường dẫn.
+
+**Quy tắc đặt `<slug>`:**
+1. Chỉ gồm chữ thường **không dấu**, số, và gạch ngang (`-`). Hệ thống chỉ nhận mẫu `^[a-z0-9]+(-[a-z0-9]+)*$`; chữ `đ` viết thành `d`. Ví dụ: `rem-ore` (không `rèm-ore`).
+2. Lấy từ **từ khóa chính tiếng Việt** của bài, đặt từ khóa lên đầu: `cach-do-va-tinh-vai-rem-ore`.
+3. Độ dài: **tối đa 60 ký tự** (checklist trang duyệt dùng ngưỡng này; giới hạn cứng của hệ thống là 80). Nên gọn, khoảng 3 đến 7 từ.
+4. Không đưa vào slug: tên thương hiệu (`clevinium`), năm, ngày, số thứ tự, từ chung chung (`huong-dan-chi-tiet-nhat`), ký tự đặc biệt hay chữ viết hoa.
+5. Từ nối ngắn như `va`, `cho` giữ nếu cần cho dễ đọc; bỏ nếu slug bị dài quá 60 ký tự.
+6. Một bài một từ khóa chính, nên **một slug không trùng ý** với bài khác (tránh hai bài tranh nhau cùng từ khóa). Kiểm tra danh sách bài trước khi đặt.
+7. Tự đặt slug trong form, không để hệ thống tự tạo từ tiêu đề dài. Nếu trùng, hệ thống thêm `-2`, `-3`: đặt lại slug khác thay vì chấp nhận hậu tố này.
+
+**Sau khi đăng:**
+- **Không đổi slug.** Đổi slug làm hỏng link đã chia sẻ và thứ hạng. Hiện hệ thống **chưa có chuyển hướng 301** khi sửa slug (xem `risks-and-open-questions.md` mục B6), nên chỉ đổi khi thật cần và phải xử lý chuyển hướng trước.
+- Canonical của bài là chính URL đó (đã tự đặt).
+
+**Ví dụ:**
+
+| Tốt | Không tốt | Lý do |
+|---|---|---|
+| `cach-do-va-tinh-vai-rem-ore` | `Cách-đo-và-tính-vải-rèm-ORE` | Có dấu, chữ hoa |
+| `thanh-treo-rem-chon-loai-nao` | `clevinium-thanh-treo-rem-2026-huong-dan-chi-tiet-day-du-nhat` | Có thương hiệu, năm, quá dài |
+| `rem-cau-vong-zebra-blinds` | `rem-cau-vong-2` | Hậu tố tự tạo do trùng slug |
+
+**Khi nào làm bản tiếng Anh:** khi có khách hoặc từ khóa tiếng Anh thật (từ Search Console). Cấu trúc dự kiến: `/en/news/<english-slug>`, mỗi ngôn ngữ một slug riêng dịch theo từ khóa tiếng Anh, hai bài trỏ nhau bằng `hreflang`, mặc định `x-default` là bản tiếng Việt.

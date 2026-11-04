@@ -28,6 +28,7 @@ Mức độ: **A** = sai sự thật hoặc rủi ro pháp lý/uy tín, phải x
 | B3 | Mô tả của `sp28833772773` (rèm cuốn PVC) là bản sao của mô tả rèm ORE (khoen đục lỗ, nhún sóng, vải gấm) | Không phù hợp rèm cuốn. Không dùng mô tả này làm nguồn |
 | B4 | Đơn vị độ dày trong catalog rèm cầu vồng lẫn cm và mm | Xem `zebra-vh-blinds.md` |
 | B5 | Trang `/dat-rieng` (catalog rèm cầu vồng, rèm cuốn) **không có trong sitemap** (kiểm tra 2026-11-04: sitemap có 81 URL, không có `/dat-rieng`) | Thêm vào sitemap để Google biết trang này, nhất là sau khi sửa A1 |
+| B6 | **Đổi slug bài viết không tạo chuyển hướng 301**: `updatePost` cho đổi `slug` và không lưu slug cũ, nên link cũ sẽ 404 | `backend/src/controllers/posts.js` | Quy tắc: không đổi slug sau khi đăng (`blog-playbook.md` mục 6). Nếu cần đổi thường xuyên, thêm bảng chuyển hướng |
 
 ## C. Thiếu dữ liệu
 
