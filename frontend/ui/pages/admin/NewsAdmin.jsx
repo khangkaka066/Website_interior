@@ -179,6 +179,9 @@ export default function NewsAdmin() {
                   <td>
                     {p.status === 'published' ? (
                       '—'
+                    ) : p.content === undefined ? (
+                      // API chưa trả nội dung (backend cũ): không chấm sai, mời bấm Duyệt để xem đầy đủ.
+                      <span style={{ fontSize: '13px', color: 'var(--dash-text-muted, #888)' }}>Bấm Duyệt để kiểm tra</span>
                     ) : (
                       (() => {
                         const c = buildChecklist(p)
