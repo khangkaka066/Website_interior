@@ -10,7 +10,7 @@ export const shopInfo = {
     { label: 'Hoạt động', value: '9 năm', sub: 'kinh nghiệm' },
     { label: 'Phản hồi chat', value: '71%', sub: 'trong vài giờ' },
   ],
-  address: 'Phường Hiệp Bình, TP. Hồ Chí Minh',
+  address: '47 đường Linh Đông, phường Hiệp Bình, TP. Hồ Chí Minh',
 }
 
 export const categories = [

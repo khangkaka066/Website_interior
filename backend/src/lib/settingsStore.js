@@ -19,7 +19,7 @@ export const DEFAULTS = {
     tagline: 'Rèm Việt Giá Sỉ',
     hotline: '0356 789 749',
     email: 'clevi.interior@gmail.com',
-    address: 'Phường Hiệp Bình, TP. Hồ Chí Minh',
+    address: '47 đường Linh Đông, phường Hiệp Bình, TP. Hồ Chí Minh',
   },
   payment: {
     methods: [
