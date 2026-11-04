@@ -53,6 +53,8 @@ Mô tả sản phẩm cho biết cách rèm gắn lên tường, nhưng chưa n�
 
 Gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact) để được tư vấn theo đúng căn nhà. Rèm hỗ trợ đổi trả nếu sản phẩm lỗi do nhà sản xuất.
 
+Bạn cũng có thể xem và đặt hàng tại [gian hàng CLEVINIUM trên Shopee](https://shopee.vn/clevi.interior).
+
 ## Câu hỏi thường gặp
 
 **Rèm dán tường khác rèm ORE thế nào?**

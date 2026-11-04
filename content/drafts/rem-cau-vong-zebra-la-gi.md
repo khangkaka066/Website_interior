@@ -67,6 +67,8 @@ Bạn có thể xem toàn bộ catalog rèm cầu vồng tại trang [đặt ri�
 
 Nếu bạn thích rèm vải treo thanh, có thể xem [rèm chống nắng](/products?category=chong-nang) trên website.
 
+Bạn cũng có thể xem và đặt hàng tại [gian hàng CLEVINIUM trên Shopee](https://shopee.vn/clevi.interior).
+
 ## Câu hỏi thường gặp
 
 **Rèm cầu vồng có cản sáng hoàn toàn không?**

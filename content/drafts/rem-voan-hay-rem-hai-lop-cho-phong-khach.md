@@ -53,6 +53,8 @@ Hãy trả lời ba câu hỏi sau:
 
 Nếu chưa chắc, bạn có thể liên hệ shop qua hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc trang [liên hệ](/contact).
 
+Bạn cũng có thể xem và đặt hàng tại [gian hàng CLEVINIUM trên Shopee](https://shopee.vn/clevi.interior).
+
 ## Câu hỏi thường gặp
 
 **Rèm voan có chống nắng không?**

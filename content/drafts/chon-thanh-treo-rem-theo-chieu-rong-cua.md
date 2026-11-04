@@ -55,6 +55,8 @@ Bạn có thể xem [thanh treo rèm cao cấp đầy đủ phụ kiện](/produ
 
 Khi cần tư vấn, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
 
+Bạn cũng có thể xem và đặt hàng tại [gian hàng CLEVINIUM trên Shopee](https://shopee.vn/clevi.interior).
+
 ## Câu hỏi thường gặp
 
 **Thanh treo rèm có kèm khi mua rèm không?**

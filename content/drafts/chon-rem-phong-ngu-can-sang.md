@@ -58,6 +58,8 @@ Rèm cầu vồng cho phép chỉnh nhiều mức ánh sáng, và một số b�
 
 Dù chọn loại nào, ánh sáng vẫn có thể lọt qua mép và khe phía trên. Để giảm khe sáng, hãy đo chính xác cửa theo [hướng dẫn đo](/news/cach-do-va-tinh-vai-rem-ore) và hỏi shop về cách lắp phù hợp với phòng của bạn.
 
+Bạn cũng có thể xem và đặt hàng tại [gian hàng CLEVINIUM trên Shopee](https://shopee.vn/clevi.interior).
+
 ## Câu hỏi thường gặp
 
 **Rèm nào cản sáng tốt nhất cho phòng ngủ?**

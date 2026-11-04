@@ -47,6 +47,8 @@ Kích thước ghi trên sản phẩm là của một tấm rèm, đo khi căng 
 
 Giá phụ thuộc kích thước và màu bạn chọn. Rèm RIDO nằm trong danh mục [rèm dán tường và RIDO móc](/products?category=dan-tuong). Cần tư vấn, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
 
+Bạn cũng có thể xem và đặt hàng tại [gian hàng CLEVINIUM trên Shopee](https://shopee.vn/clevi.interior).
+
 ## Câu hỏi thường gặp
 
 **Rèm RIDO có cần nhún nhiều như rèm ORE không?**
