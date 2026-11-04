@@ -64,8 +64,6 @@ Rèm cuốn VH BLINDS hiện chưa bán trực tiếp trên website mà đặt t
 
 Nếu muốn rèm vải treo thanh, bạn có thể xem [rèm chống nắng](/products?category=chong-nang) trên website.
 
-Bạn cũng có thể xem và đặt hàng tại [gian hàng CLEVINIUM trên Shopee](https://shopee.vn/clevi.interior).
-
 ## Câu hỏi thường gặp
 
 **Rèm cuốn cản sáng 100% có hoàn toàn tối không?**

@@ -51,8 +51,6 @@ Theo Russell's Curtains, loại rèm khoen có vài hạn chế:
 
 Xem thêm các mẫu khác trong danh mục [rèm chống nắng](/products?category=chong-nang). Cần tư vấn, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
 
-Bạn cũng có thể xem và đặt hàng tại [gian hàng CLEVINIUM trên Shopee](https://shopee.vn/clevi.interior).
-
 ## Câu hỏi thường gặp
 
 **Rèm ORE và rèm khoen có giống nhau không?**

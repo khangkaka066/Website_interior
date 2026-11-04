@@ -91,8 +91,6 @@ Các hướng dẫn nước ngoài cũng đưa ra khoảng độ nhún tương t
 
 Rèm có sẵn giao trong 2 đến 5 ngày. Rèm may đo cần thêm 2 đến 3 ngày may. CLEVINIUM hỗ trợ đổi trả nếu sản phẩm lỗi do nhà sản xuất; bạn chỉ cần liên hệ hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) kèm ảnh sản phẩm. Xem thêm tại trang [câu hỏi thường gặp](/faq) hoặc [liên hệ](/contact).
 
-Bạn cũng có thể xem và đặt hàng tại [gian hàng CLEVINIUM trên Shopee](https://shopee.vn/clevi.interior).
-
 ## Câu hỏi thường gặp
 
 **Rèm ORE có kèm thanh treo không?**
