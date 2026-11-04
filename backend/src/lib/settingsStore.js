@@ -125,7 +125,16 @@ export const DEFAULTS = {
   },
 }
 
-function merge(saved) {
+// FAQ mặc định cũ (3 câu). Cài đặt đã lưu mà FAQ vẫn y nguyên bộ này (admin chưa sửa) thì tự nâng lên bộ mặc định mới;
+// FAQ do admin đã sửa/thêm/xóa thì giữ nguyên.
+const OLD_DEFAULT_FAQ = [
+  ['Rèm có may theo kích thước riêng không?', 'Có. Bạn chọn kích thước rộng x cao khi đặt hàng, xưởng sẽ may đúng theo số đo.'],
+  ['Thời gian giao hàng bao lâu?', 'Rèm có sẵn giao trong 2–5 ngày. Rèm may đo cần thêm 2–3 ngày may.'],
+  ['Tôi có thể đổi trả không?', 'Hỗ trợ đổi trả nếu sản phẩm lỗi do nhà sản xuất. Vui lòng liên hệ hotline kèm ảnh sản phẩm.'],
+]
+const isOldDefaultFaq = (faq) => faq.length === OLD_DEFAULT_FAQ.length && faq.every((f, i) => f?.q === OLD_DEFAULT_FAQ[i][0] && f?.a === OLD_DEFAULT_FAQ[i][1])
+
+export function merge(saved) {
   const s = saved || {}
   const methods = DEFAULTS.payment.methods.map((def) => {
     const got = (s.payment?.methods || []).find((m) => m.id === def.id) || {}
@@ -150,7 +159,7 @@ function merge(saved) {
     content: {
       about: { ...DEFAULTS.content.about, ...(s.content?.about || {}) },
       contact: { ...DEFAULTS.content.contact, ...(s.content?.contact || {}) },
-      faq: Array.isArray(s.content?.faq) ? s.content.faq : DEFAULTS.content.faq,
+      faq: Array.isArray(s.content?.faq) && !isOldDefaultFaq(s.content.faq) ? s.content.faq : DEFAULTS.content.faq,
     },
   }
 }

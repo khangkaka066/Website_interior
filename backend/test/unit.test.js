@@ -10,6 +10,7 @@ import { parseKeywordResult, lenientJsonParse, generateKeywords, SeoConfigError,
 import { keywordsSchema } from '../src/schemas/seo.js'
 import { RATE_LIMIT_WAITS } from '../src/lib/openrouterClient.js'
 import { startJob, getJob, currentJob, cancelJob, jobView, JobLimitError } from '../src/lib/seoJobs.js'
+import { merge as mergeSettings } from '../src/lib/settingsStore.js'
 import { discountFor, checkCoupon, CouponError, normalizeCode } from '../src/lib/coupons.js'
 import { couponSchema, couponPatchSchema } from '../src/schemas/coupons.js'
 import { welcomeConfigSchema, blastSchema, unsubscribeSchema } from '../src/schemas/subscribers.js'
@@ -1802,5 +1803,24 @@ describe('webhook Best Express', () => {
     assert.equal(verifyBestBearer('abc123', 'abc123'), false)
     assert.equal(verifyBestBearer(undefined, 'abc123'), false)
     assert.equal(verifyBestBearer('Bearer abc123', ''), false)
+  })
+})
+
+describe('FAQ trong Cài đặt', () => {
+  const oldFaq = [
+    { q: 'Rèm có may theo kích thước riêng không?', a: 'Có. Bạn chọn kích thước rộng x cao khi đặt hàng, xưởng sẽ may đúng theo số đo.' },
+    { q: 'Thời gian giao hàng bao lâu?', a: 'Rèm có sẵn giao trong 2–5 ngày. Rèm may đo cần thêm 2–3 ngày may.' },
+    { q: 'Tôi có thể đổi trả không?', a: 'Hỗ trợ đổi trả nếu sản phẩm lỗi do nhà sản xuất. Vui lòng liên hệ hotline kèm ảnh sản phẩm.' },
+  ]
+  const defaults = mergeSettings(null).content.faq
+  test('FAQ đã lưu còn y nguyên bộ mặc định cũ thì nâng lên bộ mặc định mới', () => {
+    assert.ok(defaults.length > oldFaq.length)
+    assert.deepEqual(mergeSettings({ content: { faq: oldFaq } }).content.faq, defaults)
+  })
+  test('FAQ do admin đã sửa, thêm hoặc xóa thì giữ nguyên', () => {
+    const edited = [{ ...oldFaq[0], a: 'Câu trả lời khác.' }, oldFaq[1], oldFaq[2]]
+    assert.deepEqual(mergeSettings({ content: { faq: edited } }).content.faq, edited)
+    assert.deepEqual(mergeSettings({ content: { faq: oldFaq.slice(0, 2) } }).content.faq, oldFaq.slice(0, 2))
+    assert.deepEqual(mergeSettings({ content: { faq: [] } }).content.faq, [])
   })
 })
