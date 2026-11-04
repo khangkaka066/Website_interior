@@ -37,7 +37,7 @@ function describe(product) {
     ? `Giá ${vnd(product.price)} (giảm ${product.discountPercent}%).`
     : `Giá ${product.priceMax ? 'từ ' : ''}${vnd(product.price)}.`
   const lead = `${cut(product.name, 90)} — ${price}`
-  return cut(base ? `${lead} ${base}` : `${lead} Giá xưởng, giao hàng toàn quốc tại CLEVINUM.`, 158)
+  return cut(base ? `${lead} ${base}` : `${lead} Giá xưởng, giao hàng toàn quốc tại CLEVINIUM.`, 158)
 }
 
 export async function generateMetadata({ params }) {
@@ -79,7 +79,7 @@ export default async function ProductPage({ params }) {
       sku: product.shopeeId || product.id,
       mpn: product.shopeeId || product.id,
       ...(category && { category: category.name }),
-      brand: { '@type': 'Brand', name: 'CLEVINUM' },
+      brand: { '@type': 'Brand', name: 'CLEVINIUM' },
       // Chỉ khai báo khi có đánh giá thật của khách đã nhận hàng.
       ...(reviews?.count > 0 && { aggregateRating: { '@type': 'AggregateRating', ratingValue: reviews.average, reviewCount: reviews.count, bestRating: 5, worstRating: 1 } }),
       ...(!product.contactOnly && { offers: {
@@ -90,7 +90,7 @@ export default async function ProductPage({ params }) {
         itemCondition: 'https://schema.org/NewCondition',
         availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
         url,
-        seller: { '@type': 'Organization', name: 'CLEVINUM' },
+        seller: { '@type': 'Organization', name: 'CLEVINIUM' },
       } }),
     },
     {

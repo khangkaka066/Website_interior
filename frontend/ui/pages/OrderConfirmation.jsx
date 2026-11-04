@@ -37,7 +37,7 @@ export default function OrderConfirmation() {
           <div className="order-confirmation-icon">✓</div>
           <h1>Đặt hàng thành công!</h1>
           <p>
-            Cảm ơn bạn đã đặt hàng tại Clevinum. Mã đơn hàng của bạn là <strong>{orderNumber}</strong>.
+            Cảm ơn bạn đã đặt hàng tại Clevinium. Mã đơn hàng của bạn là <strong>{orderNumber}</strong>.
             Đội ngũ CSKH sẽ liên hệ xác nhận trong thời gian sớm nhất.
           </p>
           {info?.paymentMethod === 'PAYOS' && (

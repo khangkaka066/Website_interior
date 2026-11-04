@@ -167,7 +167,7 @@ export default function AllProducts() {
               <p>Rèm cửa và phụ kiện phối hợp hài hòa cho mọi không gian sống.</p>
             </div>
             <div className="shop-all-hero-image">
-              <img src="/images/curtains/room-sheer-white.webp" alt="Không gian phòng khách với rèm Clevinum" decoding="async" />
+              <img src="/images/curtains/room-sheer-white.webp" alt="Không gian phòng khách với rèm Clevinium" decoding="async" />
             </div>
           </div>
 
@@ -263,7 +263,7 @@ export default function AllProducts() {
                 <span className="all-products-sub">
                   {searchQuery
                     ? `${filtered.length} kết quả cho “${searchQuery}”`
-                    : `${filtered.length} sản phẩm từ Clevinum`}
+                    : `${filtered.length} sản phẩm từ Clevinium`}
                   {searchQuery && (
                     <>
                       {' · '}

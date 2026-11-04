@@ -17,14 +17,14 @@ export async function generateMetadata({ searchParams }) {
   const query = first(sp.q)
   const category = CATEGORY_PAGES[first(sp.category)] ? first(sp.category) : ''
   const base = {
-    description: 'Rèm cửa và phụ kiện rèm CLEVINUM giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo. Lọc theo giá, màu, kích thước.',
+    description: 'Rèm cửa và phụ kiện rèm CLEVINIUM giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo. Lọc theo giá, màu, kích thước.',
     alternates: { canonical: '/products' },
   }
   if (query) return { ...base, title: `Tìm “${query}”`, robots: { index: false, follow: true } }
   if (category) {
     const { name, items } = CATEGORY_PAGES[category]
     const title = `${name} giá xưởng`
-    const description = `${name}${items ? ` (${items.join(', ')})` : ''} tại CLEVINUM: giá xưởng, nhiều mẫu mã, giao hàng toàn quốc. Xem giá và đặt hàng online.`
+    const description = `${name}${items ? ` (${items.join(', ')})` : ''} tại CLEVINIUM: giá xưởng, nhiều mẫu mã, giao hàng toàn quốc. Xem giá và đặt hàng online.`
     return {
       title,
       description,

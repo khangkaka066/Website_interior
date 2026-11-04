@@ -157,7 +157,7 @@ export default function AdminLayout({ activeNav, pageTitle, headerActions, child
     <div className="dash-root">
       <aside className="dash-sidebar">
         <Link to="/" className="dash-logo">
-          <img src="/images/brand/logo.png" alt="Clevinum" />
+          <img src="/images/brand/logo.png" alt="Clevinium" />
           <span>{shopInfo.name}</span>
         </Link>
         <nav className="dash-nav">

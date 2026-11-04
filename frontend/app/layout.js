@@ -17,10 +17,10 @@ export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: 'CLEVINIUM — Rèm Việt Giá Sỉ', template: '%s | CLEVINIUM' },
   description: 'CLEVINIUM — rèm cửa chất lượng cao, giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo và phụ kiện. Giao hàng toàn quốc.',
-  applicationName: 'CLEVINUM',
+  applicationName: 'CLEVINIUM',
   openGraph: {
     type: 'website',
-    siteName: 'CLEVINUM',
+    siteName: 'CLEVINIUM',
     locale: 'vi_VN',
     // Ảnh mặc định khi chia sẻ link (Facebook, Zalo...) của trang không có ảnh riêng.
     images: [{ url: '/images/curtains/room-blue.webp', alt: 'CLEVINIUM — rèm cửa giá xưởng' }],

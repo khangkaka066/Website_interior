@@ -2,7 +2,7 @@ import LegalPage from '@/components/site/LegalPage'
 
 export const metadata = {
   title: 'Điều khoản sử dụng',
-  description: 'Điều khoản khi mua hàng và sử dụng website Clevinum.',
+  description: 'Điều khoản khi mua hàng và sử dụng website Clevinium.',
 }
 
 const sections = [
@@ -40,7 +40,7 @@ const sections = [
   },
   {
     title: 'Sở hữu trí tuệ',
-    paragraphs: ['Hình ảnh, nội dung và thương hiệu trên website thuộc quyền của Clevinum hoặc bên cấp phép, không được sao chép hay sử dụng thương mại khi chưa có sự đồng ý bằng văn bản.'],
+    paragraphs: ['Hình ảnh, nội dung và thương hiệu trên website thuộc quyền của Clevinium hoặc bên cấp phép, không được sao chép hay sử dụng thương mại khi chưa có sự đồng ý bằng văn bản.'],
   },
   {
     title: 'Giới hạn trách nhiệm',
@@ -56,7 +56,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Điều khoản sử dụng"
-      intro="Điều khoản này áp dụng khi bạn mua hàng hoặc sử dụng website clevinium.com của Clevinum. Vui lòng đọc kỹ trước khi sử dụng."
+      intro="Điều khoản này áp dụng khi bạn mua hàng hoặc sử dụng website clevinium.com của Clevinium. Vui lòng đọc kỹ trước khi sử dụng."
       sections={sections}
     />
   )

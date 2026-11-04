@@ -15,7 +15,7 @@ export default async function HomePage() {
       '@context': 'https://schema.org',
       '@type': 'Store',
       '@id': `${SITE_URL}/#organization`,
-      name: store?.name || 'CLEVINUM',
+      name: store?.name || 'CLEVINIUM',
       url: SITE_URL,
       logo: `${SITE_URL}/images/brand/logo.png`,
       image: `${SITE_URL}/images/curtains/room-blue.webp`,
@@ -33,7 +33,7 @@ export default async function HomePage() {
       '@type': 'WebSite',
       '@id': `${SITE_URL}/#website`,
       url: SITE_URL,
-      name: store?.name || 'CLEVINUM',
+      name: store?.name || 'CLEVINIUM',
       inLanguage: 'vi-VN',
       publisher: { '@id': `${SITE_URL}/#organization` },
       // Ô tìm kiếm ngay trên kết quả Google (sitelinks search box).

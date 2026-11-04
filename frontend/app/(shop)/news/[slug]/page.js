@@ -24,16 +24,31 @@ export default async function PostPage({ params }) {
   const post = await fetchPost(slug)
   if (!post) notFound()
 
+  const url = `${SITE_URL}/news/${post.slug}`
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: post.title,
-    description: post.excerpt || undefined,
-    image: post.coverUrl ? [post.coverUrl] : undefined,
-    datePublished: post.publishedAt,
-    dateModified: post.updatedAt,
-    mainEntityOfPage: `${SITE_URL}/news/${post.slug}`,
-    publisher: { '@type': 'Organization', name: 'CLEVINUM' },
+    '@graph': [
+      {
+        '@type': 'BlogPosting',
+        headline: post.title,
+        description: post.excerpt || undefined,
+        image: post.coverUrl ? [post.coverUrl.startsWith('http') ? post.coverUrl : SITE_URL + post.coverUrl] : undefined,
+        datePublished: post.publishedAt,
+        dateModified: post.updatedAt,
+        inLanguage: 'vi-VN',
+        mainEntityOfPage: url,
+        author: { '@type': 'Organization', name: 'CLEVINIUM', url: SITE_URL },
+        publisher: { '@type': 'Organization', name: 'CLEVINIUM', url: SITE_URL, logo: { '@type': 'ImageObject', url: `${SITE_URL}/images/brand/logo.png` } },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Tin tức', item: `${SITE_URL}/news` },
+          { '@type': 'ListItem', position: 3, name: post.title, item: url },
+        ],
+      },
+    ],
   }
   return (
     <main className="tw-reset mx-auto w-full max-w-6xl px-4 py-10">
@@ -52,7 +67,7 @@ export default async function PostPage({ params }) {
           </div>
           <div className="mt-12 rounded-xl border border-line bg-white p-6 text-center">
             <p className="font-semibold">Cần tư vấn chọn rèm?</p>
-            <Link href="/contact" className="btn btn-accent mt-4 inline-flex">Liên hệ CLEVINUM</Link>
+            <Link href="/contact" className="btn btn-accent mt-4 inline-flex">Liên hệ CLEVINIUM</Link>
           </div>
         </article>
         <div className="lg:sticky lg:top-24 lg:self-start">

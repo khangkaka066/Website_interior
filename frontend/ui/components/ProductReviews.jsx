@@ -37,7 +37,7 @@ export default function ProductReviews({ reviews }) {
             {r.comment && <p>{r.comment}</p>}
             {r.reply && (
               <div className="pr-reply">
-                <strong>Phản hồi từ Clevinum</strong>
+                <strong>Phản hồi từ Clevinium</strong>
                 <p>{r.reply}</p>
               </div>
             )}

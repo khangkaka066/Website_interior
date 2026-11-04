@@ -2,7 +2,7 @@ import LegalPage, { CONTACT_EMAIL } from '@/components/site/LegalPage'
 
 export const metadata = {
   title: 'Chính sách bảo mật',
-  description: 'Clevinum thu thập, sử dụng và bảo vệ thông tin cá nhân của khách hàng như thế nào.',
+  description: 'Clevinium thu thập, sử dụng và bảo vệ thông tin cá nhân của khách hàng như thế nào.',
 }
 
 const sections = [
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Chính sách bảo mật"
-      intro="Clevinum (website clevinium.com) tôn trọng quyền riêng tư của khách hàng. Trang này giải thích chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn như thế nào khi bạn mua hàng hoặc sử dụng tài khoản."
+      intro="Clevinium (website clevinium.com) tôn trọng quyền riêng tư của khách hàng. Trang này giải thích chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn như thế nào khi bạn mua hàng hoặc sử dụng tài khoản."
       sections={sections}
     />
   )

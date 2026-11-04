@@ -15,7 +15,7 @@ export async function generateMetadata({ searchParams }) {
   const page = parsePage((await searchParams).page)
   return {
     title: page > 1 ? `Tin tức - Trang ${page}` : 'Tin tức',
-    description: 'Tin tức, mẹo chọn rèm và xu hướng trang trí cửa sổ từ CLEVINUM.',
+    description: 'Tin tức, mẹo chọn rèm và xu hướng trang trí cửa sổ từ CLEVINIUM.',
     // Mỗi trang tự là bản chuẩn của chính nó; trang 1 luôn là /news (không có ?page=1).
     alternates: { canonical: pageHref(page) },
   }
@@ -58,7 +58,7 @@ export default async function NewsPage({ searchParams }) {
   return (
     <main className="tw-reset mx-auto w-full max-w-5xl px-4 py-10">
       <h1 className="text-3xl font-bold">Tin tức</h1>
-      <p className="mt-3 max-w-2xl text-lg text-muted">Mẹo chọn rèm, xu hướng trang trí cửa sổ và ưu đãi mới nhất từ CLEVINUM.</p>
+      <p className="mt-3 max-w-2xl text-lg text-muted">Mẹo chọn rèm, xu hướng trang trí cửa sổ và ưu đãi mới nhất từ CLEVINIUM.</p>
 
       {posts.length === 0 ? (
         <div className="mt-10 rounded-xl border border-line bg-white p-8 text-center">

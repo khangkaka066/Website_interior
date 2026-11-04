@@ -182,7 +182,7 @@ export default function ChatWidget() {
         <div className="chat-panel">
           <div className="chat-panel-head">
             <div>
-              <strong>Clevinum hỗ trợ</strong>
+              <strong>Clevinium hỗ trợ</strong>
               <span>Thường phản hồi trong vài phút</span>
             </div>
             <button className="chat-panel-close" onClick={() => setOpen(false)} aria-label="Đóng chat">
@@ -192,7 +192,7 @@ export default function ChatWidget() {
 
           {!conversationId ? (
             <div className="chat-intake">
-              <p>Để lại thông tin để đội ngũ Clevinum hỗ trợ bạn nhanh nhất.</p>
+              <p>Để lại thông tin để đội ngũ Clevinium hỗ trợ bạn nhanh nhất.</p>
               <input
                 className="chat-input"
                 placeholder="Tên của bạn *"
