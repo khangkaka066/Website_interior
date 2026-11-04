@@ -45,7 +45,7 @@ export default async function PostPage({ params }) {
           <time className="mt-3 block text-sm text-muted" dateTime={post.publishedAt}>{fmt(post.publishedAt)}</time>
           {post.coverUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={post.coverUrl} alt="" className="mt-6 w-full rounded-xl object-cover" />
+            <img src={post.coverUrl} alt="" className="mt-6 aspect-video w-full rounded-xl object-cover" />
           )}
           <div className="mt-8">
             <PostBody content={post.content} />
