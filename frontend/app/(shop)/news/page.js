@@ -1,16 +1,60 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { fetchPosts } from '@/lib/server'
 
-export const metadata = {
-  title: 'Tin tức',
-  description: 'Tin tức, mẹo chọn rèm và xu hướng trang trí cửa sổ từ CLEVINUM.',
-  alternates: { canonical: '/news' },
+const PER_PAGE = 9 // mỗi trang 9 bài (lưới 3 cột x 3 hàng); bài thứ 10 trở đi sang trang 2
+
+// ?page=2 -> 2. Giá trị lạ (chữ, số âm, số thập phân) coi như trang 1.
+const parsePage = (raw) => {
+  const n = Number(Array.isArray(raw) ? raw[0] : raw)
+  return Number.isInteger(n) && n >= 1 ? n : 1
+}
+const pageHref = (n) => (n <= 1 ? '/news' : `/news?page=${n}`)
+
+export async function generateMetadata({ searchParams }) {
+  const page = parsePage((await searchParams).page)
+  return {
+    title: page > 1 ? `Tin tức - Trang ${page}` : 'Tin tức',
+    description: 'Tin tức, mẹo chọn rèm và xu hướng trang trí cửa sổ từ CLEVINUM.',
+    // Mỗi trang tự là bản chuẩn của chính nó; trang 1 luôn là /news (không có ?page=1).
+    alternates: { canonical: pageHref(page) },
+  }
 }
 
 const fmt = (d) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
-export default async function NewsPage() {
-  const posts = (await fetchPosts()) || []
+function Pagination({ page, totalPages }) {
+  if (totalPages <= 1) return null
+  const item = 'inline-flex h-10 min-w-10 items-center justify-center rounded-lg border border-line px-3 text-sm font-semibold'
+  return (
+    <nav aria-label="Phân trang tin tức" className="mt-10 flex flex-wrap items-center justify-center gap-2">
+      {page > 1 && (
+        <Link href={pageHref(page - 1)} rel="prev" className={`${item} bg-white hover:border-accent hover:text-accent`}>
+          ← Trước
+        </Link>
+      )}
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) =>
+        n === page ? (
+          <span key={n} aria-current="page" className={`${item} border-accent bg-accent text-white`}>{n}</span>
+        ) : (
+          <Link key={n} href={pageHref(n)} aria-label={`Trang ${n}`} className={`${item} bg-white hover:border-accent hover:text-accent`}>{n}</Link>
+        ),
+      )}
+      {page < totalPages && (
+        <Link href={pageHref(page + 1)} rel="next" className={`${item} bg-white hover:border-accent hover:text-accent`}>
+          Sau →
+        </Link>
+      )}
+    </nav>
+  )
+}
+
+export default async function NewsPage({ searchParams }) {
+  const all = (await fetchPosts()) || []
+  const page = parsePage((await searchParams).page)
+  const totalPages = Math.max(1, Math.ceil(all.length / PER_PAGE))
+  if (page > totalPages) redirect(pageHref(totalPages)) // ví dụ /news?page=9 khi chỉ có 2 trang: về trang cuối thay vì hiện trang trống
+  const posts = all.slice((page - 1) * PER_PAGE, page * PER_PAGE)
   return (
     <main className="tw-reset mx-auto w-full max-w-5xl px-4 py-10">
       <h1 className="text-3xl font-bold">Tin tức</h1>
@@ -46,6 +90,7 @@ export default async function NewsPage() {
           ))}
         </ul>
       )}
+      <Pagination page={page} totalPages={totalPages} />
     </main>
   )
 }
