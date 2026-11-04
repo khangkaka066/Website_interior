@@ -29,9 +29,12 @@ export async function getPublicPost(req, res) {
 export async function listPosts(req, res) {
   const posts = await prisma.post.findMany({
     orderBy: [{ createdAt: 'desc' }],
-    select: { ...PUBLIC_LIST, status: true, rejectReason: true, createdAt: true, updatedAt: true },
+    select: { ...PUBLIC_LIST, status: true, rejectReason: true, seoReport: true, createdAt: true, updatedAt: true },
   })
-  res.json(toPlain(posts))
+  // Bài chưa đăng kèm nội dung để trang quản trị chấm checklist ngay trong danh sách (bài đã đăng thì không cần, tránh tải nặng).
+  const pending = await prisma.post.findMany({ where: { status: { not: 'published' } }, select: { id: true, content: true } })
+  const contents = new Map(pending.map((p) => [p.id, p.content]))
+  res.json(toPlain(posts.map((p) => (contents.has(p.id) ? { ...p, content: contents.get(p.id) } : p))))
 }
 
 export async function getPost(req, res) {

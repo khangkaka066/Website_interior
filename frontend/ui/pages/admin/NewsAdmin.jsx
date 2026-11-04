@@ -5,6 +5,7 @@ import AdminLayout from '../../components/dashboard/AdminLayout'
 import { api } from '../../api'
 import { formatDate } from '../../utils/format'
 import PostReview from './PostReview'
+import { buildChecklist } from './postChecklist'
 
 const STATUS_LABEL = { published: 'Đã đăng', draft: 'Chờ duyệt', rejected: 'Đã từ chối' }
 const STATUS_CLASS = { published: 'status-delivered', draft: 'status-pending', rejected: 'status-cancelled' }
@@ -154,6 +155,7 @@ export default function NewsAdmin() {
               <tr>
                 <th>Tiêu đề</th>
                 <th>Trạng thái</th>
+                <th>Sẵn sàng đăng?</th>
                 <th>Ngày đăng</th>
                 <th>Cập nhật</th>
                 <th>Thao tác</th>
@@ -172,6 +174,26 @@ export default function NewsAdmin() {
                     </span>
                     {p.status === 'rejected' && p.rejectReason && (
                       <div style={{ fontSize: '12px', color: 'var(--dash-text-muted, #888)' }}>{p.rejectReason}</div>
+                    )}
+                  </td>
+                  <td>
+                    {p.status === 'published' ? (
+                      '—'
+                    ) : (
+                      (() => {
+                        const c = buildChecklist(p)
+                        const ready = c.failed === 0
+                        return (
+                          <div style={{ fontSize: '13px' }}>
+                            <strong style={{ color: ready ? 'var(--dash-success, #1a7f37)' : 'var(--dash-danger)' }}>
+                              {ready ? '✔ Đủ điều kiện' : `✕ Còn ${c.failed} mục chưa đạt`}
+                            </strong>
+                            <div style={{ color: 'var(--dash-text-muted, #888)' }}>
+                              Checklist {c.passed}/{c.total}{p.seoReport ? ` · Điểm ${p.seoReport.total}/100` : ''}
+                            </div>
+                          </div>
+                        )
+                      })()
                     )}
                   </td>
                   <td>{formatDate(p.publishedAt)}</td>
