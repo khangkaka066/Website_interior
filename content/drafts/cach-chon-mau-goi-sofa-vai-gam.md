@@ -17,7 +17,7 @@ Bài này đưa ra các bước chọn màu. Đây là gợi ý của CLEVINIUM 
 
 ## 8 màu gối của CLEVINIUM
 
-![Gối tựa vải gấm màu xám có vân chìm đặt trên ghế sofa màu kem](https://cf.shopee.vn/file/vn-11134207-7ras8-mdsud6vqebphfb)
+![Gối sofa vải gấm xám vân chìm đặt cạnh sofa màu kem](https://cf.shopee.vn/file/vn-11134207-7ras8-mdsud6vqebphfb)
 
 Theo phần phân loại sản phẩm, gối có các màu:
 
@@ -40,7 +40,7 @@ Nếu muốn căn phòng sinh động hơn, thêm một đến hai gối màu kh
 
 ## Bước 4: Thử trước khi mua nhiều
 
-Nếu chưa chắc, hãy mua một đến hai chiếc trước, đặt lên sofa và xem trong ánh sáng ban ngày lẫn ban đêm, rồi mới mua thêm. Gối có kích thước 45 x 45 cm theo mô tả của shop, bạn có thể xem [thông tin và giá gối](/news/goi-tua-sofa-vai-gam-45x45-mua-o-dau).
+Mua một đến hai chiếc trước, đặt lên sofa và xem trong ánh sáng ban ngày lẫn ban đêm, rồi mới mua thêm. Gối có kích thước 45 x 45 cm, bạn có thể xem [thông tin và giá gối](/news/goi-tua-sofa-vai-gam-45x45-mua-o-dau).
 
 ## Phối gối với rèm
 
@@ -48,7 +48,7 @@ Nếu bạn đang chọn cả rèm, hãy chọn rèm trước vì rèm chiếm d
 
 ## Mua gối tựa sofa vải gấm
 
-Bạn có thể xem và đặt [gối tựa sofa vải gấm 45x45](/products/sp24546468731) với 8 màu trên website. Cần tư vấn, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
+Bạn có thể xem và đặt [gối tựa sofa vải gấm 45x45](/products/sp24546468731) với 8 màu trên website. Cần tư vấn phối màu gối, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
 
 ## Câu hỏi thường gặp
 
@@ -62,7 +62,7 @@ Với 8 màu hiện có, bạn có thể thử gối cùng nhóm xám cho tổng
 Tùy kích thước sofa và gu của bạn. Bạn có thể bắt đầu với hai chiếc rồi thêm nếu cần.
 
 **Màu thực tế có giống ảnh không?**
-Màu có thể khác đôi chút tùy màn hình. Hãy hỏi shop nếu bạn cần xác nhận màu trước khi đặt.
+Màu hiển thị khác đôi chút tùy màn hình.
 
 ## Tóm tắt
 

@@ -97,7 +97,9 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
   const options = product.options || []
   const selection = options.map((o) => picked[o.name] ?? o.values[0])
   const variant = product.variants?.find((v) => v.label === selection.join(' / ')) || null
-  const optionImage = options[0]?.images?.[selection[0]] || null
+  // Ảnh riêng của phân loại chỉ dùng khi khách đã chủ động chọn; mới vào trang thì hiện ảnh đầu tiên của sản phẩm (giống trang danh sách).
+  const optionPicked = options[0] && picked[options[0].name] !== undefined
+  const optionImage = (optionPicked && options[0]?.images?.[selection[0]]) || null
   const price = variant?.price ?? product.price
   const outOfStock = variant ? variant.stock <= 0 : false
   const gallery = product.images && product.images.length > 0 ? product.images : [product.image]

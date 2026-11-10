@@ -48,7 +48,7 @@ Catalog nêu các lựa chọn phần cứng sau:
 - **Thanh đáy:** dạng oval hoặc chữ nhật.
 - **Màu máng và thanh đáy:** nâu, be, kem hoặc xám nhạt.
 
-Mức che khe sáng của từng hệ máng catalog không ghi rõ, vì vậy hãy hỏi shop trước khi đặt nếu phòng cần tối hẳn.
+Phòng cần tối hẳn thì chọn vải cản sáng 100% và lắp rèm khít khung cửa.
 
 ## Chọn rèm cuốn cho từng phòng
 
@@ -67,13 +67,13 @@ Nếu muốn rèm vải treo thanh, bạn có thể xem [rèm chống nắng](/p
 ## Câu hỏi thường gặp
 
 **Rèm cuốn cản sáng 100% có hoàn toàn tối không?**
-Vải cản sáng 100% theo catalog, nhưng ánh sáng vẫn có thể lọt qua khe ở mép nếu rèm lắp không khít. Hãy đo cửa chính xác và hỏi shop về hệ máng.
+Vải cản sáng 100% theo catalog, nhưng ánh sáng vẫn có thể lọt qua khe ở mép nếu rèm lắp không khít. Đo cửa chính xác để rèm lắp khít.
 
 **Mã màu CL, SC, SV, TP nghĩa là gì?**
 Là mã màu của từng dòng: CL là Unicolor, SC là Sand-Castle, SV là Silver và TP là Transparent.
 
 **Khổ vải 295 cm là chiều rộng rèm tối đa?**
-Đó là khổ vải tối đa trong catalog, không phải chiều rộng thành phẩm. Hãy hỏi shop về kích thước thực tế cho cửa của bạn.
+Không. Đó là khổ vải tối đa trong catalog, không phải chiều rộng thành phẩm. Gửi số đo cửa qua hotline **0356 789 749** để được báo giá theo kích thước.
 
 **Có giá rèm cuốn trong catalog không?**
 Catalog rèm cuốn VH BLINDS không in giá. Shop báo giá theo kích thước và dòng vải.

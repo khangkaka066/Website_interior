@@ -51,7 +51,7 @@ Hãy trả lời ba câu hỏi sau:
 2. **Bạn cần riêng tư mức nào?** Voan che mờ nhưng mỏng. Rèm hai lớp cho thêm lớp gấm khi cần.
 3. **Ngân sách và kích thước cửa?** Rèm hai lớp có hai lớp vải nên giá thường cao hơn voan. Hãy chọn kích thước theo [cách đo và tính vải rèm ORE](/news/cach-do-va-tinh-vai-rem-ore) rồi so giá.
 
-Nếu chưa chắc, bạn có thể liên hệ shop qua hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc trang [liên hệ](/contact).
+Gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) kèm số đo cửa để được tư vấn mẫu phù hợp, hoặc xem trang [liên hệ](/contact).
 
 ## Câu hỏi thường gặp
 

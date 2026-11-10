@@ -11,7 +11,7 @@ status: draft
 
 **Gối tựa sofa vải gấm của CLEVINIUM có kích thước 45 x 45 cm, ruột bông, bán với 8 màu. Bạn có thể đặt mua ngay trên website, giá hiện từ khoảng 125.000đ đến 220.000đ tùy màu.**
 
-Bài này tổng hợp thông tin về sản phẩm theo mô tả của shop và cách đặt mua.
+Bài này nêu kích thước, chất liệu, màu sắc, giá và cách đặt mua gối.
 
 ## Gối tựa sofa vải gấm là gì?
 
@@ -21,7 +21,7 @@ Bài này tổng hợp thông tin về sản phẩm theo mô tả của shop và
 
 ## Thông tin sản phẩm
 
-| Hạng mục | Theo mô tả của shop |
+| Hạng mục | Thông số |
 |---|---|
 | Kích thước | 45 x 45 cm |
 | Chất liệu | Vải gấm và ruột bông |
@@ -47,18 +47,18 @@ Theo dữ liệu trên website, giá gối hiện nằm trong khoảng từ 125.
 
 CLEVINIUM giao hàng toàn quốc. Hàng có sẵn giao trong 2 đến 5 ngày. Shop hỗ trợ đổi trả nếu sản phẩm lỗi do nhà sản xuất, bạn liên hệ hotline kèm ảnh sản phẩm. Chi tiết xem trang [câu hỏi thường gặp](/faq).
 
-Các sản phẩm cùng nhóm nằm trong danh mục [sản phẩm khác](/products?category=rem-khac). Cần tư vấn, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
+Các sản phẩm cùng nhóm nằm trong danh mục [sản phẩm khác](/products?category=rem-khac). Cần đặt gối hoặc chọn màu, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
 
 ## Câu hỏi thường gặp
 
 **Gối có kèm ruột không?**
-Theo mô tả của shop, sản phẩm gồm vải gấm và ruột bông. Hãy hỏi shop nếu bạn cần xác nhận trước khi đặt.
+Có. Sản phẩm gồm vải gấm và ruột bông.
 
 **Kích thước gối là bao nhiêu?**
-45 x 45 cm theo mô tả của shop.
+45 x 45 cm.
 
 **Gối có giặt được không?**
-Hãy kiểm tra nhãn trên gối hoặc hỏi shop. Xem bài [hướng dẫn giặt gối tựa sofa vải gấm](/news/huong-dan-giat-goi-vai-gam).
+Giặt chế độ nhẹ với nước lạnh hoặc ấm, sau khi đọc nhãn và tháo vỏ nếu được. Xem bài [hướng dẫn giặt gối tựa sofa vải gấm](/news/huong-dan-giat-goi-vai-gam).
 
 **Gối dùng được ở đâu?**
 Shop gợi ý dùng cho sofa phòng khách, giường ngủ, ghế văn phòng, homestay và quán cà phê.

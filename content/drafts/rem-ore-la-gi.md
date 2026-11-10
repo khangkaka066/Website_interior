@@ -19,7 +19,7 @@ Bài này giải thích rèm ORE là gì, ưu nhược điểm và những đi�
 
 ![Rèm khoen màu xám bạc xỏ trên thanh treo trắng, vén gọn bằng dây vén màn](/images/curtains/silver.webp)
 
-Rèm ORE tại CLEVINIUM được may hoàn thiện theo kích thước rộng x cao đã chọn, gắn sẵn khoen và tặng kèm dây vén màn. **Giá không bao gồm thanh treo.**
+Mỗi tấm rèm ORE được may theo kích thước rộng x cao bạn chọn, gắn sẵn khoen, kèm dây vén màn. **Giá không bao gồm thanh treo.**
 
 ## Ưu điểm của rèm ORE
 

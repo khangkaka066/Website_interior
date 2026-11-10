@@ -76,7 +76,7 @@ Tùy bộ sưu tập. Catalog ghi từ khoảng 55 đến 60% (Basic) đến 100
 Không. Đây là các tên gọi khác nhau của cùng một loại rèm, vải sọc mờ xen sọc đặc.
 
 **Rèm cầu vồng có dùng điều khiển tự động được không?**
-Catalog in biểu tượng cả hai kiểu vận hành, kéo dây và tự động. Với từng mẫu cụ thể, hãy hỏi shop để xác nhận.
+Catalog in biểu tượng cả hai kiểu vận hành: kéo dây và tự động.
 
 **Có xem giá rèm cầu vồng ở đâu?**
 Giá phụ thuộc bộ sưu tập vải và kích thước cửa, nên shop báo giá theo số đo của bạn. Hãy liên hệ để nhận báo giá chính xác.

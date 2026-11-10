@@ -29,7 +29,7 @@ Khi xem thông số, hãy phân biệt con số cản sáng của vải và vi�
 
 | Loại rèm | Mức cản sáng | Lưu ý | Xem ở đâu |
 |---|---|---|---|
-| Rèm vải gấm chống nắng (ORE, dán tường) | Shop mô tả là rèm chống nắng, chưa công bố tỉ lệ cản sáng đo kiểm | Vải gấm dày, treo thanh, nhún sóng | [Rèm chống nắng](/products?category=chong-nang) |
+| Rèm vải gấm chống nắng (ORE, dán tường) | Chống nắng bằng vải gấm dày | Vải gấm dày, treo thanh, nhún sóng | [Rèm chống nắng](/products?category=chong-nang) |
 | Rèm hai lớp (gấm kèm voan) | Lớp gấm chống nắng, lớp voan lọc sáng | Dùng cả hai lớp hoặc chỉ voan | [Rèm khoen ORE hai lớp](/products/sp26431672481) |
 | Rèm cuốn cản sáng 100% | 100% theo catalog (Unicolor, Sand-Castle, Silver) | Cần lắp khít cửa; đặt theo catalog | [Trang đặt riêng](/dat-rieng) |
 | Rèm cầu vồng cản sáng cao | 95 đến 100% ở một số bộ sưu tập (VIHA, Blush, Doja, Ambie 100%) | Chỉnh được nhiều mức sáng; đặt theo catalog | [Trang đặt riêng](/dat-rieng) |
@@ -56,12 +56,12 @@ Rèm cầu vồng cho phép chỉnh nhiều mức ánh sáng, và một số b�
 
 ## Hạn chế khe sáng ở mép
 
-Dù chọn loại nào, ánh sáng vẫn có thể lọt qua mép và khe phía trên. Để giảm khe sáng, hãy đo chính xác cửa theo [hướng dẫn đo](/news/cach-do-va-tinh-vai-rem-ore) và hỏi shop về cách lắp phù hợp với phòng của bạn.
+Dù chọn loại nào, ánh sáng vẫn có thể lọt qua mép và khe phía trên. Để giảm khe sáng, hãy đo chính xác cửa theo [hướng dẫn đo](/news/cach-do-va-tinh-vai-rem-ore).
 
 ## Câu hỏi thường gặp
 
 **Rèm nào cản sáng tốt nhất cho phòng ngủ?**
-Theo catalog, rèm cuốn Unicolor, Sand-Castle, Silver và một số bộ sưu tập rèm cầu vồng ghi cản sáng 100%. Với rèm vải, shop chưa công bố tỉ lệ cản sáng đo kiểm.
+Rèm cuốn Unicolor, Sand-Castle, Silver và một số bộ sưu tập rèm cầu vồng cản sáng 100% theo catalog.
 
 **Rèm hai lớp có cần thiết cho phòng ngủ không?**
 Không bắt buộc. Nếu chỉ cần tối, rèm cản sáng một lớp là đủ. Rèm hai lớp hợp khi bạn muốn có thêm lớp voan lọc sáng ban ngày.
