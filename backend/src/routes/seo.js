@@ -14,15 +14,15 @@ router.get('/robots.txt', (req, res) => {
       'User-agent: *',
       'Allow: /',
       'Disallow: /dashboard',
-      'Disallow: /cart',
-      'Disallow: /checkout',
+      'Disallow: /gio-hang',
+      'Disallow: /thanh-toan',
       'Disallow: /login',
       'Disallow: /forgot-password',
       'Disallow: /reset-password',
-      'Disallow: /track-order',
-      'Disallow: /order-confirmation/',
-      'Disallow: /wishlist',
-      'Disallow: /account',
+      'Disallow: /tra-cuu-don-hang',
+      'Disallow: /xac-nhan-don-hang/',
+      'Disallow: /yeu-thich',
+      'Disallow: /tai-khoan',
       `Sitemap: ${shopUrl()}/sitemap.xml`,
       '',
     ].join('\n'),
@@ -48,11 +48,11 @@ router.get('/sitemap.xml', async (req, res) => {
   // Mỗi danh mục có sản phẩm là một trang đích riêng (?category=), xem products/page.js ở frontend.
   const categories = [...new Set(products.map((p) => p.categoryId).filter(Boolean))].sort()
   const entries = [
-    ...['/', '/products', '/about', '/contact', '/faq', '/dat-rieng', '/privacy', '/terms', '/news'].map((u) => tag(base + u)),
-    ...categories.map((c) => tag(`${base}/products?category=${encodeURIComponent(c)}`)),
+    ...['/', '/san-pham', '/gioi-thieu', '/lien-he', '/cau-hoi-thuong-gap', '/dat-rieng', '/chinh-sach-bao-mat', '/dieu-khoan', '/tin-tuc'].map((u) => tag(base + u)),
+    ...categories.map((c) => tag(`${base}/san-pham?category=${encodeURIComponent(c)}`)),
     ...products.map((p) =>
       // Ảnh sản phẩm giúp lên Google Hình ảnh; ảnh phải là địa chỉ đầy đủ (ảnh trong thư mục public của website thì ghép tên miền vào).
-      tag(`${base}/products/${encodeURIComponent(p.id)}`, {
+      tag(`${base}/san-pham/${encodeURIComponent(p.id)}`, {
         lastmod: day(p.updatedAt || p.createdAt),
         images: (p.images?.length ? p.images : [p.image])
           .filter(Boolean)
@@ -60,7 +60,7 @@ router.get('/sitemap.xml', async (req, res) => {
           .map((u) => (u.startsWith('http') ? u : base + u)),
       }),
     ),
-    ...posts.map((p) => tag(`${base}/news/${encodeURIComponent(p.slug)}`, { lastmod: day(p.updatedAt) })),
+    ...posts.map((p) => tag(`${base}/tin-tuc/${encodeURIComponent(p.slug)}`, { lastmod: day(p.updatedAt) })),
   ]
   res.set('Cache-Control', 'public, max-age=3600')
   res.type('application/xml').send(

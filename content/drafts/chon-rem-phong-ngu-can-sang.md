@@ -29,8 +29,8 @@ Khi xem thông số, hãy phân biệt con số cản sáng của vải và vi�
 
 | Loại rèm | Mức cản sáng | Lưu ý | Xem ở đâu |
 |---|---|---|---|
-| Rèm vải gấm chống nắng (ORE, dán tường) | Chống nắng bằng vải gấm dày | Vải gấm dày, treo thanh, nhún sóng | [Rèm chống nắng](/products?category=chong-nang) |
-| Rèm hai lớp (gấm kèm voan) | Lớp gấm chống nắng, lớp voan lọc sáng | Dùng cả hai lớp hoặc chỉ voan | [Rèm khoen ORE hai lớp](/products/sp26431672481) |
+| Rèm vải gấm chống nắng (ORE, dán tường) | Chống nắng bằng vải gấm dày | Vải gấm dày, treo thanh, nhún sóng | [Rèm chống nắng](/san-pham?category=chong-nang) |
+| Rèm hai lớp (gấm kèm voan) | Lớp gấm chống nắng, lớp voan lọc sáng | Dùng cả hai lớp hoặc chỉ voan | [Rèm khoen ORE hai lớp](/san-pham/sp26431672481) |
 | Rèm cuốn cản sáng 100% | 100% theo catalog (Unicolor, Sand-Castle, Silver) | Cần lắp khít cửa; đặt theo catalog | [Trang đặt riêng](/dat-rieng) |
 | Rèm cầu vồng cản sáng cao | 95 đến 100% ở một số bộ sưu tập (VIHA, Blush, Doja, Ambie 100%) | Chỉnh được nhiều mức sáng; đặt theo catalog | [Trang đặt riêng](/dat-rieng) |
 
@@ -40,23 +40,23 @@ Các con số cản sáng của rèm cuốn và rèm cầu vồng là do nhà s�
 
 ## Rèm vải chống nắng
 
-Rèm vải gấm là lựa chọn quen thuộc cho phòng ngủ, có nhiều màu và kích thước. Một lợi thế là bạn tính được độ nhún theo ý muốn: nhún dày hơn thì rèm phủ rộng và đẹp hơn. Xem hướng dẫn trong bài [cách đo và tính vải rèm ORE](/news/cach-do-va-tinh-vai-rem-ore).
+Rèm vải gấm là lựa chọn quen thuộc cho phòng ngủ, có nhiều màu và kích thước. Một lợi thế là bạn tính được độ nhún theo ý muốn: nhún dày hơn thì rèm phủ rộng và đẹp hơn. Xem hướng dẫn trong bài [cách đo và tính vải rèm ORE](/tin-tuc/cach-do-va-tinh-vai-rem-ore).
 
 ## Rèm hai lớp
 
-Rèm hai lớp gồm vải gấm chống nắng và lớp voan. Ban ngày bạn có thể kéo mở lớp gấm và chỉ dùng voan để lấy ánh sáng dịu, buổi tối dùng thêm lớp gấm. So sánh kỹ hơn trong bài [rèm voan hay rèm hai lớp cho phòng khách](/news/rem-voan-hay-rem-hai-lop-cho-phong-khach).
+Rèm hai lớp gồm vải gấm chống nắng và lớp voan. Ban ngày bạn có thể kéo mở lớp gấm và chỉ dùng voan để lấy ánh sáng dịu, buổi tối dùng thêm lớp gấm. So sánh kỹ hơn trong bài [rèm voan hay rèm hai lớp cho phòng khách](/tin-tuc/rem-voan-hay-rem-hai-lop-cho-phong-khach).
 
 ## Rèm cuốn cản sáng 100%
 
-Theo catalog VH BLINDS, ba dòng vải Unicolor, Sand-Castle và Silver cản sáng 100%. Rèm cuốn cần lắp thật khít vì ánh sáng có thể lọt ở mép. Xem [rèm cuốn cản sáng 100% hay lọc sáng 50%](/news/rem-cuon-can-sang-100-hay-loc-sang-50).
+Theo catalog VH BLINDS, ba dòng vải Unicolor, Sand-Castle và Silver cản sáng 100%. Rèm cuốn cần lắp thật khít vì ánh sáng có thể lọt ở mép. Xem [rèm cuốn cản sáng 100% hay lọc sáng 50%](/tin-tuc/rem-cuon-can-sang-100-hay-loc-sang-50).
 
 ## Rèm cầu vồng
 
-Rèm cầu vồng cho phép chỉnh nhiều mức ánh sáng, và một số bộ sưu tập cản sáng 100% theo catalog. Nếu bạn muốn vừa phòng tối ban đêm vừa linh hoạt ban ngày, đây là lựa chọn đáng cân nhắc. Xem [rèm cầu vồng là gì](/news/rem-cau-vong-zebra-la-gi).
+Rèm cầu vồng cho phép chỉnh nhiều mức ánh sáng, và một số bộ sưu tập cản sáng 100% theo catalog. Nếu bạn muốn vừa phòng tối ban đêm vừa linh hoạt ban ngày, đây là lựa chọn đáng cân nhắc. Xem [rèm cầu vồng là gì](/tin-tuc/rem-cau-vong-zebra-la-gi).
 
 ## Hạn chế khe sáng ở mép
 
-Dù chọn loại nào, ánh sáng vẫn có thể lọt qua mép và khe phía trên. Để giảm khe sáng, hãy đo chính xác cửa theo [hướng dẫn đo](/news/cach-do-va-tinh-vai-rem-ore).
+Dù chọn loại nào, ánh sáng vẫn có thể lọt qua mép và khe phía trên. Để giảm khe sáng, hãy đo chính xác cửa theo [hướng dẫn đo](/tin-tuc/cach-do-va-tinh-vai-rem-ore).
 
 ## Câu hỏi thường gặp
 
@@ -70,7 +70,7 @@ Không bắt buộc. Nếu chỉ cần tối, rèm cản sáng một lớp là �
 Vải cản sáng 100%, nhưng ánh sáng vẫn có thể lọt qua khe mép nếu rèm không che khít cửa.
 
 **Cần tư vấn chọn loại nào?**
-Gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
+Gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/lien-he).
 
 ## Tóm tắt
 

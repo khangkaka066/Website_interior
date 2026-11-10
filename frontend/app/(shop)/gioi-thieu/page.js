@@ -50,7 +50,7 @@ export default async function AboutPage() {
           ))}
         </ul>
         <p className="mt-5 text-muted">
-          Cần tư vấn hoặc báo giá? <Link href="/contact" className="font-semibold text-accent hover:underline">Gửi yêu cầu cho chúng tôi</Link>.
+          Cần tư vấn hoặc báo giá? <Link href="/lien-he" className="font-semibold text-accent hover:underline">Gửi yêu cầu cho chúng tôi</Link>.
         </p>
       </section>
     </SiteShell>

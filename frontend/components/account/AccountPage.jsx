@@ -22,7 +22,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     const s = getSession()
-    if (!s) navigate('/login?from=/account', { replace: true })
+    if (!s) navigate('/login?from=/tai-khoan', { replace: true })
     else if (s.role === 'ADMIN') navigate('/dashboard', { replace: true })
     else setSession(s)
   }, [navigate])
@@ -56,7 +56,7 @@ export default function AccountPage() {
           {TABS.map((t) => (
             <Link
               key={t.id}
-              to={`/account?tab=${t.id}`}
+              to={`/tai-khoan?tab=${t.id}`}
               aria-current={t.id === tab ? 'page' : undefined}
               className={`whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium ${
                 t.id === tab ? 'bg-accent text-white' : 'border border-line bg-white hover:border-accent'

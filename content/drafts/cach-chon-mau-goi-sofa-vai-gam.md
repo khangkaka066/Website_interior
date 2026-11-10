@@ -32,7 +32,7 @@ Nhìn vào ba thứ chiếm diện tích lớn nhất: sofa, tường và rèm. 
 
 ## Bước 2: Chọn một màu chủ đạo
 
-Chọn một màu gối làm màu chính, ví dụ cùng tông với rèm hoặc sofa để căn phòng hài hòa. Tên màu gối trùng với tên màu của nhiều [rèm ORE vải gấm](/products/sp29481006929) của shop, nên bạn có thể chọn gối cùng tên màu với rèm. Hãy xem ảnh thật vì màu hiển thị còn tùy màn hình.
+Chọn một màu gối làm màu chính, ví dụ cùng tông với rèm hoặc sofa để căn phòng hài hòa. Tên màu gối trùng với tên màu của nhiều [rèm ORE vải gấm](/san-pham/sp29481006929) của shop, nên bạn có thể chọn gối cùng tên màu với rèm. Hãy xem ảnh thật vì màu hiển thị còn tùy màn hình.
 
 ## Bước 3: Thêm màu điểm nhấn
 
@@ -40,15 +40,15 @@ Nếu muốn căn phòng sinh động hơn, thêm một đến hai gối màu kh
 
 ## Bước 4: Thử trước khi mua nhiều
 
-Mua một đến hai chiếc trước, đặt lên sofa và xem trong ánh sáng ban ngày lẫn ban đêm, rồi mới mua thêm. Gối có kích thước 45 x 45 cm, bạn có thể xem [thông tin và giá gối](/news/goi-tua-sofa-vai-gam-45x45-mua-o-dau).
+Mua một đến hai chiếc trước, đặt lên sofa và xem trong ánh sáng ban ngày lẫn ban đêm, rồi mới mua thêm. Gối có kích thước 45 x 45 cm, bạn có thể xem [thông tin và giá gối](/tin-tuc/goi-tua-sofa-vai-gam-45x45-mua-o-dau).
 
 ## Phối gối với rèm
 
-Nếu bạn đang chọn cả rèm, hãy chọn rèm trước vì rèm chiếm diện tích lớn hơn, rồi chọn gối. Xem hướng dẫn trong bài [cách đo và tính vải rèm ORE](/news/cach-do-va-tinh-vai-rem-ore) và [chọn rèm phòng ngủ cản sáng](/news/chon-rem-phong-ngu-can-sang).
+Nếu bạn đang chọn cả rèm, hãy chọn rèm trước vì rèm chiếm diện tích lớn hơn, rồi chọn gối. Xem hướng dẫn trong bài [cách đo và tính vải rèm ORE](/tin-tuc/cach-do-va-tinh-vai-rem-ore) và [chọn rèm phòng ngủ cản sáng](/tin-tuc/chon-rem-phong-ngu-can-sang).
 
 ## Mua gối tựa sofa vải gấm
 
-Bạn có thể xem và đặt [gối tựa sofa vải gấm 45x45](/products/sp24546468731) với 8 màu trên website. Cần tư vấn phối màu gối, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
+Bạn có thể xem và đặt [gối tựa sofa vải gấm 45x45](/san-pham/sp24546468731) với 8 màu trên website. Cần tư vấn phối màu gối, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/lien-he).
 
 ## Câu hỏi thường gặp
 

@@ -1,0 +1,39 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/dashboard/layout,_N_T_/dashboard/discounts/layout,_N_T_/dashboard/discounts/page,_N_T_/dashboard/discounts"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/dashboard/discounts/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/9ea46ef8d9da0962111deb2c75f8f04465f615156f46b36b41364a911b4be504/$/dashboard/discounts",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/dashboard/discounts/page"
+    },
+    "isFallback": false
+  }
+}

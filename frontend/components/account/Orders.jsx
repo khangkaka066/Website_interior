@@ -106,7 +106,7 @@ export function OrderList({ onOpen }) {
         {orders?.length === 0 && (
           <div className="rounded-xl border border-line bg-white p-8 text-center">
             <p className="text-muted">Bạn chưa có đơn hàng nào.</p>
-            <Link href="/products" className={`${btnPrimary} mt-4 inline-block`}>Mua sắm ngay</Link>
+            <Link href="/san-pham" className={`${btnPrimary} mt-4 inline-block`}>Mua sắm ngay</Link>
           </div>
         )}
         {orders && orders.length > 0 && (
@@ -182,7 +182,7 @@ export function OrderDetail({ orderNumber, onBack }) {
               <li key={idx} className="flex items-center gap-3 p-3">
                 {i.image && /* eslint-disable-next-line @next/next/no-img-element */ <img src={sized(i.image, IMG.thumb)} alt="" className="h-14 w-14 rounded-lg object-cover" />}
                 <div className="min-w-0 flex-1">
-                  {i.productId ? <Link href={`/products/${i.productId}`} className="font-medium hover:text-accent">{i.name}</Link> : <span className="font-medium">{i.name}</span>}
+                  {i.productId ? <Link href={`/san-pham/${i.productId}`} className="font-medium hover:text-accent">{i.name}</Link> : <span className="font-medium">{i.name}</span>}
                   <p className="text-sm text-muted">{i.variant ? `${i.variant} · ` : ''}{money(i.unitPrice)} × {i.quantity}</p>
                   {i.review && <p className="text-xs text-muted"><StaticStars value={i.review.rating} /> Bạn đã đánh giá</p>}
                 </div>
@@ -236,7 +236,7 @@ export function OrderDetail({ orderNumber, onBack }) {
           </div>
 
           {order.paymentMethod === 'PAYOS' && order.paymentStatus === 'AWAITING_PAYMENT' && !['CANCELLED', 'RETURNED'].includes(order.status) && (
-            <Link href={`/track-order?orderNumber=${encodeURIComponent(order.orderNumber)}`} className={`${btnPrimary} inline-block`}>
+            <Link href={`/tra-cuu-don-hang?orderNumber=${encodeURIComponent(order.orderNumber)}`} className={`${btnPrimary} inline-block`}>
               Thanh toán đơn hàng
             </Link>
           )}

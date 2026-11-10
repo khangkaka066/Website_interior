@@ -208,7 +208,7 @@ export default function TrackOrder() {
                   <li key={k}>
                     {i.image && <img src={sized(i.image, IMG.thumb)} alt="" loading="lazy" />}
                     <div>
-                      {i.productId ? <Link to={`/products/${i.productId}`}>{i.name}</Link> : i.name}
+                      {i.productId ? <Link to={`/san-pham/${i.productId}`}>{i.name}</Link> : i.name}
                       {i.variant && <small>{i.variant}</small>}
                       {i.review && <small><StaticStars value={i.review.rating} /> Bạn đã đánh giá</small>}
                     </div>

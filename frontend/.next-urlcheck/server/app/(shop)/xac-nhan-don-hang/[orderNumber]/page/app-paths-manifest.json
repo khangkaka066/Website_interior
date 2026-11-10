@@ -1,0 +1,3 @@
+{
+  "/(shop)/xac-nhan-don-hang/[orderNumber]/page": "app/(shop)/xac-nhan-don-hang/[orderNumber]/page.js"
+}

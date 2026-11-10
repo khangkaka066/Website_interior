@@ -81,7 +81,7 @@ export default function ProductsMenu() {
                   <ul>
                     {CURTAIN_CATEGORIES.map((c) => (
                       <li key={c.id}>
-                        <Link to={`/products?category=${c.id}`}>{c.name}</Link>
+                        <Link to={`/san-pham?category=${c.id}`}>{c.name}</Link>
                       </li>
                     ))}
                   </ul>
@@ -100,11 +100,11 @@ export default function ProductsMenu() {
           <div className="container mega-foot">
             <span className="mega-foot-label">Dịch vụ</span>
             {SERVICES.map((s) => (
-              <Link key={s.id} to="/about#linh-vuc">
+              <Link key={s.id} to="/gioi-thieu#linh-vuc">
                 {s.title}
               </Link>
             ))}
-            <Link to="/products" className="mega-all">
+            <Link to="/san-pham" className="mega-all">
               Xem tất cả sản phẩm →
             </Link>
           </div>
@@ -113,7 +113,7 @@ export default function ProductsMenu() {
 
   return (
     <div className={`nav-products ${open ? 'nav-products-open' : ''}`} ref={wrap} onPointerEnter={show} onPointerLeave={hideSoon}>
-      <Link to="/products" className="nav-products-link">
+      <Link to="/san-pham" className="nav-products-link">
         Sản phẩm
       </Link>
       <button

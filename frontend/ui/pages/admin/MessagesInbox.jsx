@@ -11,7 +11,7 @@ const FALLBACK_POLL_MS = 30000 // dự phòng; cập nhật chính đến qua lu
 
 // Bỏ dấu + hạ chữ thường để tìm "rem" ra cả "Rèm".
 const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase()
-const productLink = (id) => `${window.location.origin}/products/${encodeURIComponent(id)}`
+const productLink = (id) => `${window.location.origin}/san-pham/${encodeURIComponent(id)}`
 
 async function copyText(text) {
   try {

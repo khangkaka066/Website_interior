@@ -30,26 +30,26 @@ Theo hướng dẫn của shop, mô tả của từng sản phẩm có thể ghi
 - **Chiều ngang:** khoảng 2 lần chiều rộng lọt lòng cửa (nhún vừa phải) hoặc khoảng 2,4 lần (nhún dày dặn). Một số sản phẩm dán ghi khoảng 1,5 đến 2,5 lần.
 - **Chiều cao:** cửa sổ bằng chiều cao lọt lòng cộng khoảng 30 cm. Cửa chính cộng khoảng 10 đến 15 cm tùy sản phẩm.
 
-Hãy đọc mô tả của sản phẩm bạn chọn, và xem thêm [cách đo và tính vải rèm ORE](/news/cach-do-va-tinh-vai-rem-ore) vì cách tính tương tự.
+Hãy đọc mô tả của sản phẩm bạn chọn, và xem thêm [cách đo và tính vải rèm ORE](/tin-tuc/cach-do-va-tinh-vai-rem-ore) vì cách tính tương tự.
 
 ## Các mẫu rèm dán tường tại CLEVINIUM
 
-- [Rèm cửa sổ dán tường Loại 1](/products/sp3366890841), 8 màu, giá từ 163.761đ đến 806.400đ.
-- [Rèm cửa sổ cao cấp dán tường nhiều màu](/products/sp27330910471), 5 màu, giá từ 114.216đ đến 861.538đ.
-- [Rèm dán hai lớp vải chống nắng kèm voan trắng](/products/sp24043050122), giá từ 177.356đ đến 884.292đ.
-- [Rèm voan dán tường](/products/sp26331538658), giá từ 132.677đ đến 648.222đ.
-- [Miếng dán tường cho rèm dán](/products/sp28830763252), tính theo mét.
+- [Rèm cửa sổ dán tường Loại 1](/san-pham/sp3366890841), 8 màu, giá từ 163.761đ đến 806.400đ.
+- [Rèm cửa sổ cao cấp dán tường nhiều màu](/san-pham/sp27330910471), 5 màu, giá từ 114.216đ đến 861.538đ.
+- [Rèm dán hai lớp vải chống nắng kèm voan trắng](/san-pham/sp24043050122), giá từ 177.356đ đến 884.292đ.
+- [Rèm voan dán tường](/san-pham/sp26331538658), giá từ 132.677đ đến 648.222đ.
+- [Miếng dán tường cho rèm dán](/san-pham/sp28830763252), tính theo mét.
 
-Tất cả nằm trong danh mục [rèm dán tường và RIDO móc](/products?category=dan-tuong). Giá phụ thuộc kích thước và màu.
+Tất cả nằm trong danh mục [rèm dán tường và RIDO móc](/san-pham?category=dan-tuong). Giá phụ thuộc kích thước và màu.
 
 ## Đặt mua rèm dán tường
 
-Chọn mẫu trong danh mục trên, nhập kích thước rộng x cao rồi đặt hàng. Cần chọn kích thước hoặc màu, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact). Rèm hỗ trợ đổi trả nếu sản phẩm lỗi do nhà sản xuất.
+Chọn mẫu trong danh mục trên, nhập kích thước rộng x cao rồi đặt hàng. Cần chọn kích thước hoặc màu, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/lien-he). Rèm hỗ trợ đổi trả nếu sản phẩm lỗi do nhà sản xuất.
 
 ## Câu hỏi thường gặp
 
 **Rèm dán tường khác rèm ORE thế nào?**
-Rèm ORE xỏ vào thanh treo bằng khoen, còn rèm dán tường gắn lên tường bằng miếng dán. Xem [rèm ORE là gì](/news/rem-ore-la-gi) và [rèm RIDO là gì](/news/rem-rido-la-gi).
+Rèm ORE xỏ vào thanh treo bằng khoen, còn rèm dán tường gắn lên tường bằng miếng dán. Xem [rèm ORE là gì](/tin-tuc/rem-ore-la-gi) và [rèm RIDO là gì](/tin-tuc/rem-rido-la-gi).
 
 **Miếng dán mặt bông và mặt gai khác nhau thế nào?**
 Mặt bông là loại không keo, mặt gai là loại có keo.

@@ -14,28 +14,28 @@ export const PRODUCT_GROUPS = [
     id: 'curtain',
     title: 'Rèm cửa, đệm gối sofa, khăn bàn',
     items: ['Rèm cửa', 'Đệm gối sofa', 'Khăn bàn'],
-    href: '/products',
+    href: '/san-pham',
   },
   {
     id: 'vat-lieu',
     title: 'Sơn tường & vật liệu ốp',
     items: ['Sơn tường', 'Trần vách thạch cao', 'PU foam', 'Lam sóng', 'Than tre', 'Sàn giả gỗ'],
     categoryId: 'vat-lieu',
-    href: '/products?category=vat-lieu',
+    href: '/san-pham?category=vat-lieu',
   },
   {
     id: 'bang-hieu-den',
     title: 'Bảng hiệu, decal & đèn LED',
     items: ['Bảng hiệu', 'Decal', 'Đèn LED trang trí chiếu sáng'],
     categoryId: 'bang-hieu-den',
-    href: '/products?category=bang-hieu-den',
+    href: '/san-pham?category=bang-hieu-den',
   },
   {
     id: 'do-go',
     title: 'Đồ gỗ nội thất',
     items: ['Đồ gỗ gia dụng', 'Đồ gỗ trang trí nội thất'],
     categoryId: 'do-go',
-    href: '/products?category=do-go',
+    href: '/san-pham?category=do-go',
   },
 ]
 

@@ -18,7 +18,7 @@ export async function generateMetadata({ searchParams }) {
   const category = CATEGORY_PAGES[first(sp.category)] ? first(sp.category) : ''
   const base = {
     description: 'Rèm cửa và phụ kiện rèm CLEVINIUM giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo. Lọc theo giá, màu, kích thước.',
-    alternates: { canonical: '/products' },
+    alternates: { canonical: '/san-pham' },
   }
   if (query) return { ...base, title: `Tìm “${query}”`, robots: { index: false, follow: true } }
   if (category) {
@@ -28,8 +28,8 @@ export async function generateMetadata({ searchParams }) {
     return {
       title,
       description,
-      alternates: { canonical: `/products?category=${category}` },
-      openGraph: { type: 'website', title, description, url: `/products?category=${category}`, images: [{ url: '/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.webp', alt: title }] },
+      alternates: { canonical: `/san-pham?category=${category}` },
+      openGraph: { type: 'website', title, description, url: `/san-pham?category=${category}`, images: [{ url: '/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.webp', alt: title }] },
       // Có thêm bộ lọc/sắp xếp khác trên cùng danh mục thì không lập chỉ mục (canonical đã trỏ về trang danh mục sạch).
       // Chọn nhiều danh mục cùng lúc (?category=a&category=b) cũng là một bộ lọc.
       ...((Array.isArray(sp.category) || Object.keys(sp).some((k) => k !== 'category')) && { robots: { index: false, follow: true } }),

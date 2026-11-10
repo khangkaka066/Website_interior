@@ -1,0 +1,39 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/dashboard/layout,_N_T_/dashboard/campaigns/layout,_N_T_/dashboard/campaigns/page,_N_T_/dashboard/campaigns"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/dashboard/campaigns/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/d4638ed7a7f813cb9c31e16e031b9c834f3d3156b01e3c0d3708a36a8a2c8959/$/dashboard/campaigns",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/dashboard/campaigns/page"
+    },
+    "isFallback": false
+  }
+}

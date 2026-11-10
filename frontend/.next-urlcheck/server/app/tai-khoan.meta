@@ -1,0 +1,40 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(shop)/layout,_N_T_/(shop)/tai-khoan/layout,_N_T_/(shop)/tai-khoan/page,_N_T_/tai-khoan"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KHNob3Ap",
+    "/!KHNob3Ap/tai-khoan/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 32,
+        "slots": {
+          "children": {
+            "hints": 64,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/c85706d13e774212196e5d77ac76258a49d9b632ba7a9b75b8589dad6dc1dd02/$/tai-khoan",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/(shop)/tai-khoan/page"
+    },
+    "isFallback": false
+  }
+}

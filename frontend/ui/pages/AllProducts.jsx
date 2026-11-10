@@ -267,7 +267,7 @@ export default function AllProducts() {
                   {searchQuery && (
                     <>
                       {' · '}
-                      <Link to="/products">Xóa tìm kiếm</Link>
+                      <Link to="/san-pham">Xóa tìm kiếm</Link>
                     </>
                   )}
                 </span>
@@ -300,7 +300,7 @@ export default function AllProducts() {
                       {CATEGORY_NOTES[emptyGroup.id] ? `${CATEGORY_NOTES[emptyGroup.id]}. ` : ''}
                       Nhóm này chưa đăng sản phẩm lên website. Liên hệ để được tư vấn và báo giá trực tiếp:{' '}
                       <a href={`tel:${String(shopInfo.hotline).replace(/\s/g, '')}`}>{shopInfo.hotline}</a> hoặc{' '}
-                      <Link to="/contact">gửi yêu cầu cho chúng tôi</Link>.
+                      <Link to="/lien-he">gửi yêu cầu cho chúng tôi</Link>.
                     </p>
                   )}
                   <p>
@@ -317,12 +317,12 @@ export default function AllProducts() {
                   )}
                   <div className="no-results-chips">
                     {POPULAR_KEYWORDS.map((k) => (
-                      <Link key={k} to={`/products?q=${encodeURIComponent(k)}`}>
+                      <Link key={k} to={`/san-pham?q=${encodeURIComponent(k)}`}>
                         {k}
                       </Link>
                     ))}
                     {categories.map((c) => (
-                      <Link key={c.id} to={`/products?category=${c.id}`}>
+                      <Link key={c.id} to={`/san-pham?category=${c.id}`}>
                         {c.name}
                       </Link>
                     ))}
@@ -330,7 +330,7 @@ export default function AllProducts() {
                   <h4>Sản phẩm được quan tâm</h4>
                   <div className="product-grid product-grid-all">
                     {popular.map((p) => (
-                      <Link className="product-card" key={p.id} to={`/products/${p.id}`}>
+                      <Link className="product-card" key={p.id} to={`/san-pham/${p.id}`}>
                         <div className="product-thumb">
                           <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
                         </div>
@@ -353,7 +353,7 @@ export default function AllProducts() {
                     <div
                       className="product-card"
                       key={p.id}
-                      onClick={() => navigate(`/products/${p.id}`)}
+                      onClick={() => navigate(`/san-pham/${p.id}`)}
                       role="button"
                       tabIndex={0}
                     >

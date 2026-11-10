@@ -22,7 +22,7 @@ export default function ProductColumns() {
         <div className="product-column" key={col.title}>
           <h3>{col.title}</h3>
           {col.items.map((p) => (
-            <Link className="product-row" key={p.id} to={`/products/${p.id}`}>
+            <Link className="product-row" key={p.id} to={`/san-pham/${p.id}`}>
               <div className="product-row-thumb">
                 <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
               </div>

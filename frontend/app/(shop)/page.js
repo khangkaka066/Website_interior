@@ -37,7 +37,7 @@ export default async function HomePage() {
       inLanguage: 'vi-VN',
       publisher: { '@id': `${SITE_URL}/#organization` },
       // Ô tìm kiếm ngay trên kết quả Google (sitelinks search box).
-      potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/products?q={search_term_string}` }, 'query-input': 'required name=search_term_string' },
+      potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/san-pham?q={search_term_string}` }, 'query-input': 'required name=search_term_string' },
     },
   ]
   return (

@@ -71,7 +71,7 @@ export default function CollectionScroll() {
       </div>
       <div className="collection-track" ref={track}>
         {products.map((p) => (
-          <Link className="collection-card" key={p.id} to={`/products/${p.id}`}>
+          <Link className="collection-card" key={p.id} to={`/san-pham/${p.id}`}>
             <img src={sized(p.image, IMG.large)} alt={p.name} loading="lazy" decoding="async" draggable="false" />
             <div className="collection-card-body">
               <h3>{p.name}</h3>

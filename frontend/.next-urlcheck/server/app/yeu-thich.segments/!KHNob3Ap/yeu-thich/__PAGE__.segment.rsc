@@ -1,0 +1,21 @@
+1:"$Sreact.fragment"
+2:I[65776,["/_next/static/chunks/0tmmuvbo55wo2.js","/_next/static/chunks/0p1mht2cpx2n_.js","/_next/static/chunks/2_9fsycu0t7gz.js","/_next/static/chunks/0owvllrf5zl33.js","/_next/static/chunks/2ot6rpmjtrj6j.js"],"Wishlist"]
+3:I[97367,["/_next/static/chunks/0tmmuvbo55wo2.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+8:I[97367,["/_next/static/chunks/0tmmuvbo55wo2.js"],"ViewportBoundary"]
+9:I[97367,["/_next/static/chunks/0tmmuvbo55wo2.js"],"MetadataBoundary"]
+a:I[27201,["/_next/static/chunks/0tmmuvbo55wo2.js"],"IconMark"]
+c:I[39756,["/_next/static/chunks/0tmmuvbo55wo2.js"],"default"]
+d:I[37457,["/_next/static/chunks/0tmmuvbo55wo2.js"],"default"]
+7:X
+f:X
+f:C
+0:{"buildId":"JwHf0qSdjnfWkcqqSMhMU","data":[{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/_next/static/chunks/2ot6rpmjtrj6j.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":["$","$1","h",{"children":[null,["$","$L8",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#c8913f"}]]}],["$","div",null,{"hidden":true,"children":["$","$L9",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Sản phẩm yêu thích | CLEVINIUM"}],["$","meta","1",{"name":"description","content":"CLEVINIUM — rèm cửa chất lượng cao, giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo và phụ kiện. Giao hàng toàn quốc."}],["$","meta","2",{"name":"application-name","content":"CLEVINIUM"}],["$","meta","3",{"name":"robots","content":"noindex, nofollow"}],["$","meta","4",{"property":"og:title","content":"Sản phẩm yêu thích | CLEVINIUM"}],["$","meta","5",{"property":"og:description","content":"CLEVINIUM — rèm cửa chất lượng cao, giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo và phụ kiện. Giao hàng toàn quốc."}],["$","meta","6",{"property":"og:site_name","content":"CLEVINIUM"}],["$","meta","7",{"property":"og:locale","content":"vi_VN"}],["$","meta","8",{"property":"og:image","content":"https://clevinium.com/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.webp"}],["$","meta","9",{"property":"og:image:alt","content":"CLEVINIUM — rèm cửa giá xưởng"}],["$","meta","10",{"property":"og:type","content":"website"}],["$","meta","11",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","12",{"name":"twitter:title","content":"Sản phẩm yêu thích | CLEVINIUM"}],["$","meta","13",{"name":"twitter:description","content":"CLEVINIUM — rèm cửa chất lượng cao, giá xưởng: rèm ore, rèm dán tường, rèm voan, thanh treo và phụ kiện. Giao hàng toàn quốc."}],["$","meta","14",{"name":"twitter:image","content":"https://clevinium.com/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.webp"}],["$","meta","15",{"name":"twitter:image:alt","content":"CLEVINIUM — rèm cửa giá xưởng"}],["$","link","16",{"rel":"icon","href":"/favicon.ico?favicon.2of41zah7b-3f.ico","sizes":"48x48","type":"image/x-icon"}],["$","link","17",{"rel":"icon","href":"/icon.png?icon.2aqup8aplzwgo.png","sizes":"96x96","type":"image/png"}],["$","link","18",{"rel":"apple-touch-icon","href":"/apple-icon.png?apple-icon.3arv4wsxobd7e.png","sizes":"180x180","type":"image/png"}],["$","$La","19",{}]]}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"isPartial":"$@b","staleTime":"$7","varyParams":null},{"rsc":["$","$1","c",{"children":[null,["$","$Lc",null,{"parallelRouterKey":"children","template":["$","$Ld",null,{}]}]]}],"isPartial":"$@e","staleTime":"$7","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+5:null
+11:true
+7:300
+7:C
+10:0
+b:"$undefined"
+e:"$undefined"
+6:"$undefined"

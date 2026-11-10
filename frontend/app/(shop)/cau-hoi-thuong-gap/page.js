@@ -40,7 +40,7 @@ export default async function FaqPage() {
         </div>
       )}
       <p className="mt-10 text-sm text-muted">
-        Chưa tìm thấy câu trả lời? <a href="/contact" className="font-semibold text-accent underline">Liên hệ chúng tôi</a>.
+        Chưa tìm thấy câu trả lời? <a href="/lien-he" className="font-semibold text-accent underline">Liên hệ chúng tôi</a>.
       </p>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
     </SiteShell>

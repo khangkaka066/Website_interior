@@ -46,7 +46,7 @@ export default function PostReview({ post, busy, error, onAccept, onReject, onCl
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '24px' }}>
           <article style={{ minWidth: 0 }}>
-            <p style={{ fontSize: '12px', color: '#888' }}>/news/{post.slug}</p>
+            <p style={{ fontSize: '12px', color: '#888' }}>/tin-tuc/{post.slug}</p>
             {post.coverUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={post.coverUrl} alt="" style={{ maxWidth: '100%', borderRadius: '8px', margin: '8px 0' }} />

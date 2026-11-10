@@ -1,0 +1,3 @@
+{
+  "/(shop)/tin-tuc/[slug]/page": "app/(shop)/tin-tuc/[slug]/page.js"
+}

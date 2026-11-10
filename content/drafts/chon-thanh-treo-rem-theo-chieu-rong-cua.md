@@ -17,7 +17,7 @@ Bài này hướng dẫn cách chọn cỡ thanh, phân biệt thanh nguyên và
 
 ## Bước 1: Xác định chiều rộng cần treo
 
-Trước hết hãy đo chiều rộng cửa và chiều rộng đoạn tường bạn định lắp thanh. Nếu bạn chưa biết rèm cần rộng bao nhiêu, xem bài [cách đo và tính vải rèm ORE](/news/cach-do-va-tinh-vai-rem-ore) trước, vì rèm cần dư vải để nhún nếp.
+Trước hết hãy đo chiều rộng cửa và chiều rộng đoạn tường bạn định lắp thanh. Nếu bạn chưa biết rèm cần rộng bao nhiêu, xem bài [cách đo và tính vải rèm ORE](/tin-tuc/cach-do-va-tinh-vai-rem-ore) trước, vì rèm cần dư vải để nhún nếp.
 
 Theo hướng dẫn của [The Shade Store](https://theshadestore.com/blog/how-to-measure-for-curtains/), bạn nhân với hệ số nhún "chiều rộng mà rèm sẽ phủ (hoặc chiều rộng mà thanh sẽ trải dài)". Nghĩa là chiều rộng thanh cũng là mốc để tính rèm.
 
@@ -51,9 +51,9 @@ Rèm ORE được may sẵn khoen để xỏ vào thanh, nhưng **giá rèm khô
 
 ## Mua thanh treo ở đâu?
 
-Bạn có thể xem [thanh treo rèm cao cấp đầy đủ phụ kiện](/products/sp6449488839) với giá từ 128.373đ đến 542.868đ tùy cỡ và màu. Tất cả sản phẩm cùng nhóm nằm trong danh mục [thanh treo](/products?category=thanh-treo). Nếu cần đặt nhiều thanh nguyên chiếc dài, hãy liên hệ shop để giao riêng.
+Bạn có thể xem [thanh treo rèm cao cấp đầy đủ phụ kiện](/san-pham/sp6449488839) với giá từ 128.373đ đến 542.868đ tùy cỡ và màu. Tất cả sản phẩm cùng nhóm nằm trong danh mục [thanh treo](/san-pham?category=thanh-treo). Nếu cần đặt nhiều thanh nguyên chiếc dài, hãy liên hệ shop để giao riêng.
 
-Khi cần tư vấn, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
+Khi cần tư vấn, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/lien-he).
 
 ## Câu hỏi thường gặp
 
@@ -74,4 +74,4 @@ Cỡ lớn nhất trên website là 3,4 m. Với cửa rộng hơn, hãy liên h
 1. Đo chiều rộng chỗ cần treo rồi chọn cỡ gần nhất trong 13 cỡ từ 1 m đến 3,4 m.
 2. Thanh từ 1,6 m trở xuống giao nguyên, từ 1,8 m trở lên là 2 thanh nối với 3 pát đỡ.
 3. Chọn màu Trắng, Gỗ hoặc Màu khác cho hợp với rèm.
-4. Giá rèm ORE không gồm thanh, xem [thanh treo tại đây](/products/sp6449488839).
+4. Giá rèm ORE không gồm thanh, xem [thanh treo tại đây](/san-pham/sp6449488839).

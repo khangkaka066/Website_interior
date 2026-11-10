@@ -97,7 +97,7 @@ export default function FilterBar() {
     if (category) sp.set('category', category)
     if (color) sp.set('color', color)
     if (price) sp.set('price', price)
-    navigate(`/products${sp.toString() ? `?${sp}` : ''}`)
+    navigate(`/san-pham${sp.toString() ? `?${sp}` : ''}`)
   }
 
   return (

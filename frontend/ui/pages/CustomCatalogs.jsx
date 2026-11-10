@@ -39,7 +39,7 @@ export default function CustomCatalogs() {
 
       <p className="mt-10 text-sm text-muted">
         Cần tư vấn mẫu, kích thước hoặc giá?{' '}
-        <a href="/contact" className="font-semibold text-accent underline">
+        <a href="/lien-he" className="font-semibold text-accent underline">
           Liên hệ chúng tôi
         </a>
         .

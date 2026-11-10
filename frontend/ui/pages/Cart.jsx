@@ -21,7 +21,7 @@ export default function Cart() {
           {!hydrated ? null : items.length === 0 ? (
             <div className="cart-empty">
               <p>Giỏ hàng đang trống.</p>
-              <Link to="/products" className="btn btn-accent">
+              <Link to="/san-pham" className="btn btn-accent">
                 Tiếp tục mua sắm
               </Link>
             </div>
@@ -59,10 +59,10 @@ export default function Cart() {
                   <strong>{formatPrice(totalPrice)}</strong>
                 </div>
                 <p className="cart-summary-note">Phí vận chuyển sẽ được tính ở bước thanh toán.</p>
-                <button className="btn btn-accent cart-checkout-btn" onClick={() => navigate('/checkout')}>
+                <button className="btn btn-accent cart-checkout-btn" onClick={() => navigate('/thanh-toan')}>
                   Tiến hành thanh toán
                 </button>
-                <Link to="/products" className="cart-continue-link">
+                <Link to="/san-pham" className="cart-continue-link">
                   ← Tiếp tục mua sắm
                 </Link>
               </div>

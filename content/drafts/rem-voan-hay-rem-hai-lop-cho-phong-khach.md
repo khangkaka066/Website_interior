@@ -36,12 +36,12 @@ Giá thực tế phụ thuộc kích thước và màu bạn chọn.
 
 ## Các sản phẩm tham khảo tại CLEVINIUM
 
-- [Rèm voan trắng lụa che mờ](/products/sp3753509017), có các kiểu treo khoen ORE, móc RIDO nhỏ hoặc dán tường, từ 100.737đ đến 465.696đ.
-- [Rèm voan dán tường trơn mịn hoặc kẻ hạt mưa](/products/sp26331538658), có 3 màu, từ 132.677đ đến 648.222đ.
-- [Rèm khoen ORE hai lớp kèm voan trắng](/products/sp26431672481), 8 màu, từ 146.511đ đến 1.085.538đ.
-- [Rèm dán hai lớp vải gấm và voan lụa](/products/sp28980677265), từ 209.999đ đến 989.291đ.
+- [Rèm voan trắng lụa che mờ](/san-pham/sp3753509017), có các kiểu treo khoen ORE, móc RIDO nhỏ hoặc dán tường, từ 100.737đ đến 465.696đ.
+- [Rèm voan dán tường trơn mịn hoặc kẻ hạt mưa](/san-pham/sp26331538658), có 3 màu, từ 132.677đ đến 648.222đ.
+- [Rèm khoen ORE hai lớp kèm voan trắng](/san-pham/sp26431672481), 8 màu, từ 146.511đ đến 1.085.538đ.
+- [Rèm dán hai lớp vải gấm và voan lụa](/san-pham/sp28980677265), từ 209.999đ đến 989.291đ.
 
-Toàn bộ voan có trong danh mục [voan lụa](/products?category=voan-lua).
+Toàn bộ voan có trong danh mục [voan lụa](/san-pham?category=voan-lua).
 
 ## Chọn thế nào cho phòng khách?
 
@@ -49,9 +49,9 @@ Hãy trả lời ba câu hỏi sau:
 
 1. **Phòng có nắng gắt không?** Nếu cửa hứng nắng nhiều giờ, rèm hai lớp cho bạn lớp gấm để chắn nắng. Nếu chỉ cần ánh sáng dịu, voan là đủ.
 2. **Bạn cần riêng tư mức nào?** Voan che mờ nhưng mỏng. Rèm hai lớp cho thêm lớp gấm khi cần.
-3. **Ngân sách và kích thước cửa?** Rèm hai lớp có hai lớp vải nên giá thường cao hơn voan. Hãy chọn kích thước theo [cách đo và tính vải rèm ORE](/news/cach-do-va-tinh-vai-rem-ore) rồi so giá.
+3. **Ngân sách và kích thước cửa?** Rèm hai lớp có hai lớp vải nên giá thường cao hơn voan. Hãy chọn kích thước theo [cách đo và tính vải rèm ORE](/tin-tuc/cach-do-va-tinh-vai-rem-ore) rồi so giá.
 
-Gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) kèm số đo cửa để được tư vấn mẫu phù hợp, hoặc xem trang [liên hệ](/contact).
+Gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) kèm số đo cửa để được tư vấn mẫu phù hợp, hoặc xem trang [liên hệ](/lien-he).
 
 ## Câu hỏi thường gặp
 
@@ -59,7 +59,7 @@ Gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) kèm số đo c�
 Rèm voan là vải mỏng để lọc sáng và che mờ, không dùng để chắn nắng. Muốn chắn nắng, hãy chọn rèm hai lớp có lớp vải gấm.
 
 **Rèm hai lớp có kèm thanh treo không?**
-Không. Giá rèm không gồm thanh treo, bạn chọn thêm [thanh treo rèm](/products?category=thanh-treo) theo chiều rộng cửa.
+Không. Giá rèm không gồm thanh treo, bạn chọn thêm [thanh treo rèm](/san-pham?category=thanh-treo) theo chiều rộng cửa.
 
 **Có thể mua voan riêng rồi treo cùng rèm khác không?**
 Có thể. Shop bán voan riêng và rèm chống nắng riêng, bạn chọn kích thước cho từng lớp.

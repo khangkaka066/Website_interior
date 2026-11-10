@@ -23,8 +23,8 @@ const hmac = (data) => crypto.createHmac('sha256', process.env.PAYOS_CHECKSUM_KE
 // Tạo link thanh toán cho một đơn. Trả về checkoutUrl, ném lỗi (đã dịch) nếu PayOS từ chối.
 export async function createPaymentLink(order) {
   const amount = Math.round(Number(order.total))
-  const returnUrl = `${shopUrl()}/order-confirmation/${order.orderNumber}`
-  const cancelUrl = `${shopUrl()}/track-order?orderNumber=${encodeURIComponent(order.orderNumber)}`
+  const returnUrl = `${shopUrl()}/xac-nhan-don-hang/${order.orderNumber}`
+  const cancelUrl = `${shopUrl()}/tra-cuu-don-hang?orderNumber=${encodeURIComponent(order.orderNumber)}`
   const description = order.orderNumber // mã đơn nằm trong nội dung để webhook khớp lại đơn (tối đa 25 ký tự)
   const orderCode = Date.now() // phải duy nhất mỗi lần tạo link; tạo lại link cho cùng đơn vẫn được
   const signature = hmac(`amount=${amount}&cancelUrl=${cancelUrl}&description=${description}&orderCode=${orderCode}&returnUrl=${returnUrl}`)

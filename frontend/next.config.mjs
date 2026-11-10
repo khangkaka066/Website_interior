@@ -60,6 +60,21 @@ const nextConfig = {
   // cơ sở dữ liệu và chỉ mục Google cũ vẫn dẫn đúng ảnh.
   async redirects() {
     return [
+      // URL tiếng Việt (2026-11-10): chuyển hướng 308 từ địa chỉ tiếng Anh cũ để link đã chia sẻ, email đã gửi và chỉ mục Google cũ vẫn dẫn đúng trang.
+      // Chuỗi truy vấn (?category=, ?orderNumber=...) được Next giữ nguyên.
+      { source: '/products/:path*', destination: '/san-pham/:path*', permanent: true },
+      { source: '/about/:path*', destination: '/gioi-thieu/:path*', permanent: true },
+      { source: '/contact/:path*', destination: '/lien-he/:path*', permanent: true },
+      { source: '/news/:path*', destination: '/tin-tuc/:path*', permanent: true },
+      { source: '/faq/:path*', destination: '/cau-hoi-thuong-gap/:path*', permanent: true },
+      { source: '/privacy/:path*', destination: '/chinh-sach-bao-mat/:path*', permanent: true },
+      { source: '/terms/:path*', destination: '/dieu-khoan/:path*', permanent: true },
+      { source: '/cart/:path*', destination: '/gio-hang/:path*', permanent: true },
+      { source: '/checkout/:path*', destination: '/thanh-toan/:path*', permanent: true },
+      { source: '/track-order/:path*', destination: '/tra-cuu-don-hang/:path*', permanent: true },
+      { source: '/wishlist/:path*', destination: '/yeu-thich/:path*', permanent: true },
+      { source: '/account/:path*', destination: '/tai-khoan/:path*', permanent: true },
+      { source: '/order-confirmation/:path*', destination: '/xac-nhan-don-hang/:path*', permanent: true },
       { source: '/images/curtains/black.webp', destination: '/images/curtains/rem-cua-vai-gam-mau-den.webp', permanent: true },
       { source: '/images/curtains/black.png', destination: '/images/curtains/rem-cua-vai-gam-mau-den.png', permanent: true },
       { source: '/images/curtains/blue.webp', destination: '/images/curtains/rem-cua-vai-gam-mau-xanh-duong.webp', permanent: true },

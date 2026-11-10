@@ -34,9 +34,9 @@ Dùng để lập kế hoạch; xác nhận bằng Search Console hoặc Keyword
 | Cụm ý tưởng | Trang nội bộ nên gắn link |
 |---|---|
 | rèm cầu vồng là gì; rèm cầu vồng khác rèm cuốn và màn sáo thế nào | `/dat-rieng` |
-| cách chọn rèm phòng ngủ cản sáng | `/products?category=chong-nang`, `/dat-rieng` |
-| cách đo và tính vải rèm ORE (độ nhún) | `/products?category=chong-nang` |
-| rèm dán tường có tốt không; so sánh với rèm treo thanh | `/products?category=dan-tuong` |
-| chọn thanh treo rèm theo chiều rộng cửa | `/products?category=thanh-treo` |
-| rèm voan hay rèm hai lớp cho phòng khách | `/products?category=voan-lua` |
+| cách chọn rèm phòng ngủ cản sáng | `/san-pham?category=chong-nang`, `/dat-rieng` |
+| cách đo và tính vải rèm ORE (độ nhún) | `/san-pham?category=chong-nang` |
+| rèm dán tường có tốt không; so sánh với rèm treo thanh | `/san-pham?category=dan-tuong` |
+| chọn thanh treo rèm theo chiều rộng cửa | `/san-pham?category=thanh-treo` |
+| rèm voan hay rèm hai lớp cho phòng khách | `/san-pham?category=voan-lua` |
 | rèm cuốn văn phòng cản sáng 100% hay lọc sáng 50% | `/dat-rieng`, `sp28833772773` |

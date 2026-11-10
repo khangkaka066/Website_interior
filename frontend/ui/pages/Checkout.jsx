@@ -79,7 +79,7 @@ export default function Checkout() {
   useEffect(() => {
     // Cart empties itself right after a successful order, which would
     // otherwise trip this same "no items -> back to cart" guard.
-    if (hydrated && items.length === 0 && !submitted) navigate('/cart', { replace: true })
+    if (hydrated && items.length === 0 && !submitted) navigate('/gio-hang', { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, items.length, submitted])
 
@@ -180,7 +180,7 @@ export default function Checkout() {
         window.location.href = order.paymentUrl
         return
       }
-      navigate(`/order-confirmation/${order.orderNumber}`)
+      navigate(`/xac-nhan-don-hang/${order.orderNumber}`)
     } catch (err) {
       setError(err.message)
       setSubmitting(false)
@@ -195,7 +195,7 @@ export default function Checkout() {
     <>
       <main>
         <div className="container checkout-page">
-          <Link to="/cart" className="pdp-back">
+          <Link to="/gio-hang" className="pdp-back">
             ← Quay lại giỏ hàng
           </Link>
           <h1 className="cart-title">Thanh toán</h1>

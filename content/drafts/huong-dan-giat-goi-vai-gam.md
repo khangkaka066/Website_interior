@@ -37,7 +37,7 @@ Các lưu ý này là gợi ý thận trọng của CLEVINIUM, không thay thế
 
 ## Mua gối tựa sofa vải gấm
 
-Bạn có thể xem [gối tựa sofa vải gấm 45x45](/products/sp24546468731) với 8 màu và đọc thêm [thông tin, giá và cách đặt mua](/news/goi-tua-sofa-vai-gam-45x45-mua-o-dau). Cần hỏi cách bảo quản, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
+Bạn có thể xem [gối tựa sofa vải gấm 45x45](/san-pham/sp24546468731) với 8 màu và đọc thêm [thông tin, giá và cách đặt mua](/tin-tuc/goi-tua-sofa-vai-gam-45x45-mua-o-dau). Cần hỏi cách bảo quản, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/lien-he).
 
 ## Câu hỏi thường gặp
 

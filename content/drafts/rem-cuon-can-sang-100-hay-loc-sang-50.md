@@ -17,7 +17,7 @@ Bài này so sánh bốn dòng vải, hệ máng và thanh đáy để bạn ch�
 
 ## Rèm cuốn là gì?
 
-**Rèm cuốn** là loại rèm dùng một tấm vải cuộn quanh ống: kéo xuống để che và cuộn lên để mở. Khác với [rèm cầu vồng](/news/rem-cau-vong-zebra-la-gi) có hai lớp sọc, vải của rèm cuốn là một lớp duy nhất.
+**Rèm cuốn** là loại rèm dùng một tấm vải cuộn quanh ống: kéo xuống để che và cuộn lên để mở. Khác với [rèm cầu vồng](/tin-tuc/rem-cau-vong-zebra-la-gi) có hai lớp sọc, vải của rèm cuốn là một lớp duy nhất.
 
 ## Bốn dòng vải rèm cuốn VH BLINDS
 
@@ -60,9 +60,9 @@ Catalog minh họa rèm cuốn ở phòng ngủ, phòng làm việc, nhà bếp 
 
 ## Đặt rèm cuốn tại CLEVINIUM
 
-Rèm cuốn VH BLINDS hiện chưa bán trực tiếp trên website mà đặt theo catalog tại trang [đặt riêng](/dat-rieng). Catalog rèm cuốn không in giá, vì vậy bạn cần gửi kích thước và màu để được báo giá. Hãy gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc dùng trang [liên hệ](/contact).
+Rèm cuốn VH BLINDS hiện chưa bán trực tiếp trên website mà đặt theo catalog tại trang [đặt riêng](/dat-rieng). Catalog rèm cuốn không in giá, vì vậy bạn cần gửi kích thước và màu để được báo giá. Hãy gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc dùng trang [liên hệ](/lien-he).
 
-Nếu muốn rèm vải treo thanh, bạn có thể xem [rèm chống nắng](/products?category=chong-nang) trên website.
+Nếu muốn rèm vải treo thanh, bạn có thể xem [rèm chống nắng](/san-pham?category=chong-nang) trên website.
 
 ## Câu hỏi thường gặp
 

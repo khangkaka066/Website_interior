@@ -49,19 +49,19 @@ export default function Footer() {
         </div>
         <div className="footer-col">
           <h4>Tài khoản</h4>
-          {/* /about, /contact, /faq do app Next (frontend/) phục vụ nên dùng <a> tải trang đầy đủ, không dùng <Link> */}
-          <a href="/about">Về chúng tôi</a>
-          <a href="/contact">Liên hệ</a>
-          <a href="/faq">FAQ</a>
-          <a href="/privacy">Chính sách bảo mật</a>
-          <a href="/terms">Điều khoản sử dụng</a>
-          <Link to="/cart">Giỏ hàng</Link>
-          <Link to="/track-order">Tra cứu đơn hàng</Link>
+          {/* /gioi-thieu, /lien-he, /cau-hoi-thuong-gap do app Next (frontend/) phục vụ nên dùng <a> tải trang đầy đủ, không dùng <Link> */}
+          <a href="/gioi-thieu">Về chúng tôi</a>
+          <a href="/lien-he">Liên hệ</a>
+          <a href="/cau-hoi-thuong-gap">FAQ</a>
+          <a href="/chinh-sach-bao-mat">Chính sách bảo mật</a>
+          <a href="/dieu-khoan">Điều khoản sử dụng</a>
+          <Link to="/gio-hang">Giỏ hàng</Link>
+          <Link to="/tra-cuu-don-hang">Tra cứu đơn hàng</Link>
         </div>
         <div className="footer-col">
           <h4>Danh mục</h4>
           {categories.map((c) => (
-            <Link key={c.id} to={`/products?category=${c.id}`}>
+            <Link key={c.id} to={`/san-pham?category=${c.id}`}>
               {c.name}
             </Link>
           ))}

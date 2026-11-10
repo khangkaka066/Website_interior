@@ -38,7 +38,7 @@ export default function ProductSection() {
         ))}
       </div>
 
-      <Link className="view-all-link" to="/products">
+      <Link className="view-all-link" to="/san-pham">
         Xem tất cả sản phẩm →
       </Link>
     </section>

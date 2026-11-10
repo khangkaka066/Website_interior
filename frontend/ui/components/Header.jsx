@@ -104,7 +104,7 @@ export default function Header() {
                 <span className="account-text">Quản trị</span>
                 </Link>
               ) : (
-                <Link to="/account" className="account-admin-link" aria-label="Tài khoản">
+                <Link to="/tai-khoan" className="account-admin-link" aria-label="Tài khoản">
                   <svg className="account-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8c1.2-4 4-6 7-6s5.8 2 7 6" stroke="currentColor" strokeWidth="1.6" fill="none" />
                 </svg>
@@ -125,7 +125,7 @@ export default function Header() {
               />
             </IconButton>
           )}
-          <Link to="/wishlist" className="icon-btn wish-link" aria-label={`Yêu thích (${wishCount})`}>
+          <Link to="/yeu-thich" className="icon-btn wish-link" aria-label={`Yêu thích (${wishCount})`}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
                 d="M12 20s-7-4.35-9.3-8.8C1.2 8 3 5 6.3 5c2 0 3.4 1.1 4.2 2.4C11.3 6.1 12.7 5 14.7 5 18 5 19.8 8 18.3 11.2 16 15.65 12 20 12 20Z"
@@ -136,7 +136,7 @@ export default function Header() {
             </svg>
             {wishCount > 0 && <span className="wish-count">{wishCount}</span>}
           </Link>
-          <Link to="/cart" className="cart">
+          <Link to="/gio-hang" className="cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
                 d="M3 4h2l2 12h11l2-8H7"
@@ -168,11 +168,11 @@ export default function Header() {
             <Link to="/" onClick={reloadIfHome}>Trang chủ</Link>
             <ProductsMenu />
             <Link to="/dat-rieng">Đặt riêng</Link>
-            <Link to="/news">Tin tức</Link>
-            <Link to="/about">Giới thiệu</Link>
-            <Link to="/faq">Hỏi đáp</Link>
-            <Link to="/track-order">Tra cứu đơn hàng</Link>
-            <Link to="/contact">Liên hệ</Link>
+            <Link to="/tin-tuc">Tin tức</Link>
+            <Link to="/gioi-thieu">Giới thiệu</Link>
+            <Link to="/cau-hoi-thuong-gap">Hỏi đáp</Link>
+            <Link to="/tra-cuu-don-hang">Tra cứu đơn hàng</Link>
+            <Link to="/lien-he">Liên hệ</Link>
           </nav>
         </div>
       </div>

@@ -50,8 +50,8 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
-    alternates: { canonical: `/products/${product.id}` },
-    openGraph: { type: 'website', title, description, url: `/products/${product.id}`, images: images.map((url) => ({ url, alt: product.name })) },
+    alternates: { canonical: `/san-pham/${product.id}` },
+    openGraph: { type: 'website', title, description, url: `/san-pham/${product.id}`, images: images.map((url) => ({ url, alt: product.name })) },
     twitter: { card: 'summary_large_image', title, description, images: images.slice(0, 1) },
     ...(!product.contactOnly && { other: { 'product:price:amount': String(product.price), 'product:price:currency': 'VND' } }),
   }
@@ -64,7 +64,7 @@ export default async function ProductPage({ params }) {
 
   const reviews = await fetchReviews(product.id)
   const inStock = !product.variants?.length || product.variants.some((v) => v.stock > 0)
-  const url = `${SITE_URL}/products/${product.id}`
+  const url = `${SITE_URL}/san-pham/${product.id}`
   const category = categories.find((c) => c.id === product.categoryId)
   const nextYear = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().slice(0, 10)
   const jsonLd = [
@@ -98,8 +98,8 @@ export default async function ProductPage({ params }) {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: SITE_URL },
-        { '@type': 'ListItem', position: 2, name: 'Sản phẩm', item: `${SITE_URL}/products` },
-        ...(category ? [{ '@type': 'ListItem', position: 3, name: category.name, item: `${SITE_URL}/products?category=${category.id}` }] : []),
+        { '@type': 'ListItem', position: 2, name: 'Sản phẩm', item: `${SITE_URL}/san-pham` },
+        ...(category ? [{ '@type': 'ListItem', position: 3, name: category.name, item: `${SITE_URL}/san-pham?category=${category.id}` }] : []),
         { '@type': 'ListItem', position: category ? 4 : 3, name: cut(product.name, 80), item: url },
       ],
     },

@@ -35,7 +35,7 @@ function itemsTable(order) {
 <tr><td colspan="2" style="font-weight:bold">Tổng cộng</td><td style="text-align:right;font-weight:bold">${money(order.total)}</td></tr></table>`
 }
 
-const trackLink = (order) => `${shopUrl()}/track-order?orderNumber=${encodeURIComponent(order.orderNumber)}`
+const trackLink = (order) => `${shopUrl()}/tra-cuu-don-hang?orderNumber=${encodeURIComponent(order.orderNumber)}`
 
 export async function orderCreatedEmail(order) {
   const { store } = await getSettings()
@@ -122,7 +122,7 @@ export async function welcomeEmail(subscriber, coupon) {
     `<p>Tặng bạn mã giảm giá <strong>${off}</strong> cho đơn hàng đầu tiên${coupon.minOrder ? ` (đơn từ ${money(coupon.minOrder)})` : ''}:</p>
 <p style="font-size:24px;font-weight:bold;letter-spacing:2px;background:#faf6ea;border:1px dashed #946b08;border-radius:12px;padding:14px;text-align:center">${esc(coupon.code)}</p>
 <p style="font-size:14px">Nhập mã ở bước thanh toán. Mã dùng một lần${until ? `, hết hạn ngày ${until}` : ''}.</p>
-<p><a href="${esc(shopUrl())}/products" style="background:#1e293b;color:#fff;padding:12px 22px;border-radius:24px;text-decoration:none;display:inline-block">Mua sắm ngay</a></p>${unsubFooter(subscriber.unsubToken)}`,
+<p><a href="${esc(shopUrl())}/san-pham" style="background:#1e293b;color:#fff;padding:12px 22px;border-radius:24px;text-decoration:none;display:inline-block">Mua sắm ngay</a></p>${unsubFooter(subscriber.unsubToken)}`,
   )
   const text = `Cảm ơn bạn đã đăng ký tại ${store.name}! Mã giảm ${off}: ${coupon.code}${until ? ` (hết hạn ${until})` : ''}. Mua sắm: ${shopUrl()}/products. Hủy đăng ký: ${unsubUrl(subscriber.unsubToken)}`
   return { subject, html, text, headers: unsubHeaders(subscriber.unsubToken) }

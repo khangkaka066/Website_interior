@@ -349,8 +349,8 @@ suite('luồng với database', () => {
     })
     test('sitemap có trang Tin tức và bài đã xuất bản', async () => {
       const xml = await (await fetch(base.replace('/api', '') + '/sitemap.xml')).text()
-      assert.ok(xml.includes('/news<'))
-      assert.ok(xml.includes(`/news/${post.slug}`))
+      assert.ok(xml.includes('/tin-tuc<'))
+      assert.ok(xml.includes(`/tin-tuc/${post.slug}`))
     })
     test('xóa bài', async () => {
       assert.equal((await req('DELETE', `/posts/${post.id}`, undefined, adminHeaders)).status, 200)

@@ -21,7 +21,7 @@ export default async function SaleProductsPanel({ limit = 4 }) {
       <ul className="mt-3 grid gap-4">
         {onSale.map((p) => (
           <li key={p.id}>
-            <Link href={`/products/${p.id}`} className="group flex gap-3">
+            <Link href={`/san-pham/${p.id}`} className="group flex gap-3">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.image} alt={shortName(p.name)} loading="lazy" className="h-full w-full object-cover" />
@@ -36,7 +36,7 @@ export default async function SaleProductsPanel({ limit = 4 }) {
           </li>
         ))}
       </ul>
-      <Link href="/products" className="mt-4 block text-center text-sm font-semibold text-accent hover:underline">Xem tất cả sản phẩm →</Link>
+      <Link href="/san-pham" className="mt-4 block text-center text-sm font-semibold text-accent hover:underline">Xem tất cả sản phẩm →</Link>
     </aside>
   )
 }

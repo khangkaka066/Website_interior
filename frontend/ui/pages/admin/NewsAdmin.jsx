@@ -168,7 +168,7 @@ export default function NewsAdmin() {
                 <tr key={p.id}>
                   <td>
                     <strong>{p.title}</strong>
-                    <div style={{ fontSize: '12px', color: 'var(--dash-text-muted, #888)' }}>/news/{p.slug}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--dash-text-muted, #888)' }}>/tin-tuc/{p.slug}</div>
                   </td>
                   <td>
                     <span className={`order-status-badge ${STATUS_CLASS[p.status] || 'status-pending'}`}>
@@ -215,7 +215,7 @@ export default function NewsAdmin() {
                     )}{' '}
                     <button className="dash-btn-outline" onClick={() => startEdit(p.id)}>Sửa</button>{' '}
                     {p.status === 'published' && (
-                      <a className="dash-btn-outline" href={`/news/${p.slug}`} target="_blank" rel="noreferrer">Xem</a>
+                      <a className="dash-btn-outline" href={`/tin-tuc/${p.slug}`} target="_blank" rel="noreferrer">Xem</a>
                     )}{' '}
                     {p.status === 'published' && (
                       <button className="dash-btn-outline" onClick={() => toggle(p)}>Gỡ xuống</button>

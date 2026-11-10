@@ -1,0 +1,39 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/dashboard/layout,_N_T_/dashboard/reviews/layout,_N_T_/dashboard/reviews/page,_N_T_/dashboard/reviews"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/dashboard/reviews/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/82fe5fd40d23929fa1c450f3283cb9897d5d54ed24f59635903ac0c48fe1c61d/$/dashboard/reviews",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/dashboard/reviews/page"
+    },
+    "isFallback": false
+  }
+}

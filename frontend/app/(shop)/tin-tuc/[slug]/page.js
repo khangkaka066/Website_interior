@@ -14,7 +14,7 @@ export async function generateMetadata({ params }) {
   return {
     title: post.title,
     description: post.excerpt || undefined,
-    alternates: { canonical: `/news/${post.slug}` },
+    alternates: { canonical: `/tin-tuc/${post.slug}` },
     openGraph: { type: 'article', title: post.title, description: post.excerpt || undefined, images: post.coverUrl ? [post.coverUrl] : undefined, publishedTime: post.publishedAt },
   }
 }
@@ -24,7 +24,7 @@ export default async function PostPage({ params }) {
   const post = await fetchPost(slug)
   if (!post) notFound()
 
-  const url = `${SITE_URL}/news/${post.slug}`
+  const url = `${SITE_URL}/tin-tuc/${post.slug}`
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -44,7 +44,7 @@ export default async function PostPage({ params }) {
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: SITE_URL },
-          { '@type': 'ListItem', position: 2, name: 'Tin tức', item: `${SITE_URL}/news` },
+          { '@type': 'ListItem', position: 2, name: 'Tin tức', item: `${SITE_URL}/tin-tuc` },
           { '@type': 'ListItem', position: 3, name: post.title, item: url },
         ],
       },
@@ -53,7 +53,7 @@ export default async function PostPage({ params }) {
   return (
     <main className="tw-reset mx-auto w-full max-w-6xl px-4 py-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <Link href="/news" className="text-sm font-semibold text-accent hover:underline">← Tất cả tin tức</Link>
+      <Link href="/tin-tuc" className="text-sm font-semibold text-accent hover:underline">← Tất cả tin tức</Link>
       <div className="mt-4 grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         <article className="min-w-0 max-w-3xl">
           <h1 className="text-3xl font-bold leading-tight sm:text-4xl">{post.title}</h1>
@@ -67,7 +67,7 @@ export default async function PostPage({ params }) {
           </div>
           <div className="mt-12 rounded-xl border border-line bg-white p-6 text-center">
             <p className="font-semibold">Cần tư vấn chọn rèm?</p>
-            <Link href="/contact" className="btn btn-accent mt-4 inline-flex">Liên hệ CLEVINIUM</Link>
+            <Link href="/lien-he" className="btn btn-accent mt-4 inline-flex">Liên hệ CLEVINIUM</Link>
           </div>
         </article>
         <div className="lg:sticky lg:top-24 lg:self-start">

@@ -12,10 +12,10 @@ describe('menu Sản phẩm / lĩnh vực hoạt động', () => {
 
   test('mỗi nhóm có đường dẫn bấm được và có mục con', () => {
     for (const g of PRODUCT_GROUPS) {
-      expect(g.href.startsWith('/products')).toBe(true)
+      expect(g.href.startsWith('/san-pham')).toBe(true)
       expect(g.items.length).toBeGreaterThan(0)
     }
-    expect(PRODUCT_GROUPS.find((g) => g.categoryId === 'vat-lieu').href).toBe('/products?category=vat-lieu')
+    expect(PRODUCT_GROUPS.find((g) => g.categoryId === 'vat-lieu').href).toBe('/san-pham?category=vat-lieu')
   })
 
   test('danh thiếp: 6 lĩnh vực (2 dịch vụ + 4 nhóm sản phẩm), đúng nội dung', () => {

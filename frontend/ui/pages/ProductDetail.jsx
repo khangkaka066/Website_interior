@@ -85,7 +85,7 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
         <main>
           <div className="container" style={{ padding: '80px 0', textAlign: 'center' }}>
             <p>Không tìm thấy sản phẩm.</p>
-            <button className="btn btn-accent" onClick={() => navigate('/products')}>
+            <button className="btn btn-accent" onClick={() => navigate('/san-pham')}>
               Về danh sách sản phẩm
             </button>
           </div>
@@ -125,7 +125,7 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
     <>
       <main>
         <div className="container pdp">
-          <Link to="/products" className="pdp-back">
+          <Link to="/san-pham" className="pdp-back">
             ← Tất cả sản phẩm
           </Link>
 
@@ -209,7 +209,7 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
                   <a className="btn btn-accent" href={`tel:${shopInfo.hotline.replace(/\s/g, '')}`}>
                     Gọi {shopInfo.hotline} để báo giá
                   </a>
-                  <Link className="btn" to="/contact">
+                  <Link className="btn" to="/lien-he">
                     Gửi yêu cầu tư vấn
                   </Link>
                 </div>
@@ -241,14 +241,14 @@ export default function ProductDetail({ initialProduct, reviewSummary } = {}) {
                   disabled={outOfStock}
                   onClick={() => {
                     addToCart()
-                    navigate('/checkout')
+                    navigate('/thanh-toan')
                   }}
                 >
                   Mua ngay
                 </button>
               </div>
               )}
-              {added && <p className="pdp-added-note">Đã thêm vào giỏ hàng — <Link to="/cart">xem giỏ hàng →</Link></p>}
+              {added && <p className="pdp-added-note">Đã thêm vào giỏ hàng — <Link to="/gio-hang">xem giỏ hàng →</Link></p>}
 
               <a href="#shipping-info" className="pdp-shipping-link">
                 Vận chuyển, đổi trả & bảo hành

@@ -37,8 +37,8 @@ export default function SearchBox() {
   const rows = []
   if (sug) {
     sug.keywords.forEach((k) => rows.push({ kind: 'kw', label: k, go: () => goSearch(k) }))
-    sug.categories.forEach((c) => rows.push({ kind: 'cat', label: c.name, go: () => go(`/products?category=${c.id}`) }))
-    sug.products.forEach((p) => rows.push({ kind: 'p', product: p, go: () => go(`/products/${p.id}`) }))
+    sug.categories.forEach((c) => rows.push({ kind: 'cat', label: c.name, go: () => go(`/san-pham?category=${c.id}`) }))
+    sug.products.forEach((p) => rows.push({ kind: 'p', product: p, go: () => go(`/san-pham/${p.id}`) }))
   }
 
   function go(path) {
@@ -49,7 +49,7 @@ export default function SearchBox() {
   function goSearch(text) {
     const q = text.trim()
     setQuery(q)
-    go(q ? `/products?q=${encodeURIComponent(q)}` : '/products')
+    go(q ? `/san-pham?q=${encodeURIComponent(q)}` : '/san-pham')
   }
 
   function onSubmit(e) {
@@ -128,7 +128,7 @@ export default function SearchBox() {
               {sug.categories.map((c) => {
                 const i = ++n
                 return (
-                  <button type="button" key={c.id} className={`ss-row ${active === i ? 'ss-active' : ''}`} onClick={() => go(`/products?category=${c.id}`)}>
+                  <button type="button" key={c.id} className={`ss-row ${active === i ? 'ss-active' : ''}`} onClick={() => go(`/san-pham?category=${c.id}`)}>
                     {c.name}
                   </button>
                 )
@@ -142,7 +142,7 @@ export default function SearchBox() {
               {sug.products.map((p) => {
                 const i = ++n
                 return (
-                  <button type="button" key={p.id} className={`ss-row ss-product ${active === i ? 'ss-active' : ''}`} onClick={() => go(`/products/${p.id}`)}>
+                  <button type="button" key={p.id} className={`ss-row ss-product ${active === i ? 'ss-active' : ''}`} onClick={() => go(`/san-pham/${p.id}`)}>
                     <img src={sized(p.image, IMG.thumb)} alt="" loading="lazy" />
                     <span className="ss-name">{p.name}</span>
                     <span className="ss-price">

@@ -38,18 +38,18 @@ Theo Russell's Curtains, loại rèm khoen có vài hạn chế:
 
 ## Cách chọn rèm ORE
 
-1. **Đo cửa.** Đo rộng cửa và cao cửa, rồi tính tổng chiều ngang rèm gấp khoảng 1,5 đến 2,5 lần chiều rộng cửa. Xem hướng dẫn chi tiết trong bài [cách đo và tính vải rèm ORE](/news/cach-do-va-tinh-vai-rem-ore).
-2. **Chọn thanh treo.** Thanh mua riêng theo chiều rộng chỗ treo, xem [chọn thanh treo rèm theo chiều rộng cửa](/news/chon-thanh-treo-rem-theo-chieu-rong-cua).
+1. **Đo cửa.** Đo rộng cửa và cao cửa, rồi tính tổng chiều ngang rèm gấp khoảng 1,5 đến 2,5 lần chiều rộng cửa. Xem hướng dẫn chi tiết trong bài [cách đo và tính vải rèm ORE](/tin-tuc/cach-do-va-tinh-vai-rem-ore).
+2. **Chọn thanh treo.** Thanh mua riêng theo chiều rộng chỗ treo, xem [chọn thanh treo rèm theo chiều rộng cửa](/tin-tuc/chon-thanh-treo-rem-theo-chieu-rong-cua).
 3. **Chọn vải và màu.** Cần chắn nắng thì chọn vải gấm dày. Cần lọc sáng thì chọn loại hai lớp kèm voan.
 
 ## Rèm ORE tại CLEVINIUM
 
-- [Rèm đục lỗ ORE vải gấm dày, 8 màu](/products/sp29481006929), giá từ 191.263đ đến 1.036.000đ tùy màu và cỡ.
-- [Rèm đục lỗ ORE vải gấm dày, 5 màu](/products/sp29381003635).
-- [Rèm khoen ORE hai lớp kèm voan trắng](/products/sp26431672481), giá từ 146.511đ đến 1.085.538đ.
-- [Rèm cửa chính cao từ 2,7 m đến 3,1 m](/products/sp28930288769) cho cửa lớn.
+- [Rèm đục lỗ ORE vải gấm dày, 8 màu](/san-pham/sp29481006929), giá từ 191.263đ đến 1.036.000đ tùy màu và cỡ.
+- [Rèm đục lỗ ORE vải gấm dày, 5 màu](/san-pham/sp29381003635).
+- [Rèm khoen ORE hai lớp kèm voan trắng](/san-pham/sp26431672481), giá từ 146.511đ đến 1.085.538đ.
+- [Rèm cửa chính cao từ 2,7 m đến 3,1 m](/san-pham/sp28930288769) cho cửa lớn.
 
-Xem thêm các mẫu khác trong danh mục [rèm chống nắng](/products?category=chong-nang). Cần tư vấn, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
+Xem thêm các mẫu khác trong danh mục [rèm chống nắng](/san-pham?category=chong-nang). Cần tư vấn, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/lien-he).
 
 ## Câu hỏi thường gặp
 
@@ -60,7 +60,7 @@ Có. Rèm ORE, rèm khoen và rèm đục lỗ đều chỉ loại rèm có khoe
 Không. Giá chỉ gồm rèm và dây vén màn. Thanh treo mua riêng.
 
 **Rèm ORE khác rèm RIDO và rèm dán thế nào?**
-Ba kiểu này khác nhau ở cách gắn rèm lên cửa. Xem bài [rèm RIDO là gì](/news/rem-rido-la-gi) và [rèm dán tường là gì](/news/rem-dan-tuong-la-gi).
+Ba kiểu này khác nhau ở cách gắn rèm lên cửa. Xem bài [rèm RIDO là gì](/tin-tuc/rem-rido-la-gi) và [rèm dán tường là gì](/tin-tuc/rem-dan-tuong-la-gi).
 
 **Mua rèm ORE giao trong bao lâu?**
 Rèm có sẵn giao trong 2 đến 5 ngày. Rèm may đo cần thêm 2 đến 3 ngày. Rèm hỗ trợ đổi trả khi sản phẩm lỗi do nhà sản xuất.

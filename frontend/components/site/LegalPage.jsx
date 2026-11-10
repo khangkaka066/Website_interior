@@ -31,7 +31,7 @@ export default function LegalPage({ title, intro, sections }) {
       </div>
       <p className="mt-10 text-sm text-muted">
         Cần hỏi thêm? Email <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-accent underline">{CONTACT_EMAIL}</a> hoặc xem trang{' '}
-        <a href="/contact" className="font-semibold text-accent underline">Liên hệ</a>.
+        <a href="/lien-he" className="font-semibold text-accent underline">Liên hệ</a>.
       </p>
     </SiteShell>
   )

@@ -35,7 +35,7 @@ export default function Hero() {
         <p className="hero-sub">Vải rèm dày dặn, cản sáng &amp; chống tia UV vượt trội, buông rủ mềm mại và lên màu sang trọng dưới mọi ánh đèn.</p>
 
         <div className="hero-cta">
-          <Link className="btn-pill btn-pill-dark" to="/products">
+          <Link className="btn-pill btn-pill-dark" to="/san-pham">
             Mua sắm ngay
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9" /></svg>
           </Link>

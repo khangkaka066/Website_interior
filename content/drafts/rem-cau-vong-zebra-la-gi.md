@@ -63,9 +63,9 @@ Catalog gợi ý rèm cầu vồng cho phòng học, quán cà phê, phòng làm
 
 ## Đặt rèm cầu vồng tại CLEVINIUM
 
-Bạn có thể xem toàn bộ catalog rèm cầu vồng tại trang [đặt riêng](/dat-rieng) và chọn bộ sưu tập, màu theo kích thước cần làm. Mỗi cửa có kích thước khác nhau, nên hãy gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact) để được tư vấn báo giá theo đúng số đo.
+Bạn có thể xem toàn bộ catalog rèm cầu vồng tại trang [đặt riêng](/dat-rieng) và chọn bộ sưu tập, màu theo kích thước cần làm. Mỗi cửa có kích thước khác nhau, nên hãy gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/lien-he) để được tư vấn báo giá theo đúng số đo.
 
-Nếu bạn thích rèm vải treo thanh, có thể xem [rèm chống nắng](/products?category=chong-nang) trên website.
+Nếu bạn thích rèm vải treo thanh, có thể xem [rèm chống nắng](/san-pham?category=chong-nang) trên website.
 
 ## Câu hỏi thường gặp
 

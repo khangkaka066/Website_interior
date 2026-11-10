@@ -62,7 +62,7 @@ export default function DealOfTheDay() {
             <Tile value={sec} label="Giây" />
           </div>
           {/* Mở đúng sản phẩm đang khuyến mãi: khách chọn phân loại rồi bấm "Mua ngay" ở trang sản phẩm. */}
-          <Link className="btn btn-accent" to={`/products/${deal.id}`}>
+          <Link className="btn btn-accent" to={`/san-pham/${deal.id}`}>
             MUA NGAY
           </Link>
         </div>

@@ -10,7 +10,7 @@ export default function CategoryGrid() {
   return (
     <section className="container category-grid" aria-label="Danh mục sản phẩm">
       {categories.map((c) => (
-        <Link key={c.id} className={`cat-card photo-${c.photoStyle}`} href={`/products?category=${c.id}`}>
+        <Link key={c.id} className={`cat-card photo-${c.photoStyle}`} href={`/san-pham?category=${c.id}`}>
           <span className="cat-photo-wrap">
             <img className="cat-photo" src={c.image} alt="" loading="lazy" decoding="async" />
           </span>

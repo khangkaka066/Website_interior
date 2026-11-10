@@ -1,0 +1,39 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(bare)/layout,_N_T_/(bare)/login/layout,_N_T_/(bare)/login/page,_N_T_/login"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGJhcmUp/login/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/b26156b7f9d94289e706c1bd4e5ac9397538706df1da5a34808541c33a5ec559/$/login",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/(bare)/login/page"
+    },
+    "isFallback": false
+  }
+}

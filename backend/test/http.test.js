@@ -126,7 +126,7 @@ describe('công khai', () => {
   test('robots.txt chặn trang riêng tư, có sitemap', async () => {
     const r = await call('/robots.txt')
     assert.match(r.text, /Disallow: \/dashboard/)
-    assert.match(r.text, /Disallow: \/checkout/)
+    assert.match(r.text, /Disallow: \/thanh-toan/)
     assert.match(r.text, /Sitemap: .*\/sitemap\.xml/)
   })
   test('sitemap.xml hợp lệ, có trang sản phẩm', async () => {
@@ -134,7 +134,7 @@ describe('công khai', () => {
     assert.match(r.headers.get('content-type'), /xml/)
     assert.match(r.text, /<urlset/)
     assert.ok((r.text.match(/<loc>/g) || []).length > 5)
-    assert.ok(r.text.includes('/products/'))
+    assert.ok(r.text.includes('/san-pham/'))
   })
   test('thông tin cửa hàng, danh mục, tùy chọn thanh toán', async () => {
     assert.ok(json(await call('/api/shop/categories')).length > 0)

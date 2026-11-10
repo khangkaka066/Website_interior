@@ -1,0 +1,657 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    },
+    {
+      "source": "/products/:path*",
+      "destination": "/san-pham/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/products(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/about/:path*",
+      "destination": "/gioi-thieu/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/about(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/contact/:path*",
+      "destination": "/lien-he/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/contact(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/news/:path*",
+      "destination": "/tin-tuc/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/news(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/faq/:path*",
+      "destination": "/cau-hoi-thuong-gap/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/faq(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/privacy/:path*",
+      "destination": "/chinh-sach-bao-mat/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/privacy(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/terms/:path*",
+      "destination": "/dieu-khoan/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/terms(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/cart/:path*",
+      "destination": "/gio-hang/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/cart(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/checkout/:path*",
+      "destination": "/thanh-toan/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/checkout(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/track-order/:path*",
+      "destination": "/tra-cuu-don-hang/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/track-order(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/wishlist/:path*",
+      "destination": "/yeu-thich/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/wishlist(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/account/:path*",
+      "destination": "/tai-khoan/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/account(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/order-confirmation/:path*",
+      "destination": "/xac-nhan-don-hang/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/order-confirmation(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/black.webp",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-den.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/black\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/black.png",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-den.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/black\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/blue.webp",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-xanh-duong.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/blue\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/blue.png",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-xanh-duong.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/blue\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/brown.webp",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-nau.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/brown\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/brown.png",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-nau.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/brown\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/gold.webp",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-vang-gold.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/gold\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/gold.png",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-vang-gold.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/gold\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/green.webp",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-xanh-la.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/green\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/green.png",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-xanh-la.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/green\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/purple-gray.webp",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-xam-tim.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/purple-gray\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/purple-gray.png",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-xam-tim.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/purple-gray\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/silver.webp",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-xam-bac.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/silver\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/silver.png",
+      "destination": "/images/curtains/rem-cua-vai-gam-mau-xam-bac.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/silver\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/pillow.webp",
+      "destination": "/images/curtains/goi-tua-sofa-vai-gam-mau-xam-dam.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/pillow\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/pillow.png",
+      "destination": "/images/curtains/goi-tua-sofa-vai-gam-mau-xam-dam.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/pillow\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/collage-dan-tuong.webp",
+      "destination": "/images/curtains/rem-dan-tuong-nhieu-mau-sac.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/collage-dan-tuong\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/collage-dan-tuong.png",
+      "destination": "/images/curtains/rem-dan-tuong-nhieu-mau-sac.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/collage-dan-tuong\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/room-blue.webp",
+      "destination": "/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/room-blue\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/room-blue.png",
+      "destination": "/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/room-blue\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/room-brown.webp",
+      "destination": "/images/curtains/rem-cua-vai-gam-nau-lap-cua-so.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/room-brown\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/room-brown.png",
+      "destination": "/images/curtains/rem-cua-vai-gam-nau-lap-cua-so.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/room-brown\\.png(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/room-sheer-white.webp",
+      "destination": "/images/curtains/rem-voan-trang-phong-khach.webp",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/room-sheer-white\\.webp(?:/)?$"
+    },
+    {
+      "source": "/images/curtains/room-sheer-white.png",
+      "destination": "/images/curtains/rem-voan-trang-phong-khach.png",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/images/curtains/room-sheer-white\\.png(?:/)?$"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/:path*",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://accounts.google.com  https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.doubleclick.net https://www.google.com https://*.googleadservices.com; frame-src 'self' https://accounts.google.com https://www.google.com https://www.googletagmanager.com https://td.doubleclick.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+        }
+      ],
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/images/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=2592000"
+        }
+      ],
+      "regex": "^/images(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    }
+  ],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [
+      {
+        "source": "/api/:path*",
+        "destination": "http://localhost:4000/api/:path*",
+        "regex": "^/api(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+      },
+      {
+        "source": "/robots.txt",
+        "destination": "http://localhost:4000/robots.txt",
+        "regex": "^/robots\\.txt(?:/)?$"
+      },
+      {
+        "source": "/sitemap.xml",
+        "destination": "http://localhost:4000/sitemap.xml",
+        "regex": "^/sitemap\\.xml(?:/)?$"
+      }
+    ],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/dashboard/campaigns/[id]",
+      "regex": "^/dashboard/campaigns/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/campaigns/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/dashboard/customers/[id]",
+      "regex": "^/dashboard/customers/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/customers/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/dashboard/orders/[id]",
+      "regex": "^/dashboard/orders/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/orders/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/dashboard/products/[id]",
+      "regex": "^/dashboard/products/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/products/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/dashboard/products/[id]/edit",
+      "regex": "^/dashboard/products/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/products/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/shipping/[id]",
+      "regex": "^/dashboard/shipping/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/shipping/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/san-pham/[id]",
+      "regex": "^/san\\-pham/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/san\\-pham/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/tin-tuc/[slug]",
+      "regex": "^/tin\\-tuc/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/tin\\-tuc/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/xac-nhan-don-hang/[orderNumber]",
+      "regex": "^/xac\\-nhan\\-don\\-hang/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPorderNumber": "nxtPorderNumber"
+      },
+      "namedRegex": "^/xac\\-nhan\\-don\\-hang/(?<nxtPorderNumber>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/apple-icon.png",
+      "regex": "^/apple\\-icon\\.png(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/apple\\-icon\\.png(?:/)?$"
+    },
+    {
+      "page": "/cau-hoi-thuong-gap",
+      "regex": "^/cau\\-hoi\\-thuong\\-gap(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/cau\\-hoi\\-thuong\\-gap(?:/)?$"
+    },
+    {
+      "page": "/chinh-sach-bao-mat",
+      "regex": "^/chinh\\-sach\\-bao\\-mat(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/chinh\\-sach\\-bao\\-mat(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/accounts",
+      "regex": "^/dashboard/accounts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/accounts(?:/)?$"
+    },
+    {
+      "page": "/dashboard/analytics",
+      "regex": "^/dashboard/analytics(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/analytics(?:/)?$"
+    },
+    {
+      "page": "/dashboard/campaigns",
+      "regex": "^/dashboard/campaigns(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/campaigns(?:/)?$"
+    },
+    {
+      "page": "/dashboard/coupons",
+      "regex": "^/dashboard/coupons(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/coupons(?:/)?$"
+    },
+    {
+      "page": "/dashboard/customers",
+      "regex": "^/dashboard/customers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/customers(?:/)?$"
+    },
+    {
+      "page": "/dashboard/discounts",
+      "regex": "^/dashboard/discounts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/discounts(?:/)?$"
+    },
+    {
+      "page": "/dashboard/messages",
+      "regex": "^/dashboard/messages(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/messages(?:/)?$"
+    },
+    {
+      "page": "/dashboard/news",
+      "regex": "^/dashboard/news(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/news(?:/)?$"
+    },
+    {
+      "page": "/dashboard/orders",
+      "regex": "^/dashboard/orders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/orders(?:/)?$"
+    },
+    {
+      "page": "/dashboard/orders/pack",
+      "regex": "^/dashboard/orders/pack(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/orders/pack(?:/)?$"
+    },
+    {
+      "page": "/dashboard/payments",
+      "regex": "^/dashboard/payments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/payments(?:/)?$"
+    },
+    {
+      "page": "/dashboard/products",
+      "regex": "^/dashboard/products(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/products(?:/)?$"
+    },
+    {
+      "page": "/dashboard/products/new",
+      "regex": "^/dashboard/products/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/products/new(?:/)?$"
+    },
+    {
+      "page": "/dashboard/reviews",
+      "regex": "^/dashboard/reviews(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/reviews(?:/)?$"
+    },
+    {
+      "page": "/dashboard/seo",
+      "regex": "^/dashboard/seo(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/seo(?:/)?$"
+    },
+    {
+      "page": "/dashboard/settings",
+      "regex": "^/dashboard/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/settings(?:/)?$"
+    },
+    {
+      "page": "/dashboard/shipping",
+      "regex": "^/dashboard/shipping(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/shipping(?:/)?$"
+    },
+    {
+      "page": "/dashboard/shipping/carriers",
+      "regex": "^/dashboard/shipping/carriers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/shipping/carriers(?:/)?$"
+    },
+    {
+      "page": "/dashboard/shipping/handover",
+      "regex": "^/dashboard/shipping/handover(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/shipping/handover(?:/)?$"
+    },
+    {
+      "page": "/dashboard/subscribers",
+      "regex": "^/dashboard/subscribers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/subscribers(?:/)?$"
+    },
+    {
+      "page": "/dat-rieng",
+      "regex": "^/dat\\-rieng(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dat\\-rieng(?:/)?$"
+    },
+    {
+      "page": "/dieu-khoan",
+      "regex": "^/dieu\\-khoan(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dieu\\-khoan(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/forgot-password",
+      "regex": "^/forgot\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/forgot\\-password(?:/)?$"
+    },
+    {
+      "page": "/gio-hang",
+      "regex": "^/gio\\-hang(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/gio\\-hang(?:/)?$"
+    },
+    {
+      "page": "/gioi-thieu",
+      "regex": "^/gioi\\-thieu(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/gioi\\-thieu(?:/)?$"
+    },
+    {
+      "page": "/icon.png",
+      "regex": "^/icon\\.png(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/icon\\.png(?:/)?$"
+    },
+    {
+      "page": "/lien-he",
+      "regex": "^/lien\\-he(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/lien\\-he(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/reset-password",
+      "regex": "^/reset\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/reset\\-password(?:/)?$"
+    },
+    {
+      "page": "/san-pham",
+      "regex": "^/san\\-pham(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/san\\-pham(?:/)?$"
+    },
+    {
+      "page": "/tai-khoan",
+      "regex": "^/tai\\-khoan(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tai\\-khoan(?:/)?$"
+    },
+    {
+      "page": "/thanh-toan",
+      "regex": "^/thanh\\-toan(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/thanh\\-toan(?:/)?$"
+    },
+    {
+      "page": "/tin-tuc",
+      "regex": "^/tin\\-tuc(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tin\\-tuc(?:/)?$"
+    },
+    {
+      "page": "/tra-cuu-don-hang",
+      "regex": "^/tra\\-cuu\\-don\\-hang(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tra\\-cuu\\-don\\-hang(?:/)?$"
+    },
+    {
+      "page": "/unsubscribe",
+      "regex": "^/unsubscribe(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/unsubscribe(?:/)?$"
+    },
+    {
+      "page": "/yeu-thich",
+      "regex": "^/yeu\\-thich(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/yeu\\-thich(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

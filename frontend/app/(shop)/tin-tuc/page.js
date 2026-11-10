@@ -9,7 +9,7 @@ const parsePage = (raw) => {
   const n = Number(Array.isArray(raw) ? raw[0] : raw)
   return Number.isInteger(n) && n >= 1 ? n : 1
 }
-const pageHref = (n) => (n <= 1 ? '/news' : `/news?page=${n}`)
+const pageHref = (n) => (n <= 1 ? '/tin-tuc' : `/tin-tuc?page=${n}`)
 
 export async function generateMetadata({ searchParams }) {
   const page = parsePage((await searchParams).page)
@@ -63,7 +63,7 @@ export default async function NewsPage({ searchParams }) {
       {posts.length === 0 ? (
         <div className="mt-10 rounded-xl border border-line bg-white p-8 text-center">
           <p className="text-muted">Chuyên mục đang được chuẩn bị, chưa có bài viết nào.</p>
-          <Link href="/products" className="btn btn-accent mt-5 inline-flex">
+          <Link href="/san-pham" className="btn btn-accent mt-5 inline-flex">
             Xem sản phẩm
           </Link>
         </div>
@@ -71,7 +71,7 @@ export default async function NewsPage({ searchParams }) {
         <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((p) => (
             <li key={p.id}>
-              <Link href={`/news/${p.slug}`} className="group block h-full overflow-hidden rounded-xl border border-line bg-white transition hover:shadow-lg">
+              <Link href={`/tin-tuc/${p.slug}`} className="group block h-full overflow-hidden rounded-xl border border-line bg-white transition hover:shadow-lg">
                 {p.coverUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={p.coverUrl} alt="" loading="lazy" className="aspect-[16/10] w-full object-cover" />

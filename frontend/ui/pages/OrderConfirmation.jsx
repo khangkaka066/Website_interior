@@ -58,10 +58,10 @@ export default function OrderConfirmation() {
             </div>
           )}
           <div className="order-confirmation-actions">
-            <Link to={`/track-order?orderNumber=${encodeURIComponent(orderNumber)}`} className="btn btn-accent">
+            <Link to={`/tra-cuu-don-hang?orderNumber=${encodeURIComponent(orderNumber)}`} className="btn btn-accent">
               Theo dõi đơn hàng
             </Link>
-            <Link to="/products" className="btn btn-hero">
+            <Link to="/san-pham" className="btn btn-hero">
               Tiếp tục mua sắm
             </Link>
             <Link to="/" className="btn btn-hero">

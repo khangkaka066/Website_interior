@@ -37,15 +37,15 @@ Theo tên sản phẩm trên website, ngoài làm rèm cửa sổ, rèm RIDO cò
 
 ## Tính kích thước rèm RIDO
 
-Kích thước ghi trên sản phẩm là của một tấm rèm, đo khi căng phẳng vải. Theo hướng dẫn của shop, tổng chiều ngang rèm khoảng 1,5 đến 2,5 lần chiều rộng cửa, chiều cao rèm cửa sổ là chiều cao cửa cộng khoảng 30 cm và cửa chính cộng khoảng 15 cm. Xem cách tính cụ thể trong bài [cách đo và tính vải rèm ORE](/news/cach-do-va-tinh-vai-rem-ore), vì cách tính tương tự.
+Kích thước ghi trên sản phẩm là của một tấm rèm, đo khi căng phẳng vải. Theo hướng dẫn của shop, tổng chiều ngang rèm khoảng 1,5 đến 2,5 lần chiều rộng cửa, chiều cao rèm cửa sổ là chiều cao cửa cộng khoảng 30 cm và cửa chính cộng khoảng 15 cm. Xem cách tính cụ thể trong bài [cách đo và tính vải rèm ORE](/tin-tuc/cach-do-va-tinh-vai-rem-ore), vì cách tính tương tự.
 
 ## Rèm RIDO tại CLEVINIUM
 
-- [Rèm cửa sổ móc RIDO Loại 1](/products/sp5248262061), 8 màu, giá từ 99.256đ đến 780.342đ.
-- [Rèm móc RIDO vải gấm dày cản nắng tốt](/products/sp28482500494), 5 màu, giá từ 93.842đ đến 835.484đ.
-- [Rèm móc RIDO vải gấm dày dặn chống nắng](/products/sp28882500901), 8 màu, giá từ 160.831đ đến 1.002.581đ.
+- [Rèm cửa sổ móc RIDO Loại 1](/san-pham/sp5248262061), 8 màu, giá từ 99.256đ đến 780.342đ.
+- [Rèm móc RIDO vải gấm dày cản nắng tốt](/san-pham/sp28482500494), 5 màu, giá từ 93.842đ đến 835.484đ.
+- [Rèm móc RIDO vải gấm dày dặn chống nắng](/san-pham/sp28882500901), 8 màu, giá từ 160.831đ đến 1.002.581đ.
 
-Giá phụ thuộc kích thước và màu bạn chọn. Rèm RIDO nằm trong danh mục [rèm dán tường và RIDO móc](/products?category=dan-tuong). Cần chọn giữa rèm RIDO và rèm ORE, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/contact).
+Giá phụ thuộc kích thước và màu bạn chọn. Rèm RIDO nằm trong danh mục [rèm dán tường và RIDO móc](/san-pham?category=dan-tuong). Cần chọn giữa rèm RIDO và rèm ORE, gọi hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) hoặc xem trang [liên hệ](/lien-he).
 
 ## Câu hỏi thường gặp
 
@@ -53,13 +53,13 @@ Giá phụ thuộc kích thước và màu bạn chọn. Rèm RIDO nằm trong d
 Không. Rèm RIDO dạng móc kéo thẳng được mà không cần nhún sóng nhiều. Muốn nếp sóng đẹp thì chọn rèm ORE.
 
 **Rèm RIDO có kèm thanh treo không?**
-Không. Giá rèm không bao gồm thanh treo, bạn chọn thêm [thanh treo rèm](/products?category=thanh-treo).
+Không. Giá rèm không bao gồm thanh treo, bạn chọn thêm [thanh treo rèm](/san-pham?category=thanh-treo).
 
 **Có thể chọn cùng một mẫu vải với kiểu ORE hoặc dán tường không?**
 Nhiều sản phẩm cho chọn kiểu treo ở phần phân loại khi đặt hàng.
 
 **Rèm RIDO tìm hiểu thêm ở đâu?**
-Xem bài [rèm ORE là gì](/news/rem-ore-la-gi) và [rèm dán tường là gì](/news/rem-dan-tuong-la-gi).
+Xem bài [rèm ORE là gì](/tin-tuc/rem-ore-la-gi) và [rèm dán tường là gì](/tin-tuc/rem-dan-tuong-la-gi).
 
 ## Tóm tắt
 

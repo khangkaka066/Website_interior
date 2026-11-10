@@ -40,7 +40,7 @@ export default function ProductHoverCard({ product: p }) {
   }
 
   return (
-    <Link className="product-card" to={`/products/${p.id}`}>
+    <Link className="product-card" to={`/san-pham/${p.id}`}>
       <div
         className="product-thumb"
         onPointerEnter={(e) => {

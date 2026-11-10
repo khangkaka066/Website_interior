@@ -37,7 +37,7 @@ for cid in ['dan-tuong','chong-nang','voan-lua','thanh-treo','rem-khac','vat-lie
         if color: det.append(f"{len(color)} màu" + (f": {', '.join(color[:8])}" if len(color) <= 8 else ""))
         if size: det.append(f"{len(size)} cỡ" + (f": {size[0]} … {size[-1]}" if len(size) > 2 else ""))
         name = re.sub(r'\s+', ' ', p['name']).replace('|', '/')
-        out.append(f"| [{name}](/products/{p['id']}) `{p['id']}` | {price} | {'; '.join(det) or '—'} |")
+        out.append(f"| [{name}](/san-pham/{p['id']}) `{p['id']}` | {price} | {'; '.join(det) or '—'} |")
     out.append("")
 open(f"{outdir}/products/web-catalog.md", 'w').write('\n'.join(out))
 print(len(data), 'products;', {c: len(v) for c, v in rows.items()})

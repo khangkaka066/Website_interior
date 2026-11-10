@@ -1,0 +1,44 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/dashboard/layout,_N_T_/dashboard/shipping/layout,_N_T_/dashboard/shipping/carriers/layout,_N_T_/dashboard/shipping/carriers/page,_N_T_/dashboard/shipping/carriers"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/dashboard/shipping/carriers/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 96,
+                "slots": {
+                  "children": {
+                    "hints": 160,
+                    "slots": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/bdbd697ded9d576b61f520755e8b17dbd9eb49fb9d2a91f18516b0d7d70a9177/$/dashboard/shipping/carriers",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/dashboard/shipping/carriers/page"
+    },
+    "isFallback": false
+  }
+}

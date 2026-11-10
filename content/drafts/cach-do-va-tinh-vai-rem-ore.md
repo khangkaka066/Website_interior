@@ -11,11 +11,11 @@ status: draft
 
 **Rèm ORE nên có tổng chiều ngang khoảng 1,5 đến 2,5 lần chiều rộng cửa, và cao hơn cửa khoảng 30 cm với cửa sổ, 10 đến 15 cm với cửa chính.**
 
-Rèm cần dư vải để nhún thành nếp khi treo. Bài này hướng dẫn từng bước đo và tính, theo cách CLEVINIUM đang tư vấn khi bạn chọn [rèm ORE chống nắng](/products?category=chong-nang).
+Rèm cần dư vải để nhún thành nếp khi treo. Bài này hướng dẫn từng bước đo và tính, theo cách CLEVINIUM đang tư vấn khi bạn chọn [rèm ORE chống nắng](/san-pham?category=chong-nang).
 
 ## Rèm ORE là gì?
 
-**Rèm ORE** là loại rèm vải gấm may sẵn (còn gọi là rèm khoen, rèm đục lỗ), gắn hàng khoen đục lỗ để xỏ thẳng vào thanh treo. Rèm ORE tại CLEVINIUM được may hoàn thiện theo kích thước rộng x cao đã chọn, gắn sẵn khoen và tặng kèm dây vén màn. **Giá không bao gồm thanh treo**, nên bạn cần chọn thêm [thanh treo rèm](/products?category=thanh-treo).
+**Rèm ORE** là loại rèm vải gấm may sẵn (còn gọi là rèm khoen, rèm đục lỗ), gắn hàng khoen đục lỗ để xỏ thẳng vào thanh treo. Rèm ORE tại CLEVINIUM được may hoàn thiện theo kích thước rộng x cao đã chọn, gắn sẵn khoen và tặng kèm dây vén màn. **Giá không bao gồm thanh treo**, nên bạn cần chọn thêm [thanh treo rèm](/san-pham?category=thanh-treo).
 
 ## Kích thước trên shop là kích thước của 1 tấm rèm
 
@@ -70,16 +70,16 @@ Thanh treo nên chọn sau khi đã biết chiều rộng rèm. Tại CLEVINIUM,
 - Thanh lẻ **từ 1,8 m trở lên** gồm 2 thanh nối, gắn 3 pát đỡ và đầu nối ở giữa. Rèm treo theo kiểu vén ra hai bên.
 - Muốn đặt nhiều thanh nguyên chiếc dài, hãy liên hệ shop để giao riêng.
 
-Bạn có thể xem [thanh treo rèm cao cấp đầy đủ phụ kiện](/products/sp6449488839) với 13 cỡ để chọn.
+Bạn có thể xem [thanh treo rèm cao cấp đầy đủ phụ kiện](/san-pham/sp6449488839) với 13 cỡ để chọn.
 
 ## Chọn mẫu rèm ORE trên website
 
 CLEVINIUM có nhiều mẫu rèm ORE vải gấm với nhiều màu và kích thước, ví dụ:
 
-- [Rèm đục lỗ ORE vải gấm dày, 8 màu](/products/sp29481006929)
-- [Rèm đục lỗ ORE vải gấm dày, 5 màu](/products/sp29381003635)
-- [Rèm khoen ORE hai lớp kèm voan trắng](/products/sp26431672481) cho phòng cần cả lớp chống nắng và lớp lọc sáng
-- [Rèm cửa chính cao từ 2,7 m đến 3,1 m](/products/sp28930288769) cho cửa lớn
+- [Rèm đục lỗ ORE vải gấm dày, 8 màu](/san-pham/sp29481006929)
+- [Rèm đục lỗ ORE vải gấm dày, 5 màu](/san-pham/sp29381003635)
+- [Rèm khoen ORE hai lớp kèm voan trắng](/san-pham/sp26431672481) cho phòng cần cả lớp chống nắng và lớp lọc sáng
+- [Rèm cửa chính cao từ 2,7 m đến 3,1 m](/san-pham/sp28930288769) cho cửa lớn
 
 Ở trang sản phẩm có phần chọn kích thước, bạn cũng có thể bấm "Hướng dẫn chọn kích thước" để xem lại hai hình minh họa ở trên.
 
@@ -89,7 +89,7 @@ Các hướng dẫn nước ngoài cũng đưa ra khoảng độ nhún tương t
 
 ## Giao hàng và đổi trả
 
-Rèm có sẵn giao trong 2 đến 5 ngày. Rèm may đo cần thêm 2 đến 3 ngày may. CLEVINIUM hỗ trợ đổi trả nếu sản phẩm lỗi do nhà sản xuất; bạn chỉ cần liên hệ hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) kèm ảnh sản phẩm. Xem thêm tại trang [câu hỏi thường gặp](/faq) hoặc [liên hệ](/contact).
+Rèm có sẵn giao trong 2 đến 5 ngày. Rèm may đo cần thêm 2 đến 3 ngày may. CLEVINIUM hỗ trợ đổi trả nếu sản phẩm lỗi do nhà sản xuất; bạn chỉ cần liên hệ hotline **0356 789 749** (8:00 đến 21:00 hằng ngày) kèm ảnh sản phẩm. Xem thêm tại trang [câu hỏi thường gặp](/cau-hoi-thuong-gap) hoặc [liên hệ](/lien-he).
 
 ## Câu hỏi thường gặp
 

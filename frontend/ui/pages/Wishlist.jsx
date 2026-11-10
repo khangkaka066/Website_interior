@@ -23,14 +23,14 @@ export default function Wishlist() {
           {items.length === 0 ? (
             <div className="wishlist-empty">
               <p>Bạn chưa lưu sản phẩm nào. Bấm biểu tượng trái tim trên sản phẩm để lưu lại xem sau.</p>
-              <Link to="/products" className="btn btn-accent">
+              <Link to="/san-pham" className="btn btn-accent">
                 Xem sản phẩm
               </Link>
             </div>
           ) : (
             <div className="product-grid product-grid-all">
               {items.map((p) => (
-                <Link className="product-card" key={p.id} to={`/products/${p.id}`}>
+                <Link className="product-card" key={p.id} to={`/san-pham/${p.id}`}>
                   <div className="product-thumb">
                     <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
                     <WishlistButton productId={p.id} />
