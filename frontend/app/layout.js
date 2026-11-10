@@ -23,7 +23,7 @@ export const metadata = {
     siteName: 'CLEVINIUM',
     locale: 'vi_VN',
     // Ảnh mặc định khi chia sẻ link (Facebook, Zalo...) của trang không có ảnh riêng.
-    images: [{ url: '/images/curtains/room-blue.webp', alt: 'CLEVINIUM — rèm cửa giá xưởng' }],
+    images: [{ url: '/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.webp', alt: 'CLEVINIUM — rèm cửa giá xưởng' }],
   },
   twitter: { card: 'summary_large_image' },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },

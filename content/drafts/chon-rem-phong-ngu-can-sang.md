@@ -36,7 +36,7 @@ Khi xem thông số, hãy phân biệt con số cản sáng của vải và vi�
 
 Các con số cản sáng của rèm cuốn và rèm cầu vồng là do nhà sản xuất ghi trong catalog.
 
-![Rèm khoen ORE màu nâu đậm trong phòng, vén gọn bằng dây vén màn](/images/curtains/room-brown.webp)
+![Rèm khoen ORE màu nâu đậm trong phòng, vén gọn bằng dây vén màn](/images/curtains/rem-cua-vai-gam-nau-lap-cua-so.webp)
 
 ## Rèm vải chống nắng
 

@@ -17,7 +17,7 @@ Bài này so sánh hai lựa chọn dựa trên các sản phẩm đang bán t�
 
 **Rèm voan** (còn gọi là voan lụa) là rèm mỏng, lọc sáng và che mờ. Ánh sáng ban ngày vẫn đi qua lớp vải mỏng. Rèm voan thường là lớp trong của rèm hai lớp.
 
-![Rèm voan trắng treo bằng khoen trong phòng khách, kèm cận cảnh vải và khoen](/images/curtains/room-sheer-white.webp)
+![Rèm voan trắng treo bằng khoen trong phòng khách, kèm cận cảnh vải và khoen](/images/curtains/rem-voan-trang-phong-khach.webp)
 
 ## Rèm hai lớp là gì?
 

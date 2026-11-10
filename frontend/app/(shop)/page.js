@@ -18,7 +18,7 @@ export default async function HomePage() {
       name: store?.name || 'CLEVINIUM',
       url: SITE_URL,
       logo: `${SITE_URL}/images/brand/logo.png`,
-      image: `${SITE_URL}/images/curtains/room-blue.webp`,
+      image: `${SITE_URL}/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.webp`,
       description: store?.tagline || 'Rèm cửa chất lượng cao, giá xưởng, giao hàng toàn quốc.',
       ...(store?.hotline && { telephone: store.hotline }),
       ...(store?.email && { email: store.email }),

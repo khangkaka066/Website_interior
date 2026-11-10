@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from 'react'
 // Ba ảnh rèm xếp chồng 3D ở hero, TỰ ĐỔI CHỖ theo vòng như xếp lại bộ bài: một ảnh ngẫu nhiên ở phía sau nhảy lên trước.
 // order = [sau, giữa, trước]. Chuyển động nằm hết trong CSS (transition + keyframes); ở đây chỉ quyết định ai đứng ở vị trí nào.
 const CARDS = {
-  blue: { src: '/images/curtains/blue.webp', alt: 'Rèm xanh dương', label: 'Xem rèm xanh dương' },
-  brown: { src: '/images/curtains/brown.webp', alt: 'Rèm nâu', label: 'Xem rèm nâu' },
-  gold: { src: '/images/curtains/gold.webp', alt: 'Rèm vàng gold', label: 'Xem rèm vàng gold' },
+  blue: { src: '/images/curtains/rem-cua-vai-gam-mau-xanh-duong.webp', alt: 'Rèm xanh dương', label: 'Xem rèm xanh dương' },
+  brown: { src: '/images/curtains/rem-cua-vai-gam-mau-nau.webp', alt: 'Rèm nâu', label: 'Xem rèm nâu' },
+  gold: { src: '/images/curtains/rem-cua-vai-gam-mau-vang-gold.webp', alt: 'Rèm vàng gold', label: 'Xem rèm vàng gold' },
 }
 const SLOTS = ['back', 'mid', 'front']
 const CYCLE_MS = 2000 // 0,8 giây đứng yên + 1,2 giây chuyển động (khớp thời gian trong CSS)

@@ -56,6 +56,36 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   // Thư mục gốc của dự án (có package-lock.json riêng ở thư mục cha nên Next dễ đoán nhầm).
   turbopack: { root: import.meta.dirname },
+  // Ảnh trong /images/curtains đã đổi sang tên mô tả (tốt cho SEO hình ảnh). Chuyển hướng 308 từ tên cũ để link ngoài, ảnh đã lưu trong
+  // cơ sở dữ liệu và chỉ mục Google cũ vẫn dẫn đúng ảnh.
+  async redirects() {
+    return [
+      { source: '/images/curtains/black.webp', destination: '/images/curtains/rem-cua-vai-gam-mau-den.webp', permanent: true },
+      { source: '/images/curtains/black.png', destination: '/images/curtains/rem-cua-vai-gam-mau-den.png', permanent: true },
+      { source: '/images/curtains/blue.webp', destination: '/images/curtains/rem-cua-vai-gam-mau-xanh-duong.webp', permanent: true },
+      { source: '/images/curtains/blue.png', destination: '/images/curtains/rem-cua-vai-gam-mau-xanh-duong.png', permanent: true },
+      { source: '/images/curtains/brown.webp', destination: '/images/curtains/rem-cua-vai-gam-mau-nau.webp', permanent: true },
+      { source: '/images/curtains/brown.png', destination: '/images/curtains/rem-cua-vai-gam-mau-nau.png', permanent: true },
+      { source: '/images/curtains/gold.webp', destination: '/images/curtains/rem-cua-vai-gam-mau-vang-gold.webp', permanent: true },
+      { source: '/images/curtains/gold.png', destination: '/images/curtains/rem-cua-vai-gam-mau-vang-gold.png', permanent: true },
+      { source: '/images/curtains/green.webp', destination: '/images/curtains/rem-cua-vai-gam-mau-xanh-la.webp', permanent: true },
+      { source: '/images/curtains/green.png', destination: '/images/curtains/rem-cua-vai-gam-mau-xanh-la.png', permanent: true },
+      { source: '/images/curtains/purple-gray.webp', destination: '/images/curtains/rem-cua-vai-gam-mau-xam-tim.webp', permanent: true },
+      { source: '/images/curtains/purple-gray.png', destination: '/images/curtains/rem-cua-vai-gam-mau-xam-tim.png', permanent: true },
+      { source: '/images/curtains/silver.webp', destination: '/images/curtains/rem-cua-vai-gam-mau-xam-bac.webp', permanent: true },
+      { source: '/images/curtains/silver.png', destination: '/images/curtains/rem-cua-vai-gam-mau-xam-bac.png', permanent: true },
+      { source: '/images/curtains/pillow.webp', destination: '/images/curtains/goi-tua-sofa-vai-gam-mau-xam-dam.webp', permanent: true },
+      { source: '/images/curtains/pillow.png', destination: '/images/curtains/goi-tua-sofa-vai-gam-mau-xam-dam.png', permanent: true },
+      { source: '/images/curtains/collage-dan-tuong.webp', destination: '/images/curtains/rem-dan-tuong-nhieu-mau-sac.webp', permanent: true },
+      { source: '/images/curtains/collage-dan-tuong.png', destination: '/images/curtains/rem-dan-tuong-nhieu-mau-sac.png', permanent: true },
+      { source: '/images/curtains/room-blue.webp', destination: '/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.webp', permanent: true },
+      { source: '/images/curtains/room-blue.png', destination: '/images/curtains/rem-cua-vai-gam-xanh-duong-lap-phong-ngu.png', permanent: true },
+      { source: '/images/curtains/room-brown.webp', destination: '/images/curtains/rem-cua-vai-gam-nau-lap-cua-so.webp', permanent: true },
+      { source: '/images/curtains/room-brown.png', destination: '/images/curtains/rem-cua-vai-gam-nau-lap-cua-so.png', permanent: true },
+      { source: '/images/curtains/room-sheer-white.webp', destination: '/images/curtains/rem-voan-trang-phong-khach.webp', permanent: true },
+      { source: '/images/curtains/room-sheer-white.png', destination: '/images/curtains/rem-voan-trang-phong-khach.png', permanent: true },
+    ]
+  },
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },

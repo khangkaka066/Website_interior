@@ -17,7 +17,7 @@ Bài này giải thích rèm dán tường là gì, cách tính kích thước v
 
 **Rèm dán tường** là loại rèm vải gấm được may hoàn thiện theo số tấm rộng x cao, kèm miếng dán để gắn rèm lên tường, và tặng kèm dây vén màn. Rèm được may sẵn bông gai để dính vào lớp keo dán tường.
 
-![Các mẫu rèm dán tường nhiều màu của CLEVINIUM, vén gọn bằng dây vén màn](/images/curtains/collage-dan-tuong.webp)
+![Các mẫu rèm dán tường nhiều màu của CLEVINIUM, vén gọn bằng dây vén màn](/images/curtains/rem-dan-tuong-nhieu-mau-sac.webp)
 
 Shop cũng bán **miếng dán tường** riêng, tính theo mét, gồm hai loại: mặt bông không keo, hoặc mặt gai có keo. Sản phẩm này có hai cỡ, giá từ 18.976đ đến 47.440đ.
 

@@ -17,7 +17,7 @@ Bài này giải thích rèm ORE là gì, ưu nhược điểm và những đi�
 
 **Rèm ORE** là loại rèm vải gấm may sẵn, mép trên có hàng khoen đục lỗ để xỏ thẳng vào thanh. Theo [Russell's Curtains](https://www.russellscurtains.co.nz/guides-and-advice/the-pros-and-cons-of-eyelet-curtains/), các khoen "cách đều nhau dọc mép trên để treo vào thanh, tạo ra những nếp sóng sâu". Trong tiếng Anh, loại rèm này gọi là eyelet hoặc grommet curtain.
 
-![Rèm khoen màu xám bạc xỏ trên thanh treo trắng, vén gọn bằng dây vén màn](/images/curtains/silver.webp)
+![Rèm khoen màu xám bạc xỏ trên thanh treo trắng, vén gọn bằng dây vén màn](/images/curtains/rem-cua-vai-gam-mau-xam-bac.webp)
 
 Mỗi tấm rèm ORE được may theo kích thước rộng x cao bạn chọn, gắn sẵn khoen, kèm dây vén màn. **Giá không bao gồm thanh treo.**
 

@@ -21,7 +21,7 @@ Trước hết hãy đo chiều rộng cửa và chiều rộng đoạn tường
 
 Theo hướng dẫn của [The Shade Store](https://theshadestore.com/blog/how-to-measure-for-curtains/), bạn nhân với hệ số nhún "chiều rộng mà rèm sẽ phủ (hoặc chiều rộng mà thanh sẽ trải dài)". Nghĩa là chiều rộng thanh cũng là mốc để tính rèm.
 
-![Rèm khoen ORE màu nâu xỏ trên thanh treo trắng, vén gọn bằng dây vén màn cạnh cửa sổ](/images/curtains/room-brown.webp)
+![Rèm khoen ORE màu nâu xỏ trên thanh treo trắng, vén gọn bằng dây vén màn cạnh cửa sổ](/images/curtains/rem-cua-vai-gam-nau-lap-cua-so.webp)
 
 ## Bước 2: Chọn cỡ thanh
 

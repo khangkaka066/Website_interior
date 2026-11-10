@@ -3,15 +3,15 @@
 import { useRef, useState, useEffect } from 'react'
 
 const PRESET_IMAGES = [
-  '/images/curtains/blue.webp',
-  '/images/curtains/black.webp',
-  '/images/curtains/brown.webp',
-  '/images/curtains/silver.webp',
-  '/images/curtains/purple-gray.webp',
-  '/images/curtains/gold.webp',
-  '/images/curtains/pillow.webp',
-  '/images/curtains/collage-dan-tuong.webp',
-  '/images/curtains/room-sheer-white.webp',
+  '/images/curtains/rem-cua-vai-gam-mau-xanh-duong.webp',
+  '/images/curtains/rem-cua-vai-gam-mau-den.webp',
+  '/images/curtains/rem-cua-vai-gam-mau-nau.webp',
+  '/images/curtains/rem-cua-vai-gam-mau-xam-bac.webp',
+  '/images/curtains/rem-cua-vai-gam-mau-xam-tim.webp',
+  '/images/curtains/rem-cua-vai-gam-mau-vang-gold.webp',
+  '/images/curtains/goi-tua-sofa-vai-gam-mau-xam-dam.webp',
+  '/images/curtains/rem-dan-tuong-nhieu-mau-sac.webp',
+  '/images/curtains/rem-voan-trang-phong-khach.webp',
 ]
 
 export default function ImageUploader({ images, onChange }) {
