@@ -1,14 +1,16 @@
 // Sản phẩm "Liên hệ báo giá" cho các nhóm chưa bán trực tuyến (vật liệu, bảng hiệu/đèn LED, đồ gỗ).
 // Không có giá nên không đặt hàng được (xem priceLine ở controllers/orders.js); khách bấm Liên hệ để được tư vấn.
-// Ảnh minh họa lấy từ Pexels (giấy phép Pexels: dùng miễn phí, kể cả thương mại, không bắt buộc ghi nguồn).
-const make = (slug, categoryId, type, name, description) => ({
+// Ảnh minh họa lấy từ Pexels (giấy phép Pexels: dùng miễn phí, kể cả thương mại, không bắt buộc ghi nguồn). Riêng nhóm đồ gỗ
+// (do-go-gia-dung, do-go-gia-dung-2, do-go-trang-tri) là ảnh do chủ shop cung cấp ngày 2026-11-10.
+// extraImages: ảnh phụ (tên file không đuôi) hiện thêm ở trang chi tiết, sau ảnh chính `${slug}.webp`.
+const make = (slug, categoryId, type, name, description, extraImages = []) => ({
   id: `lh-${slug}`,
   shopeeId: '',
   name,
   price: 0,
   contactOnly: true,
   image: `/images/products/${slug}.webp`,
-  images: [`/images/products/${slug}.webp`],
+  images: [`/images/products/${slug}.webp`, ...extraImages.map((f) => `/images/products/${f}.webp`)],
   categoryId,
   type,
   description: `${description}\n\nGiá tùy theo kích thước, chất liệu và số lượng. Vui lòng liên hệ để được tư vấn và báo giá trực tiếp.`,
@@ -26,6 +28,6 @@ export const contactProducts = [
   make('bang-hieu', 'bang-hieu-den', 'Bảng hiệu & đèn LED', 'Bảng hiệu', 'Thiết kế và thi công bảng hiệu cửa hàng, hộp đèn, chữ nổi theo yêu cầu.'),
   make('decal', 'bang-hieu-den', 'Bảng hiệu & đèn LED', 'Decal dán trang trí', 'In và cắt decal dán kính, dán tường, dán xe với nhiều chất liệu.'),
   make('den-led', 'bang-hieu-den', 'Bảng hiệu & đèn LED', 'Đèn LED trang trí chiếu sáng', 'Đèn LED dây, đèn hắt, đèn trang trí cho nhà ở, cửa hàng và không gian kinh doanh.'),
-  make('do-go-gia-dung', 'do-go', 'Đồ gỗ nội thất', 'Đồ gỗ gia dụng', 'Đồ gỗ gia dụng làm từ gỗ tự nhiên: thớt, khay, kệ nhà bếp và các vật dụng hằng ngày.'),
+  make('do-go-gia-dung', 'do-go', 'Đồ gỗ nội thất', 'Đồ gỗ gia dụng', 'Đồ gỗ gia dụng làm từ gỗ tự nhiên: thớt, khay, kệ nhà bếp và các vật dụng hằng ngày.', ['do-go-gia-dung-2']),
   make('do-go-trang-tri', 'do-go', 'Đồ gỗ nội thất', 'Đồ gỗ trang trí nội thất', 'Kệ, giá treo tường và đồ gỗ trang trí làm theo mẫu hoặc theo yêu cầu.'),
 ]
