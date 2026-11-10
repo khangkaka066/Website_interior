@@ -6,6 +6,7 @@ import { useProducts } from '../data/liveProducts'
 import { useWishlist } from '../context/WishlistContext'
 import PriceOld from '../components/PriceOld'
 import { sized, IMG } from '../utils/image'
+import { productPath } from '@/ui/utils/productUrl'
 
 const formatPrice = (n) => n.toLocaleString('vi-VN') + 'đ'
 
@@ -30,7 +31,7 @@ export default function Wishlist() {
           ) : (
             <div className="product-grid product-grid-all">
               {items.map((p) => (
-                <Link className="product-card" key={p.id} to={`/san-pham/${p.id}`}>
+                <Link className="product-card" key={p.id} to={productPath(p)}>
                   <div className="product-thumb">
                     <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
                     <WishlistButton productId={p.id} />

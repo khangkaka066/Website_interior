@@ -1,15 +1,17 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import ProductDetail from '@/ui/pages/ProductDetail'
 import { products as bundled } from '@/ui/data/shop'
 import { fetchProduct, fetchReviews } from '@/lib/server'
 import { SITE_URL } from '@/lib/site'
+import { productPath, productParam, findProductByParam } from '@/ui/utils/productUrl'
 import ProductReviews from '@/ui/components/ProductReviews'
 import { categories } from '@/ui/data/shop'
 
 
+// `id` trên địa chỉ là "<tên-không-dấu>-<mã>" (hoặc chỉ "<mã>" của địa chỉ cũ): backend và findProductByParam đều tra được cả hai dạng.
 // Backend tắt thì thử bản đóng gói sẵn; không có ở cả hai nơi mới là 404 thật.
-async function load(id) {
-  return (await fetchProduct(id)) || bundled.find((p) => p.id === id) || null
+async function load(param) {
+  return (await fetchProduct(param)) || findProductByParam(bundled, param) || null
 }
 
 // Bỏ emoji/ký hiệu trang trí (✔️ ✨ ...) trong mô tả nhập từ Shopee: không đẹp trên kết quả tìm kiếm.
@@ -50,8 +52,8 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
-    alternates: { canonical: `/san-pham/${product.id}` },
-    openGraph: { type: 'website', title, description, url: `/san-pham/${product.id}`, images: images.map((url) => ({ url, alt: product.name })) },
+    alternates: { canonical: productPath(product) },
+    openGraph: { type: 'website', title, description, url: productPath(product), images: images.map((url) => ({ url, alt: product.name })) },
     twitter: { card: 'summary_large_image', title, description, images: images.slice(0, 1) },
     ...(!product.contactOnly && { other: { 'product:price:amount': String(product.price), 'product:price:currency': 'VND' } }),
   }
@@ -61,10 +63,12 @@ export default async function ProductPage({ params }) {
   const { id } = await params
   const product = await load(id)
   if (!product) notFound()
+  // Địa chỉ chuẩn là /san-pham/<tên>-<mã>: địa chỉ cũ (chỉ mã, hoặc tên cũ) chuyển hướng 308 để Google chỉ giữ một địa chỉ cho mỗi sản phẩm.
+  if (decodeURIComponent(id) !== productParam(product)) permanentRedirect(productPath(product))
 
   const reviews = await fetchReviews(product.id)
   const inStock = !product.variants?.length || product.variants.some((v) => v.stock > 0)
-  const url = `${SITE_URL}/san-pham/${product.id}`
+  const url = `${SITE_URL}${productPath(product)}`
   const category = categories.find((c) => c.id === product.categoryId)
   const nextYear = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().slice(0, 10)
   const jsonLd = [

@@ -1,3 +1,0 @@
-module.exports=[77691,a=>{"use strict";a.s(["dueIn",0,function(a,b=Date.now()){if(!a)return null;let c=new Date(a).getTime()-b,d=Math.abs(c),e=Math.floor(d/864e5),f=Math.floor(d%864e5/36e5),g=Math.floor(d%36e5/6e4),h=e?`${e} ng\xe0y ${f} giờ`:f?`${f} giờ ${g} ph\xfat`:`${g} ph\xfat`;return c<0?{text:`qu\xe1 hạn ${h}`,overdue:!0,soon:!1}:{text:`c\xf2n ${h}`,overdue:!1,soon:c<216e5}},"formatCurrency",0,a=>(a||0).toLocaleString("vi-VN")+"đ","formatDate",0,a=>a?new Date(a).toLocaleDateString("vi-VN"):"—","formatDateTime",0,a=>a?new Date(a).toLocaleString("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"—"])}];
-
-//# sourceMappingURL=ui_utils_format_1ag5jvb.js.map

@@ -7,6 +7,7 @@ import PriceOld from './PriceOld'
 import RatingStars from './RatingStars'
 import { useRatings } from '../data/ratings'
 import { sized, IMG } from '../utils/image'
+import { productPath } from '@/ui/utils/productUrl'
 
 const MAX_IMAGES = 4
 const SWITCH_DELAY_MS = 220 // chuột phải dừng ở một vùng ảnh chừng này mới đổi ảnh: lướt nhanh qua không làm ảnh nháy liên tục
@@ -40,7 +41,7 @@ export default function ProductHoverCard({ product: p }) {
   }
 
   return (
-    <Link className="product-card" to={`/san-pham/${p.id}`}>
+    <Link className="product-card" to={productPath(p)}>
       <div
         className="product-thumb"
         onPointerEnter={(e) => {

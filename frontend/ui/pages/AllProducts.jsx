@@ -10,6 +10,7 @@ import { CATEGORY_NOTES, PRODUCT_GROUPS } from '../data/menu'
 import { useShopInfo } from '../useShopInfo'
 import PriceOld from '../components/PriceOld'
 import { sized, IMG } from '../utils/image'
+import { productPath } from '@/ui/utils/productUrl'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -330,7 +331,7 @@ export default function AllProducts() {
                   <h4>Sản phẩm được quan tâm</h4>
                   <div className="product-grid product-grid-all">
                     {popular.map((p) => (
-                      <Link className="product-card" key={p.id} to={`/san-pham/${p.id}`}>
+                      <Link className="product-card" key={p.id} to={productPath(p)}>
                         <div className="product-thumb">
                           <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
                         </div>
@@ -353,7 +354,7 @@ export default function AllProducts() {
                     <div
                       className="product-card"
                       key={p.id}
-                      onClick={() => navigate(`/san-pham/${p.id}`)}
+                      onClick={() => navigate(productPath(p))}
                       role="button"
                       tabIndex={0}
                     >

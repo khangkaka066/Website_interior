@@ -5,6 +5,7 @@ import { categories } from '../data/shop'
 import { useProducts } from '../data/liveProducts'
 import PriceOld from './PriceOld'
 import { sized, IMG } from '../utils/image'
+import { productPath } from '@/ui/utils/productUrl'
 
 function formatPrice(n) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -22,7 +23,7 @@ export default function ProductColumns() {
         <div className="product-column" key={col.title}>
           <h3>{col.title}</h3>
           {col.items.map((p) => (
-            <Link className="product-row" key={p.id} to={`/san-pham/${p.id}`}>
+            <Link className="product-row" key={p.id} to={productPath(p)}>
               <div className="product-row-thumb">
                 <img src={sized(p.image, IMG.card)} alt={p.name} loading="lazy" decoding="async" />
               </div>

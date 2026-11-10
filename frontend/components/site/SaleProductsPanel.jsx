@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { fetchProducts } from '@/lib/server'
 import { formatVnd } from '@/lib/format'
+import { productPath } from '@/ui/utils/productUrl'
 
 // Panel “Đang giảm giá” ở bên phải bài viết: các sản phẩm đang có giá gốc cao hơn giá bán, xếp theo % giảm cao nhất.
 // Không có sản phẩm nào đang giảm thì không vẽ gì. Là Server Component, dữ liệu làm mới tối đa 30 giây một lần.
@@ -21,7 +22,7 @@ export default async function SaleProductsPanel({ limit = 4 }) {
       <ul className="mt-3 grid gap-4">
         {onSale.map((p) => (
           <li key={p.id}>
-            <Link href={`/san-pham/${p.id}`} className="group flex gap-3">
+            <Link href={productPath(p)} className="group flex gap-3">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.image} alt={shortName(p.name)} loading="lazy" className="h-full w-full object-cover" />

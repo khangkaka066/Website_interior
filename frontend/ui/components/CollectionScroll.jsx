@@ -8,6 +8,7 @@ import { watchLayout } from '../utils/scrollRefresh'
 import { sized, IMG } from '../utils/image'
 import '../styles/collection-scroll.css'
 import Words from './Words'
+import { productPath } from '@/ui/utils/productUrl'
 
 const MAX_ITEMS = 8
 const formatPrice = (n) => n.toLocaleString('vi-VN') + 'đ'
@@ -71,7 +72,7 @@ export default function CollectionScroll() {
       </div>
       <div className="collection-track" ref={track}>
         {products.map((p) => (
-          <Link className="collection-card" key={p.id} to={`/san-pham/${p.id}`}>
+          <Link className="collection-card" key={p.id} to={productPath(p)}>
             <img src={sized(p.image, IMG.large)} alt={p.name} loading="lazy" decoding="async" draggable="false" />
             <div className="collection-card-body">
               <h3>{p.name}</h3>

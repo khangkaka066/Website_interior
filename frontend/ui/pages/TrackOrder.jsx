@@ -8,6 +8,7 @@ import { SHIPPING_STATUS, dedupeEvents } from '../constants/shippingStatus'
 import { sized, IMG } from '../utils/image'
 import OrderActions, { StaticStars } from '../components/OrderActions'
 import DeliveryBadge from '../components/DeliveryBadge'
+import { productPath } from '@/ui/utils/productUrl'
 
 const money = (n) => Number(n || 0).toLocaleString('vi-VN') + 'đ'
 // Đơn đã kết thúc (vào mục Lịch sử); còn lại là đơn đang xử lý.
@@ -208,7 +209,7 @@ export default function TrackOrder() {
                   <li key={k}>
                     {i.image && <img src={sized(i.image, IMG.thumb)} alt="" loading="lazy" />}
                     <div>
-                      {i.productId ? <Link to={`/san-pham/${i.productId}`}>{i.name}</Link> : i.name}
+                      {i.productId ? <Link to={productPath({ id: i.productId, name: i.name })}>{i.name}</Link> : i.name}
                       {i.variant && <small>{i.variant}</small>}
                       {i.review && <small><StaticStars value={i.review.rating} /> Bạn đã đánh giá</small>}
                     </div>

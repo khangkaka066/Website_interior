@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { getStorefrontProducts } from '../lib/productStore.js'
 import { shopUrl } from '../lib/mailer.js'
 import { prisma } from '../lib/prisma.js'
+import { productPath } from '../lib/productSlug.js'
 
 // robots.txt và sitemap.xml cho công cụ tìm kiếm. Địa chỉ gốc lấy từ SHOP_URL; khi deploy, trỏ
 // <tên-miền-web>/robots.txt và /sitemap.xml về backend (hoặc proxy 2 đường dẫn này).
@@ -52,7 +53,7 @@ router.get('/sitemap.xml', async (req, res) => {
     ...categories.map((c) => tag(`${base}/san-pham?category=${encodeURIComponent(c)}`)),
     ...products.map((p) =>
       // Ảnh sản phẩm giúp lên Google Hình ảnh; ảnh phải là địa chỉ đầy đủ (ảnh trong thư mục public của website thì ghép tên miền vào).
-      tag(`${base}/san-pham/${encodeURIComponent(p.id)}`, {
+      tag(`${base}${productPath(p)}`, {
         lastmod: day(p.updatedAt || p.createdAt),
         images: (p.images?.length ? p.images : [p.image])
           .filter(Boolean)

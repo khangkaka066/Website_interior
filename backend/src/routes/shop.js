@@ -13,6 +13,7 @@ import { unsubscribeSchema } from '../schemas/subscribers.js'
 import { subscribe, unsubscribe } from '../lib/subscribers.js'
 import { quoteLimiter } from '../middleware/security.js'
 import { goshipConfigured, isGoshipId, listCities, listDistricts, listWards, GoshipError } from '../lib/goship.js'
+import { findProductByParam } from '../lib/productSlug.js'
 
 const router = Router()
 
@@ -112,7 +113,8 @@ router.get('/products/:id/reviews', REVALIDATE, asyncHandler(async (req, res) =>
 }))
 
 router.get('/products/:id', REVALIDATE, (req, res) => {
-  const product = getStorefrontProduct(req.params.id)
+  // :id là mã sản phẩm hoặc đoạn cuối của địa chỉ riêng "<tên>-<mã>" (xem lib/productSlug.js).
+  const product = getStorefrontProduct(req.params.id) || findProductByParam(getStorefrontProducts(), req.params.id)
   if (!product) {
     res.set('Cache-Control', 'no-store') // không cache lỗi 404
     return res.status(404).json({ error: 'Không tìm thấy sản phẩm.' })

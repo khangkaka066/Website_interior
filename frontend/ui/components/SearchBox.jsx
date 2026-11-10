@@ -6,6 +6,7 @@ import { useProducts } from '../data/liveProducts'
 import { buildIndex, suggest } from '../data/smartSearch'
 import PriceOld from './PriceOld'
 import { sized, IMG } from '../utils/image'
+import { productPath } from '@/ui/utils/productUrl'
 
 const formatPrice = (n) => n.toLocaleString('vi-VN') + 'đ'
 
@@ -38,7 +39,7 @@ export default function SearchBox() {
   if (sug) {
     sug.keywords.forEach((k) => rows.push({ kind: 'kw', label: k, go: () => goSearch(k) }))
     sug.categories.forEach((c) => rows.push({ kind: 'cat', label: c.name, go: () => go(`/san-pham?category=${c.id}`) }))
-    sug.products.forEach((p) => rows.push({ kind: 'p', product: p, go: () => go(`/san-pham/${p.id}`) }))
+    sug.products.forEach((p) => rows.push({ kind: 'p', product: p, go: () => go(productPath(p)) }))
   }
 
   function go(path) {
@@ -142,7 +143,7 @@ export default function SearchBox() {
               {sug.products.map((p) => {
                 const i = ++n
                 return (
-                  <button type="button" key={p.id} className={`ss-row ss-product ${active === i ? 'ss-active' : ''}`} onClick={() => go(`/san-pham/${p.id}`)}>
+                  <button type="button" key={p.id} className={`ss-row ss-product ${active === i ? 'ss-active' : ''}`} onClick={() => go(productPath(p))}>
                     <img src={sized(p.image, IMG.thumb)} alt="" loading="lazy" />
                     <span className="ss-name">{p.name}</span>
                     <span className="ss-price">
